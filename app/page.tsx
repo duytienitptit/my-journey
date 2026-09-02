@@ -1,5 +1,6 @@
 import { DailyScreen } from "@/components/DailyScreen";
 import { getEveningDataAction } from "@/app/actions/evening";
+import { getComputedStatsAction } from "@/app/actions/stats";
 import { daySummaryLine } from "@/core/summary";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
@@ -12,11 +13,12 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const todayKey = dayKeyOf(now());
 
-  const [labels, activeSession, todaySessions, eveningData] = await Promise.all([
+  const [labels, activeSession, todaySessions, eveningData, stats] = await Promise.all([
     listActiveLabels(),
     getActiveSession(),
     listSessionsForDay(todayKey),
     getEveningDataAction(todayKey),
+    getComputedStatsAction(),
   ]);
 
   const completed = todaySessions.filter((s) => s.status === "completed");
@@ -30,6 +32,7 @@ export default async function Home() {
       initialTodaySessions={todaySessions}
       initialSummaryLine={summaryLine}
       initialEveningData={eveningData}
+      initialStats={stats}
     />
   );
 }

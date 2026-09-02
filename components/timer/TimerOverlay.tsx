@@ -40,7 +40,7 @@ export function TimerOverlay({
     <>
       {/* Góc trên trái — duy nhất một chỗ được hiện thống kê ban ngày (SPEC.md §5.1): dải chấm
           phiên hôm nay. Chuỗi ngày hiện tại chờ mốc 4 (cần lịch sử nhiều ngày). */}
-      <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
+      <div className="pointer-events-auto absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
         {todaySessions.length === 0 ? (
           <span className="px-1 text-sm text-foreground/50">No sessions yet today</span>
         ) : (
@@ -63,12 +63,12 @@ export function TimerOverlay({
       </div>
 
       {/* Góc trên phải — ghi bù. */}
-      <div className="absolute right-4 top-4">
+      <div className="pointer-events-auto absolute right-4 top-4">
         <BackfillButton labels={labels} onBackfill={backfill} />
       </div>
 
       {/* Giữa dưới — đồng hồ. Trạng thái tĩnh khi chạy: chỉ số phút, tên nhãn, gần như trống. */}
-      <div className="absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
+      <div className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
         {running ? (
           <>
             <CircularProgress

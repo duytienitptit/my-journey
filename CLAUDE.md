@@ -14,8 +14,9 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1 và mốc 2**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Tiếp theo là **mốc 3** (XP/cấp/đồ đạc).
+- Giai đoạn: **xong mốc 1, 2 và 3**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Tiếp theo là **mốc 4** (chuỗi + mốc thưởng
+  + ngày "đạt") — mốc này cần chủ dự án duyệt câu chữ trách móc trước khi đưa vào (§4.12, R3).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
@@ -34,8 +35,20 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   tới hôm nay/hôm qua (`components/evening/`) · phòng chuyển tối khi cuộn tới nghi thức tối
   (`RoomScene` prop `timeOfDay`) · xuất JSON thủ công (`/api/export`). Test bằng tay qua trình
   duyệt: dùng thật rồi tải lại trang — dữ liệu còn nguyên (đúng luật nghiệm thu mốc 2).
+- Đã xong trong mốc 3: toàn bộ `core/engine/` (`levels.ts` · `xp.ts` · `dayAchieved.ts` ·
+  `decay.ts` · `streaks.ts` · `room.ts` · `timeline.ts` — hàm `foldTimeline` fold theo ngày, một
+  pass duy nhất, xem ghi chú kiến trúc trong chính file đó) · 12 món đồ đầu mở khoá theo cấp,
+  mọc/biến mất trong phòng (`components/room/roomItemPlacements.ts`, `RoomItems.tsx`) · ăn mừng
+  lên cấp (`components/stats/`) · công cụ tua thời gian chỉ-dev (`app/api/dev/clock`,
+  `components/dev/TimeTravelWidget.tsx`, 404 ở production). 173 test qua `npm test`. Đã sửa một
+  lỗi CÓ TỪ MỐC 1 bắt gặp lúc soi phòng: div rỗng phủ toàn màn hình (khung nhìn đầu) chặn hết
+  chuột chạm tới canvas phòng 3D + canvas dùng z-index âm nên còn thua cả `<body>` khi dò trúng
+  chuột — OrbitControls (xoay/zoom, §5.3) thực ra CHƯA BAO GIỜ bấm được từ mốc 1, chỉ là ảnh
+  chụp màn hình không lộ ra — xem `components/DailyScreen.tsx` để hiểu cách sửa (hai lớp
+  `pointer-events` + bỏ z-index âm).
 - **Bốn nguyên tắc kỹ thuật §8 đã có `core/day.ts`, `core/session.ts`, `core/summary.ts`,
-  `core/journalPrompt.ts` — thuần, đủ unit test (70 test qua `npm test`), không đụng DB/React.**
+  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (173 test qua `npm test`),
+  không đụng DB/React.**
 - Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, thẻ cho
   nhật ký, mốc chương trung gian, và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới
   đúng chỗ cần.

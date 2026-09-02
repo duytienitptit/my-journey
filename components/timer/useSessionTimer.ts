@@ -25,6 +25,9 @@ type Props = {
   initialTodaySessions: SessionForDay[];
   initialSummaryLine: string;
   defaultLabelId: number;
+  /** Gọi sau khi phiên HOÀN THÀNH hoặc GHI BÙ — hai việc duy nhất ở đây có thể đổi XP (§4.4).
+   *  Bỏ phiên (abandon) ăn 0 điểm nên không gọi. Xem components/stats/useComputedStats.ts. */
+  onXpMightHaveChanged?: () => void;
 };
 
 const TICK_MS = 1000;
@@ -34,6 +37,7 @@ export function useSessionTimer({
   initialTodaySessions,
   initialSummaryLine,
   defaultLabelId,
+  onXpMightHaveChanged,
 }: Props) {
   const [selectedLabelId, setSelectedLabelId] = useState<number>(defaultLabelId);
   const [running, setRunning] = useState<ActiveSession | null>(initialActiveSession);
@@ -78,8 +82,9 @@ export function useSessionTimer({
     void completeSessionAction(finished.id, finished.endsAt).then((snapshot) => {
       setTodaySessions(snapshot.todaySessions);
       setSummaryLine(snapshot.summaryLine);
+      onXpMightHaveChanged?.();
     });
-  }, [running, nowMs]);
+  }, [running, nowMs, onXpMightHaveChanged]);
 
   // Tự ẩn thông báo "Nice — take a break" sau 4 giây — TÁCH RIÊNG khỏi effect ở trên (gộp
   // chung sẽ tự huỷ setTimeout của chính nó ngay khi running đổi thành null).
@@ -123,12 +128,16 @@ export function useSessionTimer({
   }, [running]);
 
   /** Ghi bù — chỉ cho hôm nay, không giới hạn số phiên (§4.3). */
-  const backfill = useCallback((labelId: number, count: number) => {
-    void backfillSessionsAction(labelId, count).then((snapshot) => {
-      setTodaySessions(snapshot.todaySessions);
-      setSummaryLine(snapshot.summaryLine);
-    });
-  }, []);
+  const backfill = useCallback(
+    (labelId: number, count: number) => {
+      void backfillSessionsAction(labelId, count).then((snapshot) => {
+        setTodaySessions(snapshot.todaySessions);
+        setSummaryLine(snapshot.summaryLine);
+        onXpMightHaveChanged?.();
+      });
+    },
+    [onXpMightHaveChanged],
+  );
 
   return {
     selectedLabelId,

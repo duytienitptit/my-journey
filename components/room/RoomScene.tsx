@@ -5,6 +5,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomShell } from "./RoomShell";
+import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
 import { Character, type CharacterPose } from "./Character";
 import { characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
@@ -15,10 +16,12 @@ export type TimeOfDay = "day" | "evening";
 type Props = {
   /** Tư thế hiện tại — "idle" khi không có phiên nào chạy, ba giá trị còn lại theo SPEC.md §5.1. */
   pose: CharacterPose;
-  /** Giai đoạn nhân vật (SPEC.md §4.8) — mặc định 1, mốc 1-2 chưa có hệ thống cấp nên luôn là 1. */
+  /** Giai đoạn nhân vật (SPEC.md §4.8) — mặc định 1, chưa có model cho giai đoạn khác. */
   characterStage?: number;
   /** Cuộn tới phần buổi tối → phòng dịu xuống (SPEC.md §5.1: "ánh sáng phòng chuyển tối"). */
   timeOfDay?: TimeOfDay;
+  /** Đồ đạc đã mở khoá theo cấp (SPEC.md §4.8) — mốc 3. */
+  unlockedItems?: readonly UnlockedRoomItem[];
 };
 
 const ROOM_CENTER: [number, number, number] = [1.5, 0.55, -1.5];
@@ -75,7 +78,7 @@ function SceneAtmosphere({ lightColor, timeOfDay }: { lightColor: string; timeOf
   );
 }
 
-export function RoomScene({ pose, characterStage = 1, timeOfDay = "day" }: Props) {
+export function RoomScene({ pose, characterStage = 1, timeOfDay = "day", unlockedItems = [] }: Props) {
   const lightColor = pose === "idle" ? ROOM_LIGHT_COLOR.neutral : ROOM_LIGHT_COLOR[pose as StatKey];
 
   return (
@@ -84,6 +87,7 @@ export function RoomScene({ pose, characterStage = 1, timeOfDay = "day" }: Props
 
       <Suspense fallback={null}>
         <RoomShell />
+        <RoomItems items={unlockedItems} />
         <Character
           url={characterModelForStage(characterStage)}
           pose={pose}

@@ -153,8 +153,25 @@ async function main() {
 
   await db.insert(schema.prompts).values(JOURNAL_PROMPTS);
 
+  // Đồ đạc mở khoá theo cấp — SPEC.md §4.8, 12 món đầu (4 mỗi chỉ số). Vị trí đặt trong phòng
+  // ở components/room/roomItemPlacements.ts, model_key phải khớp components/room/models.ts.
+  await db.insert(schema.roomItems).values([
+    { stat: "mind", name: "A few books", modelKey: "books", unlockLevel: 1 },
+    { stat: "mind", name: "Reading lamp", modelKey: "lampSquareFloor", unlockLevel: 2 },
+    { stat: "mind", name: "Open bookcase", modelKey: "bookcaseOpen", unlockLevel: 3 },
+    { stat: "mind", name: "Wall of books", modelKey: "bookcaseClosedWide", unlockLevel: 4 },
+    { stat: "health", name: "Exercise mat", modelKey: "rugRound", unlockLevel: 1 },
+    { stat: "health", name: "Bench", modelKey: "bench", unlockLevel: 2 },
+    { stat: "health", name: "Floor cushion", modelKey: "pillowLong", unlockLevel: 3 },
+    { stat: "health", name: "Fresh plant", modelKey: "plantSmall3", unlockLevel: 4 },
+    { stat: "spirit", name: "Long pillow", modelKey: "pillowBlueLong", unlockLevel: 1 },
+    { stat: "spirit", name: "Quiet corner chair", modelKey: "loungeChairRelax", unlockLevel: 2 },
+    { stat: "spirit", name: "Small plant", modelKey: "plantSmall2", unlockLevel: 3 },
+    { stat: "spirit", name: "Stuffed bear", modelKey: "bear", unlockLevel: 4 },
+  ]);
+
   console.log(
-    `Seed xong: ${insertedLabels.length} nhãn, ${insertedHabits.length} thói quen, 6 daily_tasks, 1 settings, ${JOURNAL_PROMPTS.length} prompts.`,
+    `Seed xong: ${insertedLabels.length} nhãn, ${insertedHabits.length} thói quen, 6 daily_tasks, 1 settings, ${JOURNAL_PROMPTS.length} prompts, 12 room_items.`,
   );
   await client.end();
 }

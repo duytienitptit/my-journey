@@ -15,15 +15,19 @@ type Props = {
   /** Dòng "hôm nay tôi đã ở đâu" THẬT, tính trực tiếp từ đồng hồ pomodoro ở trên — xem
    *  DailyScreen.tsx để hiểu vì sao `data.summaryLine` (tự fetch riêng) không đủ. */
   liveTodaySummaryLine: string;
+  onXpMightHaveChanged?: () => void;
 };
 
 /**
  * Phần dưới màn chính — SPEC.md §5.1 "Phần dưới — cuối ngày". Cuộn tới là gặp, không tách
  * màn hình riêng (§5.1: "Đừng tách theo giờ, đừng tự chuyển chế độ").
  */
-export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine }: Props) {
-  const { selectedDay, setSelectedDay, data, saveHabitScore, saveMood, saveJournal, close } =
-    useEveningRitual({ todayKey, initialTodayData });
+export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine, onXpMightHaveChanged }: Props) {
+  const { selectedDay, setSelectedDay, data, saveHabitScore, saveMood, saveJournal, close } = useEveningRitual({
+    todayKey,
+    initialTodayData,
+    onXpMightHaveChanged,
+  });
   const [justClosed, setJustClosed] = useState(false);
   const summaryLine = selectedDay === "today" ? liveTodaySummaryLine : (data?.summaryLine ?? "");
 

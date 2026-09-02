@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   dayKeyOf,
+  enumerateDayKeys,
   isoWeekdayOf,
   mondayOf,
   parseDayKey,
@@ -137,5 +138,38 @@ describe("core/day — parseDayKey", () => {
   it("ném lỗi với định dạng sai", () => {
     expect(() => parseDayKey("2026-9-2" as DayKey)).toThrow();
     expect(() => parseDayKey("not-a-date" as DayKey)).toThrow();
+  });
+});
+
+describe("core/day — enumerateDayKeys", () => {
+  it("liệt kê đủ, hai đầu đều gồm", () => {
+    expect(enumerateDayKeys("2026-09-01", "2026-09-04")).toEqual([
+      "2026-09-01",
+      "2026-09-02",
+      "2026-09-03",
+      "2026-09-04",
+    ]);
+  });
+
+  it("fromKey = toKey → mảng một phần tử", () => {
+    expect(enumerateDayKeys("2026-09-02", "2026-09-02")).toEqual(["2026-09-02"]);
+  });
+
+  it("fromKey sau toKey → mảng rỗng", () => {
+    expect(enumerateDayKeys("2026-09-05", "2026-09-01")).toEqual([]);
+  });
+
+  it("qua tháng/năm vẫn đúng thứ tự", () => {
+    expect(enumerateDayKeys("2026-12-30", "2027-01-02")).toEqual([
+      "2026-12-30",
+      "2026-12-31",
+      "2027-01-01",
+      "2027-01-02",
+    ]);
+  });
+
+  it("so sánh chuỗi YYYY-MM-DD xếp đúng thứ tự thời gian (không cần hàm so sánh riêng)", () => {
+    expect("2026-09-02" < "2026-09-10").toBe(true); // không bị lỗi so sánh "9" > "1" kiểu chuỗi tự do — nhờ số 0 đệm trước
+    expect("2026-12-31" < "2027-01-01").toBe(true);
   });
 });

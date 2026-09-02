@@ -96,13 +96,14 @@ Vẫn phải giữ được luật 8.1: mức trừ là **hàm thuần của b�
 *Chi tiết nhỏ, để trong `balance.ts`:* ở cấp 0 công thức cho ra −0, nên dùng **`−20 × max(1, cấp)`** để cấp 0 vẫn trừ −20/ngày. **[TẠM]**
 
 <details>
-<summary><b>Con số này rơi ra một tính chất rất gọn</b></summary>
+<summary><b>Con số này rơi ra một tính chất gọn — nhưng chỉ đúng ở dạng đại số, không đúng khi mô phỏng ngày-qua-ngày</b></summary>
 
-Khoảng cách giữa cấp `n−1` và cấp `n` là `300 × n` XP, còn mức trừ là `20 × n` mỗi ngày. Chia ra thì `n` triệt tiêu:
+**[SỬA — 2026-09-03, phát hiện lúc dựng mốc 3]** Bản trước tôi viết ở đây "bỏ bê 15 ngày = mất một cấp" và "150 ngày thì cấp 10 về 0" — hai con số đó chỉ đúng nếu mức trừ **khoá nguyên ở một cấp suốt 15 ngày rồi mới đổi**. Luật [CHỐT] thật của tôi lại là "`−20 × cấp HIỆN TẠI` mỗi ngày" — và "cấp hiện tại" tính lại từ XP còn lại **mỗi ngày**, đúng tinh thần §8.1. Hai cách đó cho ra hai kết quả khác nhau:
 
-> **Bỏ bê đúng 15 ngày = mất một cấp — ở mọi cấp, từ cấp 2 tới cấp 30.**
+- Ngày đầu tiên trừ theo cấp cao đã kéo XP xuống dưới ngưỡng cấp đó ngay — nghĩa là mức trừ **giảm sớm hơn** dự tính, và vì vậy quá trình decay **kéo dài hơn** 15 ngày/cấp.
+- Mô phỏng đúng luật [CHỐT]: **cấp 10 (16.500 XP) decay liên tục về 0 mất 191 ngày**, không phải 150. Khoá lại bằng test ở `test/core/engine/decay.test.ts`.
 
-Bỏ bê liên tục 150 ngày thì một chỉ số đang ở cấp 10 về 0. Luật dễ hiểu, dễ nhớ, và không cần bảng tra.
+Vẫn đúng về mặt đại số: khoảng cách giữa cấp `n−1` và cấp `n` là `300×n` XP, mức trừ ở cấp đó là `20×n`/ngày, tỉ lệ `300n÷20n=15` — đây là một hằng số gọn, nhưng chỉ có ý nghĩa nếu bạn trừ **đúng 15 ngày ở nguyên một cấp rồi mới cho phép đổi cấp**, chứ không phải cách luật [CHỐT] thật sự vận hành (tính lại cấp mỗi ngày). Tôi giữ nguyên luật [CHỐT] — đơn giản hơn, nhất quán với "cấp luôn tính lại từ XP hiện tại", không thêm khái niệm "khoá cấp" nào — chỉ sửa lại con số minh hoạ ở đây cho đúng.
 </details>
 
 ### 4.2 Nhãn và thói quen
@@ -237,6 +238,8 @@ Thưởng khi chạm mốc, mỗi mốc **thưởng đúng một lần trong đ�
 **[CHỐT — 2026-09-02]** Giữ chấm 1–5 (bỏ ý "chỉ cần tích"), đạt = mỗi cái ≥ 4, nghỉ ngơi = trung bình ≥ 4.
 
 *Hệ quả tôi biết và chấp nhận:* giữ được cả hai thói quen thì tổng luôn ≥ 8, nên **+15 gần như luôn đi kèm** — nó thành phần thưởng cộng thêm chứ không còn là cửa ải thứ hai. Cách duy nhất ăn +15 mà không giữ được cả hai là chấm lệch, ví dụ Sport 5 / Sleep 3.
+
+**[GHI CHÚ KỸ THUẬT — mốc 3]** Công thức nêu đích danh "Sport" và "Sleep enough" — khác `daily_tasks` (4.5) vốn cố ý tổng quát, đọc từ bảng, không hard-code. Engine tìm hai thói quen này qua **slug** (`sport`, `sleep-enough`) chứ không phải tên hiển thị, để đổi tên qua Cài đặt không làm hỏng công thức — nhưng nếu tới mốc 8 tôi **xoá** một trong hai hoặc đổi cả slug, công thức này sẽ không tính được nữa và cần quyết định lại (im lặng bỏ qua? không cho xoá hai thói quen gốc? thay bằng thói quen khác?). Chưa phải **[HỎI TÔI]** vì Cài đặt (mốc 8) chưa tới, nhưng đánh dấu ở đây để không quên hỏi khi tới đó.
 
 *Đã cân nhắc và tôi loại bỏ:* suy luận từ giờ giấc chạy phiên (không chạy sau 22h, có nghỉ giữa các phiên, đóng ngày trước nửa đêm). Ba tiêu chí đó đo sai thứ cần đo — chúng đo *thói quen dùng app của tôi*, không đo *tôi có được nghỉ hay không*. **Đừng dựng lại chúng.**
 

@@ -121,3 +121,22 @@ export function weekOf(key: DayKey): DayKey[] {
   const monday = mondayOf(key);
   return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
+
+/**
+ * Mọi `DayKey` từ `fromKey` tới `toKey`, HAI ĐẦU ĐỀU GỒM, theo thứ tự thời gian. Dùng cho
+ * core/engine/timeline.ts để duyệt qua từng ngày kể từ lúc bắt đầu hồ sơ. Mảng rỗng nếu
+ * `fromKey` sau `toKey`.
+ *
+ * So sánh hai `DayKey` bằng phép so sánh chuỗi thường (`<`, `<=`) là ĐỦ và ĐÚNG ở khắp file này
+ * — định dạng `YYYY-MM-DD` với số 0 đệm trước tự nhiên xếp đúng thứ tự thời gian theo từ điển,
+ * không cần hàm so sánh riêng.
+ */
+export function enumerateDayKeys(fromKey: DayKey, toKey: DayKey): DayKey[] {
+  const result: DayKey[] = [];
+  let cursor = fromKey;
+  while (cursor <= toKey) {
+    result.push(cursor);
+    cursor = addDays(cursor, 1);
+  }
+  return result;
+}

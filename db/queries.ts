@@ -8,6 +8,8 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
+import type { RoomItemCatalogEntry } from "@/core/engine/room";
+import type { EngineRawData } from "@/core/engine/types";
 import { isSessionComplete, type RunningSession } from "@/core/session";
 import type { DayKey, StatKey } from "@/core/types";
 import { db } from "./client";
@@ -289,4 +291,57 @@ export async function exportAllData() {
     chapterEvents: chapterEventRows,
     settings: settingsRows,
   };
+}
+
+// ─── Bản ghi thô cho core/engine/ — SPEC.md §8.1, §8.4 ────────────────────
+// Tầng DỊCH duy nhất giữa bảng Postgres và kiểu `EngineRawData` engine cần. `core/engine/` không
+// biết gì về Drizzle/Postgres — mọi decode (day_key ép kiểu DayKey, journalText → boolean,
+// timestamp → dayKey) nằm ở đây, không rải trong component/action.
+
+export async function getEngineRawData(): Promise<EngineRawData> {
+  const [profileRow, labelRows, habitRows, dailyTaskRows, sessionRows, habitEntryRows, dayLogRows, weekReviewRows] =
+    await Promise.all([
+      db.select().from(schema.profile).limit(1),
+      db.select().from(schema.labels),
+      db.select().from(schema.habits),
+      db.select().from(schema.dailyTasks).where(eq(schema.dailyTasks.active, true)),
+      db
+        .select({ dayKey: schema.sessions.dayKey, labelId: schema.sessions.labelId })
+        .from(schema.sessions)
+        .where(eq(schema.sessions.status, "completed")),
+      db.select().from(schema.habitEntries),
+      db.select().from(schema.dayLogs),
+      db.select().from(schema.weekReviews),
+    ]);
+
+  const profile = profileRow[0];
+  if (!profile) throw new Error("Chưa có profile — chạy `npm run db:seed` trước.");
+
+  return {
+    profileStartedDayKey: dayKeyOf(profile.startedAt.getTime()),
+    labels: labelRows.map((l) => ({ id: l.id, stat: l.stat })),
+    habits: habitRows.map((h) => ({ id: h.id, slug: h.slug, stat: h.stat, kind: h.kind })),
+    dailyTasks: dailyTaskRows.map((t) => ({ refType: t.refType, refId: t.refId, threshold: t.threshold })),
+    completedSessions: sessionRows.map((s) => ({ dayKey: s.dayKey as DayKey, labelId: s.labelId })),
+    habitEntries: habitEntryRows.map((e) => ({
+      dayKey: e.dayKey as DayKey,
+      habitId: e.habitId,
+      score: e.score,
+      done: e.done,
+    })),
+    dayLogs: dayLogRows.map((d) => ({
+      dayKey: d.dayKey as DayKey,
+      hasJournalText: (d.journalText?.trim().length ?? 0) > 0,
+      closedAtMs: d.closedAt ? d.closedAt.getTime() : null,
+    })),
+    weekReviews: weekReviewRows.map((w) => ({
+      weekStart: w.weekStart as DayKey,
+      createdAtDayKey: dayKeyOf(w.createdAt.getTime()),
+    })),
+  };
+}
+
+export async function getRoomItemsCatalog(): Promise<RoomItemCatalogEntry[]> {
+  const rows = await db.select().from(schema.roomItems);
+  return rows.map((r) => ({ id: r.id, stat: r.stat, modelKey: r.modelKey, unlockLevel: r.unlockLevel }));
 }

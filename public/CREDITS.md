@@ -13,10 +13,24 @@ Quyết định dùng model 3D (thay vì ảnh render xếp lớp như bản v3 
 Nguồn: https://kenney.nl/assets/furniture-kit
 License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
 
-Chỉ lấy 14/140 model cho phòng khởi đầu (Chương 1 — SPEC.md §4.9); còn lại tải lại từ nguồn trên
-khi cần thêm đồ đạc cho các cấp/chương sau: `bedSingle`, `bookcaseOpenLow`, `chairDesk`, `desk`,
-`doorway`, `floorFull`, `lampRoundTable`, `plantSmall1`, `pottedPlant`, `rugRectangle`,
-`sideTable`, `wall`, `wallCorner`, `wallWindow`. Không có texture ngoài — vật liệu là màu phẳng.
+Chỉ lấy 14/140 model cho phòng khởi đầu (Chương 1 — SPEC.md §4.9): `bedSingle`, `bookcaseOpenLow`,
+`chairDesk`, `desk`, `doorway`, `floorFull`, `lampRoundTable`, `plantSmall1`, `pottedPlant`,
+`rugRectangle`, `sideTable`, `wall`, `wallCorner`, `wallWindow`. Không có texture ngoài — vật
+liệu là màu phẳng.
+
+### `room-items/` — đồ mở khoá theo cấp (mốc 3, SPEC.md §4.8, §5.3)
+
+12 món đầu (4 mỗi chỉ số), cùng nguồn Furniture Kit ở trên. Vị trí đặt trong phòng ở
+`components/room/roomItemPlacements.ts`.
+
+- **📚 Mind** — `books`, `lampSquareFloor`, `bookcaseOpen`, `bookcaseClosedWide` (đúng ý §4.8:
+  "kệ sách nhỏ → kệ lớn → cả bức tường sách").
+- **🧘 Spirit** — `pillowBlueLong`, `loungeChairRelax` ("góc ngồi yên" ở §5.3), `plantSmall2`, `bear`.
+- **💪 Health** — **Furniture Kit không có đồ tập gym thật** (đã tìm, không ra — tạ/thảm
+  tập/xe đạp/giày chạy ở §5.3 chỉ là ví dụ, không phải model có sẵn). Dùng đồ GẦN ĐÚNG nhất:
+  `rugRound` (thảm tập), `bench` (ghế tập), `pillowLong` (đệm sàn), `plantSmall3` (cây, gắn với
+  sức sống/không khí trong lành). Nếu sau này tìm được pack có đồ gym thật, đổi lại dễ dàng —
+  chỉ sửa `room-items/*.glb` + `roomItemPlacements.ts`, không đụng logic.
 
 ## Nhân vật — `characters/`
 

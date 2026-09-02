@@ -44,7 +44,7 @@ export const XP_SESSION_COMPLETE = 30;
 /** Ghi bù ăn bằng phiên thật — quên bật đồng hồ đơn giản là quên (§11.3 câu S5). */
 export const XP_SESSION_MAKEUP = 30;
 
-/** Chỉ áp cho THÓI QUEN đạt HABIT_KEPT_THRESHOLD_SCORE — nhãn đạt ngưỡng không có khoản này (§4.5, câu Q10). */
+/** Chỉ áp cho THÓI QUEN đạt ngưỡng của nó trong `daily_tasks` — nhãn đạt ngưỡng không có khoản này (§4.5, câu Q10). */
 export const XP_HABIT_KEPT = 20;
 
 /** Đóng ngày → vào Spirit. Đóng muộn vẫn ăn đủ, không phạt (§4.11). */
@@ -90,11 +90,12 @@ export const DAY_ACHIEVED_REQUIRED_COUNT: Record<IsoWeekday, number | "journal_o
   7: "journal_only", // Chủ nhật
 };
 
-/**
- * Ngưỡng "giữ được thói quen" — dùng CHUNG cho cả XP_HABIT_KEPT lẫn việc tính "ngày đạt".
- * Một ngưỡng duy nhất, đừng dựng hai ngưỡng riêng (§4.5). Áp cho Sport và Sleep enough.
- */
-export const HABIT_KEPT_THRESHOLD_SCORE = 4;
+// Không có HABIT_KEPT_THRESHOLD_SCORE ở đây — dù §4.5 gọi nó "một ngưỡng duy nhất", nguồn thật
+// của ngưỡng đó là `daily_tasks.threshold` trong DB (đã seed = giá trị ở DEFAULT_DAILY_TASK_
+// THRESHOLDS phía trên), không phải một hằng số song song trong balance.ts. Nếu tôi đổi ngưỡng
+// Sport qua Cài đặt (mốc 8) mà còn một hằng số riêng ở đây, hai nơi sẽ lệch nhau — đúng lỗi
+// "viết cứng thứ đáng lẽ cấu hình được" ở §12.4. `core/engine/xp.ts` và `dayAchieved.ts` đọc
+// threshold từ daily_tasks (qua db/queries.ts), không đọc từ đây.
 
 // ─── §4.7 · "Nghỉ ngơi đúng cách" ────────────────────────────────────────
 
