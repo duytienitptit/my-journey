@@ -78,3 +78,22 @@ body {
 .animate-confetti-burst {
   animation: confetti-burst 0.9s ease-out forwards;
 }
+
+/* Sao trôi lên nhẹ khi đóng ngày — chậm và tĩnh hơn hẳn pháo giấy, đúng giọng buổi tối
+   (SPEC.md §5.1: "Nhân vật đi ngủ. Hoạt ảnh ngắn, dễ chịu."). */
+@keyframes night-drift {
+  0% {
+    transform: translate(calc(-50% + var(--dx) * 0.3), 0) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(-50% + var(--dx)), calc(-1 * var(--rise))) scale(1);
+    opacity: 0;
+  }
+}
+.animate-night-drift {
+  animation: night-drift 1.8s ease-out forwards;
+}

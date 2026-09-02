@@ -6,6 +6,7 @@ import type { DayKey } from "@/core/types";
 import { HabitScoreRow } from "./HabitScoreRow";
 import { JournalCard } from "./JournalCard";
 import { MoodPicker } from "./MoodPicker";
+import { NightSparkle } from "./NightSparkle";
 import { useEveningRitual } from "./useEveningRitual";
 
 type Props = {
@@ -89,12 +90,15 @@ export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine 
             />
           </div>
 
-          <button
-            onClick={handleClose}
-            className="rounded-full bg-foreground py-3 text-base font-bold text-background transition-transform active:scale-95"
-          >
-            {justClosed ? "Good night 🌙" : data.closedAt ? "Day closed ✓ — close again" : "Close day"}
-          </button>
+          <div className="relative">
+            <NightSparkle active={justClosed} />
+            <button
+              onClick={handleClose}
+              className="w-full rounded-full bg-foreground py-3 text-base font-bold text-background transition-transform active:scale-95"
+            >
+              {justClosed ? "Good night 🌙" : data.closedAt ? "Day closed ✓ — close again" : "Close day"}
+            </button>
+          </div>
 
           {/* Xuất dữ liệu thủ công (SPEC.md §5.5) — chỗ tạm cho tới khi có Cài đặt (mốc 8). */}
           <a
