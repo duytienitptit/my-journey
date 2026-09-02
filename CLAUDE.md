@@ -1,5 +1,9 @@
 # My Journey — luật làm việc cho Claude
 
+@AGENTS.md
+*(Next.js tự sinh lại file này mỗi lần `next dev` chạy — bản 16 khác đáng kể so với kiến thức
+huấn luyện, đọc trước khi đụng vào `app/`.)*
+
 App cá nhân, **một người dùng duy nhất**. Toàn bộ mô tả sản phẩm nằm trong `SPEC.md` — đó là
 nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc biệt **mục 4** (cơ chế),
 **mục 8** (nguyên tắc kỹ thuật) và **mục 12** (bản trước hỏng vì sao).
@@ -10,16 +14,22 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **đang chốt spec**. Chưa có dòng code nào.
-- Nền tảng đã chốt (`SPEC.md` §8.5): Next.js + TypeScript · Postgres · react-three-fiber ·
-  deploy Vercel · asset 3D dùng pack CC0 có sẵn · ba chỉ số **Mind · Health · Spirit**.
-- **KHÔNG viết code ứng dụng** cho tới khi chủ dự án nói rõ "bắt đầu mốc 1".
-  Được phép: sửa `SPEC.md`, `CLAUDE.md`, tài liệu, phác thảo, khảo sát công nghệ.
+- Giai đoạn: **đang dựng mốc 1** (phòng 3D + nhân vật + đồng hồ pomodoro + nhãn), kế hoạch đã
+  duyệt ngày 2026-09-02 — xem `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
+- Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
+  react-three-fiber v9 + drei v10 · Vitest · Postgres + Drizzle (từ mốc 2) · deploy Vercel ·
+  asset 3D/âm thanh dùng pack Kenney CC0 có sẵn (`public/CREDITS.md`) · ba chỉ số
+  **Mind · Health · Spirit**.
 - Bốn vòng hỏi đáp đã xong (Q1–Q34 · R1–R10 · S1–S5 · T1) — sổ quyết định ở **`SPEC.md` §11.1–11.4**.
-- **Không còn câu hỏi mở nào.** Mục 4 đã đủ chi tiết để dựng mà không phải đoán.
+  **Không còn câu hỏi mở nào** ở mục 4.
+- Đã xong trong mốc 1: `core/balance.ts` · `core/clock.ts` · `core/day.ts` · `core/session.ts`
+  (đủ unit test) · phòng Chương 1 + nhân vật giai đoạn 1 (`components/room/`) · đồng hồ pomodoro
+  thật, chọn nhãn, Start/Bỏ phiên, ghi bù, vòng tròn mục tiêu ngày, dải chấm phiên hôm nay, chuông
+  + Notification + pháo giấy khi hết phiên (`components/timer/`). Phiên + phiên hôm nay đang tạm
+  lưu `localStorage` (đúng §9: mốc 1 "chưa cần DB") — mốc 2 thay bằng bảng `sessions` thật.
 - Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, bộ ~60
   câu gợi ý nhật ký, thẻ cho nhật ký, mốc chương trung gian, tên tiếng Anh của nhãn/thói quen,
-  và **câu chữ cụ thể khi app trách móc**. Không cái nào chặn mốc 1; hỏi khi dựng tới.
+  và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới đúng chỗ cần.
 
 ---
 

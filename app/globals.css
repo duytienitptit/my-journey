@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/*
+ * Ngôn ngữ thiết kế — SPEC.md §5.7: nền màu ấm (kem/be), không trắng tinh không đen tuyền;
+ * bo góc lớn, bóng mềm, chữ tròn dễ chịu; có chế độ tối cho buổi đêm.
+ */
+
+:root {
+  --background: #f7f1e3;
+  --foreground: #35291d;
+  --surface: #fffbf2;
+  --surface-muted: #eee0c4;
+  --border: #e2d2ab;
+  --shadow-color: 30 25% 45%;
+
+  /* Ba chỉ số — SPEC.md §8.5: Mind · Health · Spirit. Dùng cho ánh sáng phòng theo nhãn (§5.1),
+     dải chấm phiên, và mọi chỗ cần phân biệt trực quan ba chỉ số. */
+  --stat-mind: #4f6f93;
+  --stat-health: #c9713f;
+  --stat-spirit: #5c8570;
+
+  --radius-lg: 1.75rem;
+  --radius-md: 1.125rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Buổi tối giao diện tự dịu xuống — SPEC.md §5.7. */
+    --background: #211a10;
+    --foreground: #f1e6d2;
+    --surface: #2c2417;
+    --surface-muted: #3a3020;
+    --border: #4d4128;
+    --shadow-color: 20 40% 3%;
+
+    --stat-mind: #7ea0c9;
+    --stat-health: #e0955f;
+    --stat-spirit: #82ab92;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-border: var(--border);
+
+  --color-stat-mind: var(--stat-mind);
+  --color-stat-health: var(--stat-health);
+  --color-stat-spirit: var(--stat-spirit);
+
+  --radius-lg: var(--radius-lg);
+  --radius-md: var(--radius-md);
+
+  --font-sans: var(--font-nunito);
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Pháo giấy nhỏ khi xong phiên — SPEC.md §5.7: hoạt ảnh chỉ ở khoảnh khắc chuyển tiếp. */
+@keyframes confetti-burst {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy)) scale(1);
+    opacity: 0;
+  }
+}
+.animate-confetti-burst {
+  animation: confetti-burst 0.9s ease-out forwards;
+}

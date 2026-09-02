@@ -1,0 +1,54 @@
+# Nguồn tài nguyên — model 3D và âm thanh
+
+Toàn bộ model và âm thanh dưới `public/` là **CC0 (Creative Commons Zero / Public Domain)** — dùng tự
+do cho mục đích cá nhân, giáo dục, thương mại, không cần xin phép, không bắt buộc ghi công.
+Ghi công ở đây là tự nguyện, theo đúng tinh thần Kenney đề nghị trên trang gốc.
+
+Quyết định dùng model 3D (thay vì ảnh render xếp lớp như bản v3 gốc) — xem `SPEC.md` §5.3, §8.5,
+đổi ngày 2026-09-02.
+
+## Đồ đạc phòng — `room/`
+
+**Kenney — Furniture Kit** (2.0, phát hành 2018)
+Nguồn: https://kenney.nl/assets/furniture-kit
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+Chỉ lấy 14/140 model cho phòng khởi đầu (Chương 1 — SPEC.md §4.9); còn lại tải lại từ nguồn trên
+khi cần thêm đồ đạc cho các cấp/chương sau: `bedSingle`, `bookcaseOpenLow`, `chairDesk`, `desk`,
+`doorway`, `floorFull`, `lampRoundTable`, `plantSmall1`, `pottedPlant`, `rugRectangle`,
+`sideTable`, `wall`, `wallCorner`, `wallWindow`. Không có texture ngoài — vật liệu là màu phẳng.
+
+## Nhân vật — `characters/`
+
+**Kenney — Mini Characters** (1.0, phát hành 2024)
+Nguồn: https://kenney.nl/assets/mini-characters
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+`characters/stage-1.glb` = `character-male-a.glb` gốc, đổi tên. Đây là placeholder cho **giai
+đoạn 1** — pack gốc có 12 nhân vật (6 nam/6 nữ, khác tóc/da/trang phục); việc chọn nhân vật mặc
+định + tuỳ chỉnh tóc/da/trang phục còn hoãn lại (`SPEC.md` §11.5, "chưa cần hỏi ngay"). Đổi model
+này bất cứ lúc nào chỉ cần thay file — không đụng code, xem `components/room/models.ts`.
+
+Kèm `characters/Textures/colormap.png` — texture atlas dùng chung, GLB tham chiếu tương đối tới
+file này (đừng di chuyển hai file tách rời nhau).
+
+**32 animation dùng chung một rig**, trong đó có `idle`, `sit`, `crouch`, `static` — dùng để dựng
+3 tư thế theo chỉ số ở §5.1 (`ngồi vào bàn / cầm tạ / ngồi thiền`). Pack không có animation
+"nâng tạ" hay "thiền" đúng nghĩa đen — `crouch` và `static` là lựa chọn GẦN ĐÚNG nhất hiện có,
+xem ghi chú trong `components/room/Character.tsx`. Chỉ 8/12 giai đoạn còn lại (2 → Trưởng thành)
+chưa có model — thêm dần khi tới cấp đó, đúng tinh thần "đồ chỉ đến khi đủ điểm" ở §5.3.
+
+## Âm thanh — `public/sounds/`
+
+**Kenney — Interface Sounds** (1.0, phát hành 2020)
+Nguồn: https://kenney.nl/assets/interface-sounds
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+`sounds/session-complete.ogg` = `Audio/bong_001.ogg` gốc, đổi tên — chuông hết phiên pomodoro
+(SPEC.md §4.3, §6).
+
+## Nếu cần thêm model sau này
+
+Cùng hai nguồn trên (Kenney CC0) là lựa chọn đầu tiên để giữ phong cách nhất quán. Poly Pizza
+(https://poly.pizza) tổng hợp lại nhiều pack CC0 khác (Quaternius, v.v.) nếu Kenney không có món
+cần thiết — luôn kiểm license CC0 trước khi thêm, và cập nhật file này trong CÙNG lần thêm đó.
