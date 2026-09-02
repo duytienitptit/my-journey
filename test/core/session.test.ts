@@ -9,7 +9,7 @@ describe("core/session — sessionEndsAt", () => {
 });
 
 describe("core/session — secondsRemaining", () => {
-  const session: RunningSession = { labelId: "english", startedAt: 0, endsAt: 100_000 };
+  const session: RunningSession = { labelId: 1, startedAt: 0, endsAt: 100_000 };
 
   it("còn nguyên phiên → xấp xỉ tổng thời lượng", () => {
     expect(secondsRemaining(session, 0)).toBe(100);
@@ -29,7 +29,7 @@ describe("core/session — secondsRemaining", () => {
 });
 
 describe("core/session — isSessionComplete", () => {
-  const session: RunningSession = { labelId: "english", startedAt: 0, endsAt: 100_000 };
+  const session: RunningSession = { labelId: 1, startedAt: 0, endsAt: 100_000 };
 
   it("chưa tới mốc kết thúc → chưa hoàn thành", () => {
     expect(isSessionComplete(session, 99_999)).toBe(false);

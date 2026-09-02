@@ -1,11 +1,13 @@
 "use client";
 
 import { DAILY_SESSION_GOAL_DEFAULT } from "@/core/balance";
-import { secondsRemaining } from "@/core/session";
+import type { StatKey } from "@/core/types";
 import { BackfillButton } from "./BackfillButton";
 import { CircularProgress } from "./CircularProgress";
 import { Confetti } from "./Confetti";
-import type { useSessionTimer } from "./useSessionTimer";
+import { secondsRemaining, type useSessionTimer } from "./useSessionTimer";
+
+export type TimerLabel = { id: number; name: string; emoji: string; color: string; stat: StatKey };
 
 function formatClock(totalSeconds: number): string {
   const m = Math.floor(totalSeconds / 60);
@@ -15,8 +17,8 @@ function formatClock(totalSeconds: number): string {
 
 // Nhận state từ useSessionTimer() qua props thay vì tự gọi hook — DailyScreen là nơi DUY NHẤT
 // gọi useSessionTimer(), vì RoomScene cũng cần đọc "pose" từ cùng một trạng thái đó. Gọi hook
-// ở cả hai nơi sẽ tạo hai bản sao độc lập cùng đọc/ghi một chỗ trong localStorage — dễ lệch nhau.
-type Props = ReturnType<typeof useSessionTimer>;
+// ở cả hai nơi sẽ tạo hai bản sao độc lập cùng ghi/đọc một phiên trong DB — dễ lệch nhau.
+type Props = ReturnType<typeof useSessionTimer> & { labels: readonly TimerLabel[] };
 
 export function TimerOverlay({
   labels,
@@ -26,6 +28,7 @@ export function TimerOverlay({
   nowMs,
   todaySessions,
   justCompletedLabelId,
+  pending,
   start,
   abandon,
   backfill,
@@ -36,19 +39,23 @@ export function TimerOverlay({
   return (
     <>
       {/* Góc trên trái — duy nhất một chỗ được hiện thống kê ban ngày (SPEC.md §5.1): dải chấm
-          phiên hôm nay. Chuỗi ngày hiện tại chờ mốc 4 (cần lịch sử nhiều ngày, mốc 1 chưa có DB). */}
+          phiên hôm nay. Chuỗi ngày hiện tại chờ mốc 4 (cần lịch sử nhiều ngày). */}
       <div className="absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
         {todaySessions.length === 0 ? (
-          <span className="px-1 text-sm text-foreground/50">Chưa có phiên nào hôm nay</span>
+          <span className="px-1 text-sm text-foreground/50">No sessions yet today</span>
         ) : (
-          todaySessions.map((s, i) => {
+          todaySessions.map((s) => {
             const label = labels.find((l) => l.id === s.labelId);
+            const isBackfilled = s.source === "manual";
             return (
               <span
-                key={i}
-                title={`${label?.name ?? s.labelId}${s.backfilled ? " · ghi bù" : ""}`}
+                key={s.id}
+                title={`${label?.name ?? s.labelId}${isBackfilled ? " · backfilled" : ""}${s.status === "abandoned" ? " · abandoned" : ""}`}
                 className="h-2.5 w-2.5 rounded-full"
-                style={{ backgroundColor: label?.color ?? "#999", opacity: s.backfilled ? 0.55 : 1 }}
+                style={{
+                  backgroundColor: label?.color ?? "#999",
+                  opacity: s.status === "abandoned" ? 0.25 : isBackfilled ? 0.55 : 1,
+                }}
               />
             );
           })
@@ -83,7 +90,7 @@ export function TimerOverlay({
               onClick={abandon}
               className="text-sm font-medium text-foreground/45 underline decoration-dotted underline-offset-4 hover:text-foreground/70"
             >
-              Bỏ phiên
+              Abandon
             </button>
           </>
         ) : (
@@ -104,7 +111,8 @@ export function TimerOverlay({
             </div>
             <button
               onClick={start}
-              className="rounded-full bg-foreground px-8 py-2.5 text-base font-bold text-background transition-transform active:scale-95"
+              disabled={pending}
+              className="rounded-full bg-foreground px-8 py-2.5 text-base font-bold text-background transition-transform active:scale-95 disabled:opacity-50"
             >
               Start
             </button>
@@ -117,9 +125,9 @@ export function TimerOverlay({
       <div className="pointer-events-none absolute bottom-40 left-1/2 -translate-x-1/2">
         <Confetti active={justCompletedLabelId !== null} />
       </div>
-      {justCompletedLabelId && (
+      {justCompletedLabelId !== null && (
         <div className="absolute bottom-56 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-surface px-5 py-2.5 text-sm font-semibold text-foreground shadow-lg">
-          Xong rồi — nghỉ chút đi 🌿
+          Nice — take a break 🌿
         </div>
       )}
     </>

@@ -7,8 +7,12 @@
  * `core/clock.ts`, không đụng vào các hàm ở đây.
  */
 
-export type RunningSession = {
-  labelId: string;
+/**
+ * `labelId` generic vì core/ không cần biết (và không nên biết) nhãn được định danh bằng kiểu
+ * gì ở tầng lưu trữ — mốc 1 dùng slug chuỗi (localStorage), từ mốc 2 là serial int (Postgres).
+ */
+export type RunningSession<TLabelId = number> = {
+  labelId: TLabelId;
   startedAt: number;
   endsAt: number;
 };
@@ -19,7 +23,7 @@ export function sessionEndsAt(startedAt: number, minutes: number): number {
 }
 
 /** Số giây còn lại, không bao giờ âm. */
-export function secondsRemaining(session: RunningSession, now: number): number {
+export function secondsRemaining<TLabelId>(session: RunningSession<TLabelId>, now: number): number {
   return Math.max(0, Math.ceil((session.endsAt - now) / 1000));
 }
 
@@ -27,6 +31,6 @@ export function secondsRemaining(session: RunningSession, now: number): number {
  * Phiên chỉ tính điểm khi chạy hết trọn thời lượng (§4.3) — bao gồm cả lúc tôi đã đóng tab và
  * máy chủ/tab khác đọc lại sau: quá `endsAt` là hoàn thành, không có hạn quay lại (§11.2 R6).
  */
-export function isSessionComplete(session: RunningSession, now: number): boolean {
+export function isSessionComplete<TLabelId>(session: RunningSession<TLabelId>, now: number): boolean {
   return now >= session.endsAt;
 }
