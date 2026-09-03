@@ -373,9 +373,17 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
 **Phần dưới — cuối ngày** (ánh sáng phòng chuyển tối, nhân vật về nhà):
 1. **Hôm nay tôi đã ở đâu** — câu chữ, không biểu đồ: *"4 phiên · phần lớn vào Deep work"*
 2. **Thói quen** — Sport và Sleep tôi chấm 1–5; nhật ký hiện trạng thái đã viết/chưa
-3. **Tâm trạng** — một tâm trạng cho cả ngày, một cú bấm. **5 mức: 😞 😕 😐 🙂 😄 = 1–5** (màn tuần cần số để vẽ đường cong). **[CHỐT — 2026-09-02]**
-4. **Nhật ký** — một câu gợi ý đổi mỗi ngày ở trên, **ô viết trắng ở dưới**. Tôi bỏ qua câu gợi ý được; ô trắng luôn ở đó.
-5. **Đóng ngày** — một nút. Nhân vật đi ngủ. Hoạt ảnh ngắn, dễ chịu.
+3. **Tâm trạng** — một tâm trạng cho cả ngày, một cú bấm. **5 mức: 😢 🙁 😐 🙂 😁 = 1–5** (màn tuần cần số để vẽ đường cong). **[CHỐT — 2026-09-03, đổi từ bộ 😞 😕 😐 🙂 😄 chốt ngày 2026-09-02 — bộ cũ mức 4 (🙂) nhìn quá trung tính, dễ lẫn mức 3]**
+4. **Nhật ký** — ba phần, gộp chung xuống một chuỗi lúc lưu (không tách bảng/cột DB):
+   - **Ba câu hỏi quan trọng, CỐ ĐỊNH mỗi ngày** (không xoay vòng, khác câu gợi ý bên dưới) —
+     **[CHỐT — 2026-09-03]**:
+     1. *"Which of Mind, Health, or Spirit did you neglect most today — and why?"*
+     2. *"What's one thing you did today that your future self will thank you for?"*
+     3. *"What decision are you postponing that you already know the answer to?"*
+   - **Câu gợi ý đổi mỗi ngày** như cũ, xoay vòng qua bảng `prompts`.
+   - **Ô viết trắng tự do** — tôi bỏ qua bất kỳ phần nào cũng được, ô trắng luôn ở đó.
+   - **Ngưỡng tối thiểu 200 TỪ trên toàn bộ nhật ký đã gộp** (cả ba phần cộng lại, không phải riêng ô tự do) — **chặn cứng nút "Close day"** tới khi đủ. **[CHỐT — 2026-09-03]** *Đi ngược nguyên tắc 3 ở §2 ("dữ liệu chảy vào, không bị bơm vào") một cách CÓ CHỦ Ý — tôi đã được hỏi thẳng về mâu thuẫn này và xác nhận vẫn muốn chặn cứng, không phải chỉ nhắc nhẹ. Ngưỡng số nằm ở `core/balance.ts` (`JOURNAL_MIN_WORDS`), sửa được không đụng logic.*
+5. **Đóng ngày** — một nút, khoá bởi ngưỡng nhật ký ở trên. Nhân vật đi ngủ. Hoạt ảnh ngắn, dễ chịu.
 
 **Vấn đề kỹ thuật tôi đã lường trước:** đồng hồ phải đúng khi tôi chuyển tab hoặc máy ngủ. **Đừng dùng `setInterval` đếm lùi** — lưu mốc kết thúc, tính lại mỗi lần render. Phiên đang chạy lưu xuống server để tôi đóng tab mở lại vẫn còn.
 

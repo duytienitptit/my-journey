@@ -2,7 +2,9 @@
 
 import { MOOD_MAX, MOOD_MIN } from "@/core/balance";
 
-const MOOD_EMOJI: Record<number, string> = { 1: "😞", 2: "😕", 3: "😐", 4: "🙂", 5: "😄" };
+// [CHỐT — 2026-09-03] Kéo giãn cả hai đầu so với bộ cũ (😞😕😐🙂😄) — mức 1 khóc rõ hơn, mức 5
+// cười toe hơn, 5 mức dễ phân biệt hơn khi liếc nhanh. Xem SPEC.md §5.1.
+const MOOD_EMOJI: Record<number, string> = { 1: "😢", 2: "🙁", 3: "😐", 4: "🙂", 5: "😁" };
 
 type Props = {
   value: number | null;

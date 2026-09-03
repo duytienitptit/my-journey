@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import type { EveningData } from "@/app/actions/evening";
+import { JOURNAL_MIN_WORDS } from "@/core/balance";
+import { countWords } from "@/core/journalCompose";
 import type { DayKey } from "@/core/types";
 import { HabitScoreRow } from "./HabitScoreRow";
 import { JournalCard } from "./JournalCard";
@@ -30,6 +32,11 @@ export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine,
   });
   const [justClosed, setJustClosed] = useState(false);
   const summaryLine = selectedDay === "today" ? liveTodaySummaryLine : (data?.summaryLine ?? "");
+  // Chặn cứng "Close day" tới khi đủ JOURNAL_MIN_WORDS — [CHỐT — 2026-09-03], cố ý đi ngược
+  // nguyên tắc 3 (§2 "dữ liệu chảy vào không bị bơm vào"), chủ dự án đã xác nhận muốn vậy. Đếm
+  // trên TOÀN BỘ journalText đã gộp (câu hỏi quan trọng + câu gợi ý), không chỉ ô tự do.
+  const journalWordCount = countWords(data?.journalText ?? "");
+  const journalWordsMet = journalWordCount >= JOURNAL_MIN_WORDS;
 
   useEffect(() => {
     if (!justClosed) return;
@@ -94,14 +101,20 @@ export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine,
             />
           </div>
 
-          <div className="relative">
+          <div className="relative flex flex-col items-center gap-2">
             <NightSparkle active={justClosed} />
             <button
               onClick={handleClose}
-              className="w-full rounded-full bg-foreground py-3 text-base font-bold text-background transition-transform active:scale-95"
+              disabled={!journalWordsMet}
+              className="w-full rounded-full bg-foreground py-3 text-base font-bold text-background transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
             >
               {justClosed ? "Good night 🌙" : data.closedAt ? "Day closed ✓ — close again" : "Close day"}
             </button>
+            {!journalWordsMet && (
+              <p className="text-xs font-medium text-foreground/45">
+                {journalWordCount}/{JOURNAL_MIN_WORDS} words in journal — write a bit more to close the day
+              </p>
+            )}
           </div>
 
           {/* Xuất dữ liệu thủ công (SPEC.md §5.5) — chỗ tạm cho tới khi có Cài đặt (mốc 8). */}

@@ -193,10 +193,20 @@ export const CORRELATION_MIN_SAMPLE_DAYS = 14;
 
 // ─── Thang điểm dùng chung ───────────────────────────────────────────────
 
-/** Tâm trạng: 😞😕😐🙂😄 = 1–5 (SPEC.md §11.2 câu Q18). */
+/** Tâm trạng: 😢🙁😐🙂😁 = 1–5 (SPEC.md §5.1, đổi [CHỐT — 2026-09-03] — bản 😞😕😐🙂😄 cũ ở §11.2 Q18). */
 export const MOOD_MIN = 1;
 export const MOOD_MAX = 5;
 
 /** Sport, Sleep enough: tôi tự chấm 1–5, không phải tích Có/Không (§4.2, giữ nguyên ở §11.3 câu S1). */
 export const HABIT_SCORE_MIN = 1;
 export const HABIT_SCORE_MAX = 5;
+
+// ─── §5.1 · Nhật ký ──────────────────────────────────────────────────────
+
+/**
+ * Ngưỡng tối thiểu để bấm "Close day" — tính theo TỪ trên toàn bộ nhật ký đã gộp (câu hỏi quan
+ * trọng + câu gợi ý xoay vòng), không phải chỉ ô viết tự do. **[CHỐT — 2026-09-03]** Chặn cứng,
+ * không phải nhắc nhẹ — cố ý đi ngược nguyên tắc 3 (§2, "dữ liệu chảy vào không bị bơm vào"),
+ * chủ dự án đã xác nhận muốn vậy sau khi tôi nêu rõ mâu thuẫn này.
+ */
+export const JOURNAL_MIN_WORDS = 200;
