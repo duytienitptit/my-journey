@@ -364,10 +364,11 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
 **Bố cục:** căn phòng 3D chiếm phần lớn màn hình, đồng hồ pomodoro nổi ở trên. Phần ghi nhận cuối ngày nằm bên dưới, tôi cuộn xuống là tới.
 
 **Phần trên — lúc tôi làm việc:**
-- Tôi bấm chọn nhãn → Start → màn hình chuyển sang trạng thái tĩnh: số phút đếm ngược, tên nhãn, ánh sáng phòng đổi nhẹ theo nhãn. Nhân vật ngồi vào bàn / cầm tạ / ngồi thiền tuỳ nhãn.
+- Tôi bấm chọn nhãn → Start → màn hình chuyển sang trạng thái tĩnh: số phút đếm ngược, tên nhãn. Nhân vật ngồi vào bàn / cầm tạ / ngồi thiền tuỳ nhãn.
+- **Chế độ tập trung — [CHỐT — 2026-09-03].** Lúc đồng hồ đang chạy, phòng tối hẳn xuống gần như đen (đậm hơn hẳn mức "buổi tối" ở phần dưới) — nhân vật vẫn còn đó, chỉ lờ mờ, không biến mất hẳn (vẫn là "đang nuôi một đứa bé trong phòng", không tách thành màn hình tập trung riêng biệt). Đồng hồ đếm ngược phóng to, đứng giữa màn hình thay vì nổi ở góc dưới. Dải chấm phiên hôm nay + nút ghi bù (xem dưới) **ẩn đi lúc đang chạy** — đúng tinh thần nguyên tắc 1 (§2): "gần như trống" khi tập trung, chỉ hiện lại lúc tĩnh (chưa bấm Start / đã Start xong).
 - **Vòng tròn mục tiêu ngày** bao quanh đồng hồ, đầy dần theo số phiên. Mục tiêu tôi tự đặt (mặc định 4). **Tôi vượt quá thì đừng có gì xảy ra, tôi không đạt cũng đừng có gì xảy ra** — nó là cái thước, không phải cái roi.
-- Góc màn hình: dải chấm màu các phiên hôm nay + chuỗi ngày hiện tại. **Đây là thống kê duy nhất tôi cho phép hiện ban ngày.**
-- Nút ghi bù.
+- Góc màn hình (chỉ lúc TĨNH, chưa bấm Start): dải chấm màu các phiên hôm nay + chuỗi ngày hiện tại. **Đây là thống kê duy nhất tôi cho phép hiện ban ngày.**
+- Nút ghi bù (chỉ lúc TĨNH).
 
 **Phần dưới — cuối ngày** (ánh sáng phòng chuyển tối, nhân vật về nhà):
 1. **Hôm nay tôi đã ở đâu** — câu chữ, không biểu đồ: *"4 phiên · phần lớn vào Deep work"*

@@ -90,6 +90,7 @@ export function DailyScreen({
           timeOfDay={timeOfDay}
           characterStage={stats.stage}
           unlockedItems={stats.unlockedItems}
+          focusMode={timer.running !== null}
         />
       </div>
 

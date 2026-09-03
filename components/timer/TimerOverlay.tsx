@@ -38,62 +38,71 @@ export function TimerOverlay({
 
   return (
     <>
-      {/* Góc trên trái — duy nhất một chỗ được hiện thống kê ban ngày (SPEC.md §5.1): dải chấm
-          phiên hôm nay. Chuỗi ngày hiện tại chờ mốc 4 (cần lịch sử nhiều ngày). */}
-      <div className="pointer-events-auto absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
-        {todaySessions.length === 0 ? (
-          <span className="px-1 text-sm text-foreground/50">No sessions yet today</span>
-        ) : (
-          todaySessions.map((s) => {
-            const label = labels.find((l) => l.id === s.labelId);
-            const isBackfilled = s.source === "manual";
-            return (
-              <span
-                key={s.id}
-                title={`${label?.name ?? s.labelId}${isBackfilled ? " · backfilled" : ""}${s.status === "abandoned" ? " · abandoned" : ""}`}
-                className="h-2.5 w-2.5 rounded-full"
-                style={{
-                  backgroundColor: label?.color ?? "#999",
-                  opacity: s.status === "abandoned" ? 0.25 : isBackfilled ? 0.55 : 1,
-                }}
-              />
-            );
-          })
-        )}
-      </div>
+      {/* Góc trên trái/phải — chỉ hiện lúc TĨNH (chưa bấm Start). SPEC.md §5.1 "chế độ tập
+          trung": lúc đồng hồ chạy, đây cũng phải trống — không chỉ nhường chỗ mà ẩn hẳn, đúng
+          nguyên tắc 1 (§2) "tĩnh ở chỗ tập trung". */}
+      {!running && (
+        <>
+          {/* Duy nhất một chỗ được hiện thống kê ban ngày: dải chấm phiên hôm nay. Chuỗi ngày
+              hiện tại chờ mốc 4 (cần lịch sử nhiều ngày). */}
+          <div className="pointer-events-auto absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
+            {todaySessions.length === 0 ? (
+              <span className="px-1 text-sm text-foreground/50">No sessions yet today</span>
+            ) : (
+              todaySessions.map((s) => {
+                const label = labels.find((l) => l.id === s.labelId);
+                const isBackfilled = s.source === "manual";
+                return (
+                  <span
+                    key={s.id}
+                    title={`${label?.name ?? s.labelId}${isBackfilled ? " · backfilled" : ""}${s.status === "abandoned" ? " · abandoned" : ""}`}
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{
+                      backgroundColor: label?.color ?? "#999",
+                      opacity: s.status === "abandoned" ? 0.25 : isBackfilled ? 0.55 : 1,
+                    }}
+                  />
+                );
+              })
+            )}
+          </div>
 
-      {/* Góc trên phải — ghi bù. */}
-      <div className="pointer-events-auto absolute right-4 top-4">
-        <BackfillButton labels={labels} onBackfill={backfill} />
-      </div>
+          <div className="pointer-events-auto absolute right-4 top-4">
+            <BackfillButton labels={labels} onBackfill={backfill} />
+          </div>
+        </>
+      )}
 
-      {/* Giữa dưới — đồng hồ. Trạng thái tĩnh khi chạy: chỉ số phút, tên nhãn, gần như trống. */}
-      <div className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
-        {running ? (
-          <>
-            <CircularProgress
-              progress={goalProgress}
-              color={activeLabel.color}
-              size={200}
-              strokeWidth={7}
-            >
-              <div className="flex flex-col items-center">
-                <span className="text-3xl font-bold tabular-nums text-foreground">
-                  {formatClock(secondsRemaining(running, nowMs))}
-                </span>
-                <span className="mt-1 text-sm font-medium text-foreground/60">
-                  {activeLabel.emoji} {activeLabel.name}
-                </span>
-              </div>
-            </CircularProgress>
-            <button
-              onClick={abandon}
-              className="text-sm font-medium text-foreground/45 underline decoration-dotted underline-offset-4 hover:text-foreground/70"
-            >
-              Abandon
-            </button>
-          </>
-        ) : (
+      {running ? (
+        // Chế độ tập trung (SPEC.md §5.1, [CHỐT — 2026-09-03]) — phủ kín màn hình, đứng giữa
+        // thay vì nổi ở góc dưới, phòng đã tối gần như đen (RoomScene focusMode) nên chữ đổi
+        // sang màu sáng thay vì `text-foreground` (vốn tính cho nền sáng, chìm mất trên nền tối).
+        <div className="pointer-events-auto fixed inset-0 flex flex-col items-center justify-center gap-6">
+          <CircularProgress
+            progress={goalProgress}
+            color={activeLabel.color}
+            size={340}
+            strokeWidth={8}
+            trackColor="rgba(255,255,255,0.12)"
+          >
+            <div className="flex flex-col items-center">
+              <span className="text-7xl font-bold tabular-nums text-white">
+                {formatClock(secondsRemaining(running, nowMs))}
+              </span>
+              <span className="mt-2 text-lg font-medium text-white/60">
+                {activeLabel.emoji} {activeLabel.name}
+              </span>
+            </div>
+          </CircularProgress>
+          <button
+            onClick={abandon}
+            className="text-sm font-medium text-white/40 underline decoration-dotted underline-offset-4 hover:text-white/70"
+          >
+            Abandon
+          </button>
+        </div>
+      ) : (
+        <div className="pointer-events-auto absolute bottom-8 left-1/2 flex -translate-x-1/2 flex-col items-center gap-3">
           <div className="flex flex-col items-center gap-3 rounded-3xl bg-surface/90 p-5 shadow-lg backdrop-blur">
             <div className="flex gap-2">
               {labels.map((l) => (
@@ -117,11 +126,13 @@ export function TimerOverlay({
               Start
             </button>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Khoảnh khắc hoàn thành — chuông đã kêu trong hook, ở đây chỉ còn pháo giấy + một câu
-          nhẹ nhàng, không hỏi han gì (SPEC.md §4.3: "đừng hỏi tôi gì cả lúc đó"). */}
+          nhẹ nhàng, không hỏi han gì (SPEC.md §4.3: "đừng hỏi tôi gì cả lúc đó"). Phòng đã bắt
+          đầu sáng lại (focusMode tắt ngay khi running về null) lúc mảnh này hiện ra, nên vẫn
+          dùng màu chữ/nền cho nền sáng như cũ, không cần đổi theo focus mode. */}
       <div className="pointer-events-none absolute bottom-40 left-1/2 -translate-x-1/2">
         <Confetti active={justCompletedLabelId !== null} />
       </div>

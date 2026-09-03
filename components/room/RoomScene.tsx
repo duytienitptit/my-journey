@@ -22,6 +22,8 @@ type Props = {
   timeOfDay?: TimeOfDay;
   /** Đồ đạc đã mở khoá theo cấp (SPEC.md §4.8) — mốc 3. */
   unlockedItems?: readonly UnlockedRoomItem[];
+  /** Đồng hồ đang chạy → tối gần như đen, đè lên cả timeOfDay (SPEC.md §5.1, "chế độ tập trung"). */
+  focusMode?: boolean;
 };
 
 const ROOM_CENTER: [number, number, number] = [1.5, 0.55, -1.5];
@@ -32,22 +34,35 @@ const SCENE_TONE: Record<TimeOfDay, { background: string; ambient: number; direc
   evening: { background: "#2c2440", ambient: 0.32, directional: 0.35, hemi: 0.1 },
 };
 
+// Tối hơn hẳn "evening" — nhân vật vẫn lờ mờ thấy được (không phải 0 tuyệt đối), chỉ đủ tối để
+// đồng hồ đếm ngược phóng to đứng giữa là thứ duy nhất thật sự nổi bật (SPEC.md §5.1, nguyên
+// tắc 1 ở §2: "tĩnh ở chỗ tập trung"). Đè lên timeOfDay bất kể đang ngày hay tối.
+const FOCUS_TONE = { background: "#0a0910", ambient: 0.09, directional: 0.06, hemi: 0.03 };
+
 const LERP_SPEED = 1.4; // đơn vị/giây — đủ mềm để thấy chuyển động, không ì
 
 /**
  * Ánh sáng + màu nền — sống BÊN TRONG <Canvas> vì cần useFrame để chuyển mượt giữa ban ngày/
- * buổi tối (§5.7: "hoạt ảnh chỉ ở khoảnh khắc chuyển tiếp"). Intensity của ba đèn KHÔNG nhận
- * qua prop React mỗi khung hình — chỉ đặt giá trị ban đầu, sau đó useFrame tự lerp dần, để
- * không co giật giữa "React set" và "useFrame set" trên cùng một thuộc tính.
+ * buổi tối/chế độ tập trung (§5.7: "hoạt ảnh chỉ ở khoảnh khắc chuyển tiếp"). Intensity của ba
+ * đèn KHÔNG nhận qua prop React mỗi khung hình — chỉ đặt giá trị ban đầu, sau đó useFrame tự
+ * lerp dần, để không co giật giữa "React set" và "useFrame set" trên cùng một thuộc tính.
  */
-function SceneAtmosphere({ lightColor, timeOfDay }: { lightColor: string; timeOfDay: TimeOfDay }) {
+function SceneAtmosphere({
+  lightColor,
+  timeOfDay,
+  focusMode,
+}: {
+  lightColor: string;
+  timeOfDay: TimeOfDay;
+  focusMode: boolean;
+}) {
   const bgRef = useRef<THREE.Color>(null);
   const fogRef = useRef<THREE.Fog>(null);
   const ambientRef = useRef<THREE.AmbientLight>(null);
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const hemiRef = useRef<THREE.HemisphereLight>(null);
 
-  const tone = SCENE_TONE[timeOfDay];
+  const tone = focusMode ? FOCUS_TONE : SCENE_TONE[timeOfDay];
   const targetBg = useMemo(() => new THREE.Color(tone.background), [tone.background]);
 
   useFrame((_state, delta) => {
@@ -113,13 +128,19 @@ function useTouchScrollFix() {
   }, []);
 }
 
-export function RoomScene({ pose, characterStage = 1, timeOfDay = "day", unlockedItems = [] }: Props) {
+export function RoomScene({
+  pose,
+  characterStage = 1,
+  timeOfDay = "day",
+  unlockedItems = [],
+  focusMode = false,
+}: Props) {
   useTouchScrollFix();
   const lightColor = pose === "idle" ? ROOM_LIGHT_COLOR.neutral : ROOM_LIGHT_COLOR[pose as StatKey];
 
   return (
     <Canvas camera={{ position: [5.4, 3.7, 5.4], fov: 40 }}>
-      <SceneAtmosphere lightColor={lightColor} timeOfDay={timeOfDay} />
+      <SceneAtmosphere lightColor={lightColor} timeOfDay={timeOfDay} focusMode={focusMode} />
 
       <Suspense fallback={null}>
         <RoomShell />
