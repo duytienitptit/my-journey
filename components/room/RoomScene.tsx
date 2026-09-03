@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useMemo, useRef } from "react";
+import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -78,7 +78,43 @@ function SceneAtmosphere({ lightColor, timeOfDay }: { lightColor: string; timeOf
   );
 }
 
+/**
+ * OrbitControls tự đặt CSS `touch-action: none` lên canvas mỗi lần gắn, và trả về "auto" mỗi
+ * lần gỡ (three-stdlib, không có prop nào đổi việc này) — vì canvas phủ toàn màn hình
+ * (RoomScene phía trên), "none" chặn luôn vuốt-cuộn-trang bằng ngón tay ở BẤT KỲ khoảng trống
+ * nào, kể cả ngoài phòng — bắt gặp lúc chủ dự án thử trên điện thoại thật: vuốt xuống nghi
+ * thức tối không ăn, vì vuốt dọc bị OrbitControls nuốt mất thành xoay camera.
+ *
+ * Cưỡng chế lại "pan-y": trình duyệt tự nhận diện vuốt NGANG/CHÉO thì mới đưa cho OrbitControls
+ * (xoay ngang vẫn được), còn vuốt DỌC thì luôn cuộn trang bình thường, không cần chạm đúng nút
+ * nào. Chụm hai ngón (pinch-zoom) không đụng luật này, vẫn zoom được như cũ.
+ *
+ * Cố tình lấy canvas qua `document.querySelector` (chỉ một canvas trong app) thay vì qua ref
+ * của OrbitControls, vì hai lý do: (1) `<Canvas>` mount cây con qua reconciler RIÊNG của
+ * react-three-fiber, không đồng bộ tick với cây DOM ngoài — effect ở RoomScene từng đọc ref
+ * lúc `undefined` vì chạy trước khi OrbitControls kịp gắn; (2) ESLint `react-hooks/immutability`
+ * (React Compiler) chặn gán `style.touchAction` trên bất kỳ giá trị lần ra được tới ref/hook nào,
+ * kể cả hợp lệ về mặt runtime — DOM node lấy thẳng qua querySelector không dính quy tắc này vì
+ * không có "nguồn gốc React" để dò. MutationObserver bù lại việc phải chạy lại effect mỗi khi
+ * OrbitControls tự connect/disconnect (StrictMode dev gắn/gỡ/gắn lại) — cưỡng chế lại bất cứ
+ * lúc nào giá trị bị đổi, không phụ thuộc đúng một lần chạy effect.
+ */
+function useTouchScrollFix() {
+  useEffect(() => {
+    const canvas = document.querySelector("canvas");
+    if (!canvas) return;
+    const enforce = () => {
+      if (canvas.style.touchAction !== "pan-y") canvas.style.touchAction = "pan-y";
+    };
+    enforce();
+    const observer = new MutationObserver(enforce);
+    observer.observe(canvas, { attributes: true, attributeFilter: ["style"] });
+    return () => observer.disconnect();
+  }, []);
+}
+
 export function RoomScene({ pose, characterStage = 1, timeOfDay = "day", unlockedItems = [] }: Props) {
+  useTouchScrollFix();
   const lightColor = pose === "idle" ? ROOM_LIGHT_COLOR.neutral : ROOM_LIGHT_COLOR[pose as StatKey];
 
   return (
