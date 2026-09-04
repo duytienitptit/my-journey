@@ -13,10 +13,16 @@ Quyết định dùng model 3D (thay vì ảnh render xếp lớp như bản v3 
 Nguồn: https://kenney.nl/assets/furniture-kit
 License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
 
-Chỉ lấy 14/140 model cho phòng khởi đầu (Chương 1 — SPEC.md §4.9): `bedSingle`, `bookcaseOpenLow`,
+Mốc 1 lấy 14/140 model cho phòng khởi đầu (Chương 1 — SPEC.md §4.9): `bedSingle`, `bookcaseOpenLow`,
 `chairDesk`, `desk`, `doorway`, `floorFull`, `lampRoundTable`, `plantSmall1`, `pottedPlant`,
 `rugRectangle`, `sideTable`, `wall`, `wallCorner`, `wallWindow`. Không có texture ngoài — vật
 liệu là màu phẳng.
+
+**Mốc 5 lấy thêm 14 model** — cùng file zip, cùng license — cho 5 vỏ nhà theo chương (§4.9, §5.3:
+"5-6 vỏ nhà gốc + biến thể"), xem `components/room/shells/`: `bedDouble`, `cabinetTelevision`,
+`chairRounded`, `coatRackStanding`, `kitchenCabinet`, `kitchenFridgeSmall`, `kitchenSink`,
+`loungeChair`, `loungeSofa`, `stairs`, `table`, `tableCoffee`, `televisionModern`,
+`wallWindowSlide`.
 
 ### `room-items/` — đồ mở khoá theo cấp (mốc 3, SPEC.md §4.8, §5.3)
 
@@ -51,6 +57,17 @@ file này (đừng di chuyển hai file tách rời nhau).
 "nâng tạ" hay "thiền" đúng nghĩa đen — `crouch` và `static` là lựa chọn GẦN ĐÚNG nhất hiện có,
 xem ghi chú trong `components/room/Character.tsx`. Chỉ 8/12 giai đoạn còn lại (2 → Trưởng thành)
 chưa có model — thêm dần khi tới cấp đó, đúng tinh thần "đồ chỉ đến khi đủ điểm" ở §5.3.
+
+## Sân vườn — `garden/` (mốc 5, chương 10-12)
+
+**Kenney — Nature Kit** (1.0, phát hành 2020)
+Nguồn: https://kenney.nl/assets/nature-kit
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+4 model cho sân/vườn ở Chương 10-12 (§4.9: "Nhà riêng có sân", "Nhà có vườn", "Nhà lớn có
+vườn"): `tree_detailed`, `plant_bushDetailed`, `flower_yellowA`, `flower_redA`. Nền cỏ dùng màu
+phẳng (mặt phẳng tô màu, không phải model) — giữ đúng phong cách "vật liệu màu phẳng" đã dùng
+cho phòng, không trộn hai phong cách khác nhau trong cùng cảnh.
 
 ## Âm thanh — `public/sounds/`
 

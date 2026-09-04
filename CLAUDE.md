@@ -14,21 +14,27 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3, 4**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Mốc 4 (chuỗi + mốc thưởng + ngày "đạt"):
-  chuỗi ngày-đạt hiện ở góc màn chính (`🔥{current}`, chỉ hiện khi > 0, số dài nhất xem qua
-  hover, đổi màu cam khi "nguy hiểm"), ăn mừng lúc chạm mốc 7/30/100/365
-  (`StreakMilestoneToast.tsx`), và **câu trách móc THẬT ĐẦU TIÊN trong app** (§4.12, R3, chủ dự
-  án tự duyệt câu chữ ngày 2026-09-04): *"Okay. {n} days, gone. We're not talking about it."*
-  lúc chuỗi gãy thật (`StreakBrokenToast.tsx`). Kèm luật mới **một ngày ân hạn** trước khi gãy
-  thật (bỏ 1 ngày → "nguy hiểm", số giữ nguyên; hôm sau đủ TRỌN VẸN 6/6 thì cứu được, không đủ
-  thì gãy) — đổi luật [CHỐT] cũ ở §4.6/R5, đã hỏi rõ 3 nhánh trước khi code, đã sửa SPEC.md cùng
-  lúc. **Tiếp theo: mốc 5** (tài sản + chương + nâng cấp nhà).
-- **Phát hiện đáng nhớ lúc soi mốc 4:** công cụ tua thời gian (§8.3) từng không tới được Server
-  Action dưới Next.js 16 + Turbopack (route và action không share module instance của
-  `core/clock.ts` trong dev mode) — đã sửa bằng cách lưu override vào `globalThis` thay vì biến
-  module thường. Ảnh hưởng mọi lần verify trước đây theo kiểu "tua rồi bấm nút mà không tải lại
-  trang" (khác kiểu "tua rồi tải lại cả trang" ở mốc 3, không bị ảnh hưởng).
+- Giai đoạn: **xong mốc 1, 2, 3, 4, 5**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Mốc 5 (tài sản + chương + nâng cấp nhà,
+  SPEC.md §4.9): `core/engine/chapters.ts` (chương từ tổng tài sản, chương trung gian khi nhảy
+  vọt, điều kiện "Trưởng thành" = Thanh niên + Chương 12) · `net_worth_entries`/`chapter_events`
+  nối thật qua `db/queries.ts` + `app/actions/assets.ts` · nút "Add net worth" kín đáo góc màn
+  chính (`components/assets/NetWorthControl.tsx`) — ẩn/hiện số lưu vào `profile.hide_money`,
+  xác nhận sống sót qua tải lại trang. **5 vỏ nhà gốc theo chương** (`components/room/shells/`)
+  dựng ĐỦ ngay trong lượt này (chủ dự án chọn, không hoãn): phòng trọ → phòng rộng/studio → căn
+  hộ (thêm sofa/TV/bếp) → căn hộ cao tầng (skyline thủ công, không tải model) → nhà phố (cầu
+  thang trang trí) → nhà có sân/vườn (Kenney Nature Kit) — camera + sương mù co giãn theo cỡ
+  phòng (`shells/footprint.ts`). Xác nhận bằng mắt qua trình duyệt cho ĐỦ CẢ 12 chương (không
+  chỉ vài mẫu) + luồng thật bấm nút/gõ số/lưu, không chỉ seed thẳng DB. **Tiếp theo: mốc 6**
+  (nhìn lại tuần + thống kê + tương quan).
+- **Phát hiện đáng nhớ lúc soi mốc 5 — lỗi schema có thật, không chỉ lỗi hiển thị:**
+  `net_worth_entries.stocks_vnd`/`gold_vnd` từng khai `integer` (Postgres, trần ~2,1 tỉ) trong
+  khi SPEC.md §4.9 tự đòi tới 26.000.000.000 (Chương 12) — nhập bất kỳ số nào ≥ Chương 8 (3 tỉ)
+  là lỗi INSERT ngay. Sửa bằng `bigint` (Drizzle `{mode:"number"}`, đủ an toàn tới 2^53), migrate
+  `0001_left_ultimates.sql` (ALTER COLUMN, không mất dữ liệu cũ). Lỗi thứ hai: sương mù cảnh 3D
+  cố định [9,19] không co giãn theo camera — phòng lớn (mốc 5 camera lùi xa hơn theo cỡ phòng)
+  rơi hẳn vào dải sương mù, cả cảnh mờ trắng trông như vỡ hình dù không phải — sửa bằng co giãn
+  `fogNear`/`fogFar` cùng hệ số với camera.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
@@ -58,8 +64,17 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   chuột — OrbitControls (xoay/zoom, §5.3) thực ra CHƯA BAO GIỜ bấm được từ mốc 1, chỉ là ảnh
   chụp màn hình không lộ ra — xem `components/DailyScreen.tsx` để hiểu cách sửa (hai lớp
   `pointer-events` + bỏ z-index âm).
+- Đã xong trong mốc 4: chuỗi ngày-đạt hiện góc màn chính (`🔥{current}`, đổi màu cam khi "nguy
+  hiểm") · ăn mừng chạm mốc 7/30/100/365 (`StreakMilestoneToast.tsx`) · **câu trách móc THẬT ĐẦU
+  TIÊN trong app** (§4.12, R3, chủ dự án tự duyệt ngày 2026-09-04): *"Okay. {n} days, gone. We're
+  not talking about it."* lúc chuỗi gãy thật (`StreakBrokenToast.tsx`) · luật **một ngày ân hạn**
+  trước khi gãy thật (bỏ 1 ngày → "nguy hiểm", số giữ nguyên; hôm sau đủ TRỌN VẸN 6/6 thì cứu
+  được) — đổi luật [CHỐT] cũ ở §4.6/R5, đã sửa SPEC.md cùng lúc. Phát hiện phụ: công cụ tua thời
+  gian (§8.3) từng không tới được Server Action dưới Next.js 16 + Turbopack (route và action
+  không share module instance của `core/clock.ts` trong dev mode) — sửa bằng lưu override vào
+  `globalThis` thay vì biến module thường.
 - **Bốn nguyên tắc kỹ thuật §8 đã có `core/day.ts`, `core/session.ts`, `core/summary.ts`,
-  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (173 test qua `npm test`),
+  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (225 test qua `npm test`),
   không đụng DB/React.**
 - Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, thẻ cho
   nhật ký, mốc chương trung gian, và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới

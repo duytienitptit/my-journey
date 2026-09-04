@@ -9,6 +9,7 @@ import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
 import { Character, type CharacterPose } from "./Character";
 import { characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
+import { cameraFramingForFootprint, footprintForChapter } from "./shells/footprint";
 import type { StatKey } from "@/core/types";
 
 export type TimeOfDay = "day" | "evening";
@@ -18,6 +19,8 @@ type Props = {
   pose: CharacterPose;
   /** Giai đoạn nhân vật (SPEC.md §4.8) — mặc định 1, chưa có model cho giai đoạn khác. */
   characterStage?: number;
+  /** Chương hiện tại (SPEC.md §4.9) — mặc định 1, quyết định vỏ nhà + khung camera (mốc 5). */
+  chapter?: number;
   /** Cuộn tới phần buổi tối → phòng dịu xuống (SPEC.md §5.1: "ánh sáng phòng chuyển tối"). */
   timeOfDay?: TimeOfDay;
   /** Đồ đạc đã mở khoá theo cấp (SPEC.md §4.8) — mốc 3. */
@@ -25,9 +28,6 @@ type Props = {
   /** Đồng hồ đang chạy → tối gần như đen, đè lên cả timeOfDay (SPEC.md §5.1, "chế độ tập trung"). */
   focusMode?: boolean;
 };
-
-const ROOM_CENTER: [number, number, number] = [1.5, 0.55, -1.5];
-const CHARACTER_SPOT: [number, number, number] = [2.3, 0.05, -2.3];
 
 const SCENE_TONE: Record<TimeOfDay, { background: string; ambient: number; directional: number; hemi: number }> = {
   day: { background: "#f7f1e3", ambient: 0.8, directional: 1.15, hemi: 0.35 },
@@ -51,10 +51,14 @@ function SceneAtmosphere({
   lightColor,
   timeOfDay,
   focusMode,
+  fogNear,
+  fogFar,
 }: {
   lightColor: string;
   timeOfDay: TimeOfDay;
   focusMode: boolean;
+  fogNear: number;
+  fogFar: number;
 }) {
   const bgRef = useRef<THREE.Color>(null);
   const fogRef = useRef<THREE.Fog>(null);
@@ -83,7 +87,7 @@ function SceneAtmosphere({
   return (
     <>
       <color ref={bgRef} attach="background" args={[SCENE_TONE.day.background]} />
-      <fog ref={fogRef} attach="fog" args={[SCENE_TONE.day.background, 9, 19]} />
+      <fog ref={fogRef} attach="fog" args={[SCENE_TONE.day.background, fogNear, fogFar]} />
       {/* Màu đèn nền theo nhãn (§5.1) — đổi qua prop React bình thường, không cần lerp riêng:
           đây vốn đã là "nhẹ", không cần thêm hoạt ảnh cho chính màu sắc. */}
       <ambientLight ref={ambientRef} color={lightColor} intensity={SCENE_TONE.day.ambient} />
@@ -131,6 +135,7 @@ function useTouchScrollFix() {
 export function RoomScene({
   pose,
   characterStage = 1,
+  chapter = 1,
   timeOfDay = "day",
   unlockedItems = [],
   focusMode = false,
@@ -138,17 +143,35 @@ export function RoomScene({
   useTouchScrollFix();
   const lightColor = pose === "idle" ? ROOM_LIGHT_COLOR.neutral : ROOM_LIGHT_COLOR[pose as StatKey];
 
+  // Khung camera co giãn theo cỡ phòng (mốc 5, §4.9) — phòng Chương 12 rộng hơn hẳn Chương 1,
+  // camera phải lùi xa hơn tương ứng để không tràn khung hình. Xem shells/footprint.ts.
+  const footprint = footprintForChapter(chapter);
+  const framing = cameraFramingForFootprint(footprint);
+  // Đứng gần góc sau-phải khu vực chính (bàn học) — công thức suy từ đúng vị trí Chương 1 gốc
+  // (2.3, 0.05, -2.3) = góc (3,-3) lùi vào (-0.7,+0.7); giữ nguyên tỉ lệ đó cho mọi cỡ phòng.
+  const characterSpot: [number, number, number] = [
+    footprint.interiorWidth - 0.7,
+    0.05,
+    -footprint.interiorDepth + 0.7,
+  ];
+
   return (
-    <Canvas camera={{ position: [5.4, 3.7, 5.4], fov: 40 }}>
-      <SceneAtmosphere lightColor={lightColor} timeOfDay={timeOfDay} focusMode={focusMode} />
+    <Canvas camera={{ position: framing.position, fov: 40 }}>
+      <SceneAtmosphere
+        lightColor={lightColor}
+        timeOfDay={timeOfDay}
+        focusMode={focusMode}
+        fogNear={framing.fogNear}
+        fogFar={framing.fogFar}
+      />
 
       <Suspense fallback={null}>
-        <RoomShell />
+        <RoomShell chapter={chapter} />
         <RoomItems items={unlockedItems} />
         <Character
           url={characterModelForStage(characterStage)}
           pose={pose}
-          position={CHARACTER_SPOT}
+          position={characterSpot}
           rotation={[0, Math.PI, 0]}
         />
       </Suspense>
@@ -157,10 +180,10 @@ export function RoomScene({
           phòng chỉ có 2 tường (sau + trái), khoảng xoay hẹp quanh góc nhìn mặc định tránh camera
           lọt ra phía không có tường hoặc hạ xuống ngang/dưới sàn. */}
       <OrbitControls
-        target={ROOM_CENTER}
+        target={framing.target}
         enablePan={false}
-        minDistance={4}
-        maxDistance={9}
+        minDistance={framing.minDistance}
+        maxDistance={framing.maxDistance}
         minPolarAngle={Math.PI / 4.5}
         maxPolarAngle={Math.PI / 2.3}
         minAzimuthAngle={-Math.PI / 5}

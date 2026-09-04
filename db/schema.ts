@@ -14,6 +14,7 @@
  */
 
 import {
+  bigint,
   boolean,
   integer,
   jsonb,
@@ -164,11 +165,15 @@ export const weekReviews = pgTable(
 // ─── net_worth_entries — tài sản, dùng từ mốc 5 ──────────────────────────
 // Giữ TOÀN BỘ lịch sử, đừng ghi đè (SPEC.md §4.9, §7).
 
+// `bigint` KHÔNG PHẢI `integer` — bắt gặp lúc soi mốc 5: Postgres `integer` là số nguyên 32-bit,
+// trần 2,147,483,647 (~2,1 tỉ), trong khi SPEC.md §4.9 tự đòi tới 26.000.000.000 (Chương 12,
+// "Trưởng thành") — ghi bất kỳ số nào ≥ Chương 8 (3 tỉ) là lỗi ngay khi INSERT. `mode: "number"`
+// vì 26 tỉ còn cách rất xa trần an toàn của JS number (2^53), không cần BigInt tay ở tầng ứng dụng.
 export const netWorthEntries = pgTable("net_worth_entries", {
   id: serial("id").primaryKey(),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull(),
-  stocksVnd: integer("stocks_vnd").notNull(),
-  goldVnd: integer("gold_vnd").notNull(),
+  stocksVnd: bigint("stocks_vnd", { mode: "number" }).notNull(),
+  goldVnd: bigint("gold_vnd", { mode: "number" }).notNull(),
   note: text("note"),
 });
 

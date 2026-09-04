@@ -1,5 +1,6 @@
 "use client";
 
+import { NetWorthControl } from "@/components/assets/NetWorthControl";
 import { DAILY_SESSION_GOAL_DEFAULT } from "@/core/balance";
 import type { DayAchievedStreakInfo } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
@@ -23,6 +24,10 @@ type Props = ReturnType<typeof useSessionTimer> & {
   labels: readonly TimerLabel[];
   /** Chuỗi ngày-đạt, TỚI HẾT HÔM QUA (§4.6/R5) — mốc 4. */
   dayAchievedStreak: DayAchievedStreakInfo;
+  /** Tài sản — SPEC.md §4.9, mốc 5. */
+  netWorth: { stocksVnd: number; goldVnd: number; totalVnd: number } | null;
+  hideMoney: boolean;
+  onNetWorthChanged: () => void;
 };
 
 export function TimerOverlay({
@@ -38,6 +43,9 @@ export function TimerOverlay({
   abandon,
   backfill,
   dayAchievedStreak,
+  netWorth,
+  hideMoney,
+  onNetWorthChanged,
 }: Props) {
   const activeLabel = labels.find((l) => l.id === (running?.labelId ?? selectedLabelId)) ?? labels[0];
   const goalProgress = todaySessions.length / DAILY_SESSION_GOAL_DEFAULT;
@@ -95,8 +103,9 @@ export function TimerOverlay({
             )}
           </div>
 
-          <div className="pointer-events-auto absolute right-4 top-4">
+          <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
             <BackfillButton labels={labels} onBackfill={backfill} />
+            <NetWorthControl netWorth={netWorth} hideMoney={hideMoney} onChanged={onNetWorthChanged} />
           </div>
         </>
       )}

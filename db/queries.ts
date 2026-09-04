@@ -8,6 +8,7 @@
 import { and, asc, desc, eq } from "drizzle-orm";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
+import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
 import type { RoomItemCatalogEntry } from "@/core/engine/room";
 import type { EngineRawData } from "@/core/engine/types";
 import { isSessionComplete, type RunningSession } from "@/core/session";
@@ -344,4 +345,81 @@ export async function getEngineRawData(): Promise<EngineRawData> {
 export async function getRoomItemsCatalog(): Promise<RoomItemCatalogEntry[]> {
   const rows = await db.select().from(schema.roomItems);
   return rows.map((r) => ({ id: r.id, stat: r.stat, modelKey: r.modelKey, unlockLevel: r.unlockLevel }));
+}
+
+// ─── Tài sản + chương — SPEC.md §4.9, dùng từ mốc 5 ───────────────────────
+// KHÔNG đi qua getEngineRawData()/foldTimeline() — chương bám giá trị HIỆN TẠI (bản ghi mới
+// nhất), không phải một phép fold theo ngày như XP (core/engine/chapters.ts giải thích kỹ hơn).
+
+export type NetWorthSnapshot = { stocksVnd: number; goldVnd: number; totalVnd: number; recordedAtMs: number };
+
+/** Bản ghi tài sản MỚI NHẤT — nhà bám theo giá trị NÀY, không phải mốc cao nhất (§4.9). `null` nếu chưa từng nhập. */
+export async function getLatestNetWorth(): Promise<NetWorthSnapshot | null> {
+  const rows = await db
+    .select()
+    .from(schema.netWorthEntries)
+    .orderBy(desc(schema.netWorthEntries.recordedAt))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return null;
+  return {
+    stocksVnd: row.stocksVnd,
+    goldVnd: row.goldVnd,
+    totalVnd: totalNetWorth(row.stocksVnd, row.goldVnd),
+    recordedAtMs: row.recordedAt.getTime(),
+  };
+}
+
+/** Chương CAO NHẤT đã từng có dòng trong `chapter_events` — 0 nếu chưa ghi gì (Chương 1 không ghi, xem chapters.ts). */
+async function getMaxChapterEverReached(): Promise<number> {
+  const rows = await db.select({ chapterIndex: schema.chapterEvents.chapterIndex }).from(schema.chapterEvents);
+  if (rows.length === 0) return 0;
+  return Math.max(...rows.map((r) => r.chapterIndex));
+}
+
+export type SubmitNetWorthResult = { chapter: number; newlyReachedChapters: readonly number[] };
+
+/**
+ * Nhập một lần tài sản mới (§4.9: "nhập bất cứ khi nào tôi muốn, đừng bao giờ ép, không lùi
+ * ngày") — LUÔN ghi thêm dòng mới vào `net_worth_entries`, giữ TOÀN BỘ lịch sử, không ghi đè.
+ * Tự ghi `chapter_events` cho MỌI chương mới chạm kể cả chương trung gian (§11.1 câu Q30) —
+ * đây là MỘT TRONG BA chỗ cố ý ghi DB không thuần (kế hoạch mốc 5), vì "chương cao nhất từng
+ * chạm" không tính lại được bằng max() mỗi lần đọc (§4.9, bản trước sai đúng chỗ này).
+ */
+export async function submitNetWorthEntry(
+  stocksVnd: number,
+  goldVnd: number,
+  note?: string,
+): Promise<SubmitNetWorthResult> {
+  const maxChapterBefore = await getMaxChapterEverReached();
+  const recordedAt = new Date(now());
+  await db.insert(schema.netWorthEntries).values({ recordedAt, stocksVnd, goldVnd, note: note ?? null });
+
+  const total = totalNetWorth(stocksVnd, goldVnd);
+  const newChapter = chapterForNetWorth(total);
+  const newlyReachedChapters = chaptersNewlyReached(maxChapterBefore, newChapter);
+  if (newlyReachedChapters.length > 0) {
+    await db
+      .insert(schema.chapterEvents)
+      .values(
+        newlyReachedChapters.map((chapterIndex) => ({
+          chapterIndex,
+          reachedAt: recordedAt,
+          snapshot: { stocksVnd, goldVnd, totalVnd: total },
+        })),
+      )
+      // Phòng hai request chồng nhau — chapterIndex là UNIQUE, ghi trùng thì bỏ qua thay vì lỗi.
+      .onConflictDoNothing({ target: schema.chapterEvents.chapterIndex });
+  }
+  return { chapter: newChapter, newlyReachedChapters };
+}
+
+/** Số tài sản mặc định làm mờ (§4.9) — đọc/ghi `profile.hide_money`. Một dòng profile duy nhất. */
+export async function getHideMoney(): Promise<boolean> {
+  const rows = await db.select({ hideMoney: schema.profile.hideMoney }).from(schema.profile).limit(1);
+  return rows[0]?.hideMoney ?? true;
+}
+
+export async function setHideMoney(hide: boolean): Promise<void> {
+  await db.update(schema.profile).set({ hideMoney: hide });
 }

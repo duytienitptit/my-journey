@@ -96,7 +96,8 @@ export function DailyScreen({
         <RoomScene
           pose={pose}
           timeOfDay={timeOfDay}
-          characterStage={stats.stage}
+          characterStage={stats.characterStage}
+          chapter={stats.chapter}
           unlockedItems={stats.unlockedItems}
           focusMode={timer.running !== null}
         />
@@ -104,7 +105,14 @@ export function DailyScreen({
 
       {/* Khung nhìn đầu — cao đúng một màn hình, đồng hồ nổi ở đây. */}
       <div className="relative h-svh w-full">
-        <TimerOverlay {...timer} labels={labels} dayAchievedStreak={stats.dayAchievedStreak} />
+        <TimerOverlay
+          {...timer}
+          labels={labels}
+          dayAchievedStreak={stats.dayAchievedStreak}
+          netWorth={stats.netWorth}
+          hideMoney={stats.hideMoney}
+          onNetWorthChanged={refreshStats}
+        />
         <LevelUpToast notice={levelUpNotice} />
         <StreakMilestoneToast notice={streakMilestoneNotice} />
         <StreakBrokenToast notice={streakBrokenNotice} />
