@@ -375,6 +375,24 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
 **Phần trên — lúc tôi làm việc:**
 - Tôi bấm chọn nhãn → Start → màn hình chuyển sang trạng thái tĩnh: số phút đếm ngược, tên nhãn. Nhân vật ngồi vào bàn / cầm tạ / ngồi thiền tuỳ nhãn.
 - **Chế độ tập trung — [CHỐT — 2026-09-03].** Lúc đồng hồ đang chạy, phòng tối hẳn xuống gần như đen (đậm hơn hẳn mức "buổi tối" ở phần dưới) — nhân vật vẫn còn đó, chỉ lờ mờ, không biến mất hẳn (vẫn là "đang nuôi một đứa bé trong phòng", không tách thành màn hình tập trung riêng biệt). Đồng hồ đếm ngược phóng to, đứng giữa màn hình thay vì nổi ở góc dưới. Dải chấm phiên hôm nay + nút ghi bù (xem dưới) **ẩn đi lúc đang chạy** — đúng tinh thần nguyên tắc 1 (§2): "gần như trống" khi tập trung, chỉ hiện lại lúc tĩnh (chưa bấm Start / đã Start xong).
+
+  **[THÊM — 2026-09-05] Hạt sáng đom đóm khắp màn hình lúc tập trung.** Nới nguyên tắc 1 một
+  chút, CÓ CHỦ Ý và CÓ GIỚI HẠN — chủ dự án muốn một hiệu ứng "chill" đẹp mắt để mở full màn hình
+  MacBook trong lúc làm việc, không muốn màn hình tối om tuyệt đối. Gần trăm hạt sáng nhỏ trôi
+  chậm rãi, nhấp nháy dịu — **rải khắp cả khung hình** (chủ dự án tự xem rồi yêu cầu đổi từ bản
+  đầu "chỉ quanh nhân vật, bán kính hẹp" — không đủ "phủ kín"), màu theo đúng màu nhãn đang chạy
+  (giống màu ánh sáng phòng đã có). Đây KHÔNG phải quay lại "vui ở chỗ tập trung" — hạt sáng
+  chuyển động rất chậm, không có âm thanh, không cạnh tranh với đồng hồ đếm ngược (giờ cũng
+  **phóng to hơn hẳn** ở giữa); ranh giới là "tĩnh và dịu", chỉ nới rộng, không phải "trống tuyệt
+  đối". Chỉ hiện lúc `focusMode` (đồng hồ đang chạy), mờ dần vào/ra chứ không bật tắt đột ngột.
+
+  **[SỬA — 2026-09-05] Vòng tròn quanh đồng hồ lúc tập trung đổi ý nghĩa.** Trước đó dùng chung
+  "vòng tròn mục tiêu ngày" (đầy theo SỐ PHIÊN hôm nay, đứng yên suốt một phiên) cho cả lúc tĩnh
+  lẫn lúc đang chạy — chủ dự án xem trực tiếp thấy vòng tròn "không chuẩn xác" vì nó không nhúc
+  nhích trong khi đồng hồ vẫn đếm ngược. Từ nay, **lúc đang chạy** vòng tròn bám theo THỜI GIAN
+  của chính phiên đó (đầy dần tới lúc hết giờ). "Vòng tròn mục tiêu ngày" theo số phiên vẫn đúng
+  y nguyên như mô tả gốc, chỉ không còn dùng chung hình dạng đó cho lúc đang chạy nữa — số phiên
+  hôm nay vẫn xem được qua dải chấm ở góc màn hình lúc tĩnh.
 - **Vòng tròn mục tiêu ngày** bao quanh đồng hồ, đầy dần theo số phiên. Mục tiêu tôi tự đặt (mặc định 4). **Tôi vượt quá thì đừng có gì xảy ra, tôi không đạt cũng đừng có gì xảy ra** — nó là cái thước, không phải cái roi.
 - Góc màn hình (chỉ lúc TĨNH, chưa bấm Start): dải chấm màu các phiên hôm nay + chuỗi ngày hiện tại. **Đây là thống kê duy nhất tôi cho phép hiện ban ngày.**
 - Nút ghi bù (chỉ lúc TĨNH).

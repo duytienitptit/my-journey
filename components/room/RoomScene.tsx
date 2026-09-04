@@ -7,6 +7,7 @@ import * as THREE from "three";
 import { RoomShell } from "./RoomShell";
 import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
 import { Character, type CharacterPose } from "./Character";
+import { Fireflies } from "./Fireflies";
 import { characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
 import { cameraFramingForFootprint, footprintForChapter } from "./shells/footprint";
@@ -175,6 +176,12 @@ export function RoomScene({
           rotation={[0, Math.PI, 0]}
         />
       </Suspense>
+
+      {/* Chế độ tập trung: hạt sáng đom đóm, SPEC.md §5.1 [THÊM/SỬA — 2026-09-05] — neo vào
+          `framing.target` (điểm camera nhìn vào, giữa khung hình) chứ không phải vị trí nhân vật,
+          để bán kính lớn trải khắp màn hình thay vì dồn về một góc phòng. Màu theo đúng màu nhãn
+          đang chạy, mờ dần vào/ra theo focusMode (không bật tắt đột ngột). */}
+      <Fireflies center={framing.target} color={lightColor} active={focusMode} />
 
       {/* Xoay và zoom được (SPEC.md §5.3), nhưng giới hạn góc để không lật ra ngoài phòng —
           phòng chỉ có 2 tường (sau + trái), khoảng xoay hẹp quanh góc nhìn mặc định tránh camera

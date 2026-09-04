@@ -1,7 +1,6 @@
 "use client";
 
 import { NetWorthControl } from "@/components/assets/NetWorthControl";
-import { DAILY_SESSION_GOAL_DEFAULT } from "@/core/balance";
 import type { DayAchievedStreakInfo } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
 import { BackfillButton } from "./BackfillButton";
@@ -48,7 +47,14 @@ export function TimerOverlay({
   onNetWorthChanged,
 }: Props) {
   const activeLabel = labels.find((l) => l.id === (running?.labelId ?? selectedLabelId)) ?? labels[0];
-  const goalProgress = todaySessions.length / DAILY_SESSION_GOAL_DEFAULT;
+  // Vòng tròn LÚC ĐANG CHẠY bám theo THỜI GIAN của chính phiên này (đầy dần tới lúc hết giờ) —
+  // [SỬA — 2026-09-05], bắt gặp lúc chủ dự án xem trực tiếp: bản đầu dùng số phiên trong ngày/
+  // mục tiêu ngày (đứng yên suốt phiên) cho vòng tròn quanh đồng hồ ĐANG ĐẾM NGƯỢC khiến vòng
+  // tròn trông "không chuẩn xác" — nó không hề nhúc nhích trong khi đồng hồ vẫn chạy. Số phiên
+  // hôm nay vẫn xem được qua dải chấm ở góc màn hình lúc tĩnh (§5.1), không mất thông tin.
+  const sessionProgress = running
+    ? 1 - secondsRemaining(running, nowMs) / Math.max(1, (running.endsAt - running.startedAt) / 1000)
+    : 0;
 
   return (
     <>
@@ -120,19 +126,19 @@ export function TimerOverlay({
         // Chế độ tập trung (SPEC.md §5.1, [CHỐT — 2026-09-03]) — phủ kín màn hình, đứng giữa
         // thay vì nổi ở góc dưới, phòng đã tối gần như đen (RoomScene focusMode) nên chữ đổi
         // sang màu sáng thay vì `text-foreground` (vốn tính cho nền sáng, chìm mất trên nền tối).
-        <div className="pointer-events-auto fixed inset-0 flex flex-col items-center justify-center gap-6">
+        <div className="pointer-events-auto fixed inset-0 flex flex-col items-center justify-center gap-8">
           <CircularProgress
-            progress={goalProgress}
+            progress={sessionProgress}
             color={activeLabel.color}
-            size={340}
-            strokeWidth={8}
+            size={480}
+            strokeWidth={10}
             trackColor="rgba(255,255,255,0.12)"
           >
             <div className="flex flex-col items-center">
-              <span className="text-7xl font-bold tabular-nums text-white">
+              <span className="text-9xl font-bold tabular-nums text-white">
                 {formatClock(secondsRemaining(running, nowMs))}
               </span>
-              <span className="mt-2 text-lg font-medium text-white/60">
+              <span className="mt-3 text-xl font-medium text-white/60">
                 {activeLabel.emoji} {activeLabel.name}
               </span>
             </div>

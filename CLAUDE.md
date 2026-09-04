@@ -27,7 +27,20 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   hộ (thêm sofa/TV/bếp) → căn hộ cao tầng (skyline thủ công, không tải model) → nhà phố (cầu
   thang trang trí) → nhà có sân/vườn (Kenney Nature Kit) — camera + sương mù co giãn theo cỡ
   phòng (`shells/footprint.ts`). Xác nhận bằng mắt qua trình duyệt cho ĐỦ CẢ 12 chương (không
-  chỉ vài mẫu) + luồng thật bấm nút/gõ số/lưu, không chỉ seed thẳng DB. **Tiếp theo: mốc 6**
+  chỉ vài mẫu) + luồng thật bấm nút/gõ số/lưu, không chỉ seed thẳng DB.
+- **Chế độ tập trung nâng cấp [SỬA/THÊM — 2026-09-05]** (SPEC.md §5.1) — chủ dự án tự bấm Start
+  xem trực tiếp rồi cho ba phản hồi liên tiếp: (1) hạt sáng đom đóm `components/room/Fireflies.tsx`
+  (InstancedMesh, mờ dần vào/ra theo `focusMode`) đổi từ "quanh nhân vật, bán kính hẹp" sang
+  **rải khắp cả khung hình** (neo vào `framing.target` — điểm camera nhìn vào — không phải vị
+  trí nhân vật, bán kính 5.5, ~90 hạt); (2) vòng tròn quanh đồng hồ đổi từ "số phiên trong ngày"
+  (đứng yên suốt phiên, chủ dự án chê "không chuẩn xác") sang **thời gian phiên đang chạy** (đầy
+  dần tới lúc hết giờ); (3) đồng hồ đếm ngược + vòng tròn **to hơn hẳn** (340→480, text-7xl→9xl).
+  Đụng nguyên tắc 1 ở §2 ("gần như trống" lúc tập trung) — đã hỏi trước khi code (AskUserQuestion:
+  mở rộng ambient trong phòng tối sẵn có, KHÔNG phải nền trừu tượng tách biệt), đã sửa SPEC.md
+  cùng lúc ghi rõ đây là ngoại lệ có chủ ý, có giới hạn. `Math.random()` trong hạt sáng phải sinh
+  ở `useEffect` (sau render), không phải `useMemo` — React Compiler/`react-hooks/purity` cấm gọi
+  hàm không thuần ngay trong thân render, kể cả trong factory của useMemo.
+- **Tiếp theo: mốc 6**
   (nhìn lại tuần + thống kê + tương quan).
 - **Phát hiện đáng nhớ lúc soi mốc 5 — lỗi schema có thật, không chỉ lỗi hiển thị:**
   `net_worth_entries.stocks_vnd`/`gold_vnd` từng khai `integer` (Postgres, trần ~2,1 tỉ) trong
