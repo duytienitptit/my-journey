@@ -1,7 +1,7 @@
 "use client";
 
 import { DAILY_SESSION_GOAL_DEFAULT } from "@/core/balance";
-import type { StreakInfo } from "@/core/engine/types";
+import type { DayAchievedStreakInfo } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
 import { BackfillButton } from "./BackfillButton";
 import { CircularProgress } from "./CircularProgress";
@@ -22,7 +22,7 @@ function formatClock(totalSeconds: number): string {
 type Props = ReturnType<typeof useSessionTimer> & {
   labels: readonly TimerLabel[];
   /** Chuỗi ngày-đạt, TỚI HẾT HÔM QUA (§4.6/R5) — mốc 4. */
-  dayAchievedStreak: StreakInfo;
+  dayAchievedStreak: DayAchievedStreakInfo;
 };
 
 export function TimerOverlay({
@@ -53,13 +53,21 @@ export function TimerOverlay({
               phiên hôm nay. Chuỗi chỉ hiện SỐ (🔥 + con số), không kèm chữ nào — mốc 4 chưa có
               câu chữ "trách móc" nào được duyệt (§4.12/R3), nên chỗ này cố ý không cần chữ để
               không phải chờ duyệt. Chỉ hiện khi current > 0 — chuỗi 0 để im lặng, không có số
-              0 nào đập vào mắt lúc mới gãy hoặc chưa từng có. Số dài nhất xem qua title (hover). */}
+              0 nào đập vào mắt lúc mới gãy hoặc chưa từng có. Số dài nhất xem qua title (hover).
+              `danger` (ân hạn 1 ngày, [CHỐT — 2026-09-04]) đổi màu cam cảnh báo — CHỈ đổi màu,
+              không thêm chữ, đúng ý chủ dự án đã chọn khi hỏi. */}
           <div className="pointer-events-auto absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
             {dayAchievedStreak.current > 0 && (
               <>
                 <span
-                  className="flex items-center gap-0.5 px-1 text-sm font-semibold text-foreground/70"
-                  title={`Longest day-streak: ${dayAchievedStreak.longest}`}
+                  className={`flex items-center gap-0.5 px-1 text-sm font-semibold ${
+                    dayAchievedStreak.danger ? "text-amber-600" : "text-foreground/70"
+                  }`}
+                  title={
+                    dayAchievedStreak.danger
+                      ? `Missed yesterday — save it today or it's gone. Longest: ${dayAchievedStreak.longest}`
+                      : `Longest day-streak: ${dayAchievedStreak.longest}`
+                  }
                 >
                   🔥{dayAchievedStreak.current}
                 </span>

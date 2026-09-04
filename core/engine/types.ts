@@ -80,6 +80,12 @@ export type StreakInfo = {
   longest: number;
 };
 
+/** Chuỗi ngày-đạt có thêm "nguy hiểm" (ân hạn 1 ngày, SPEC.md §4.6, [CHỐT — 2026-09-04]) — chuỗi
+ *  nhật ký không có, vẫn dùng StreakInfo trơn. Xem streaks.ts#advanceDayAchievedStreak. */
+export type DayAchievedStreakInfo = StreakInfo & {
+  danger: boolean;
+};
+
 export type LevelUpEvent = {
   dayKey: DayKey;
   stat: StatKey;
@@ -108,7 +114,7 @@ export type TimelineResult = {
   stage: number;
   /** `.current` tính TỚI HẾT HÔM QUA (§4.6) — hôm nay đạt hay chưa không đổi số này, chỉ đổi
    *  sáng mai. XP thưởng ngày đạt (+30) thì KHÔNG chờ — cộng ngay hôm đó, xem timeline.ts. */
-  dayAchievedStreak: StreakInfo;
+  dayAchievedStreak: DayAchievedStreakInfo;
   journalStreak: StreakInfo;
   events: {
     levelUps: readonly LevelUpEvent[];

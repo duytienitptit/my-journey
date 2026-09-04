@@ -49,3 +49,14 @@ export function isDayAchieved(input: DayAchievedInput): boolean {
   const doneCount = input.dailyTasks.filter((task) => isDailyTaskDone(task, input)).length;
   return doneCount >= required;
 }
+
+/**
+ * TOÀN BỘ 6 việc trong ngày, bất kể hôm đó là thứ mấy — ngưỡng CỐ Ý cao hơn hẳn `isDayAchieved`
+ * (vốn đã nới theo thứ trong tuần). Chỉ dùng để "cứu" chuỗi ngày-đạt sau đúng 1 ngày ân hạn
+ * (SPEC.md §4.6, [CHỐT — 2026-09-04]) — không dùng cho việc gì khác, không thay thế
+ * `isDayAchieved`. Không có nhánh Chủ nhật riêng: dù Chủ nhật vốn chỉ cần viết nhật ký để
+ * "đạt", muốn CỨU chuỗi thì vẫn phải đủ cả 6, đúng ý chủ dự án đã xác nhận.
+ */
+export function isDayPerfect(input: DayAchievedInput): boolean {
+  return input.dailyTasks.every((task) => isDailyTaskDone(task, input));
+}

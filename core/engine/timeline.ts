@@ -18,10 +18,18 @@ import { STREAK_DAY_ACHIEVED_MILESTONES, STREAK_JOURNAL_MILESTONES, WEEK_PERFECT
 import { addDays, dayKeyOf, enumerateDayKeys } from "../day";
 import { STAT_KEYS, type DayKey, type StatKey } from "../types";
 import { isRestWell, xpEarnedForDay } from "./xp";
-import { isDayAchieved } from "./dayAchieved";
+import { isDayAchieved, isDayPerfect } from "./dayAchieved";
 import { decayAmountForDay } from "./decay";
 import { levelForXp, stageForTotalXp } from "./levels";
-import { advanceStreak, INITIAL_STREAK_STATE, newlyReachedMilestone, type StreakState } from "./streaks";
+import {
+  advanceDayAchievedStreak,
+  advanceStreak,
+  INITIAL_DAY_ACHIEVED_STREAK_STATE,
+  INITIAL_STREAK_STATE,
+  newlyReachedMilestone,
+  type DayAchievedStreakState,
+  type StreakState,
+} from "./streaks";
 import type {
   EngineRawData,
   LevelUpEvent,
@@ -60,23 +68,25 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
   const dayLogByDay = new Map(raw.dayLogs.map((d) => [d.dayKey, d]));
   const weekReviewsByCreatedDay = groupBy(raw.weekReviews, (w) => w.createdAtDayKey);
 
-  // ─── Pass 1 — "ngày đạt" cho MỌI ngày (kể cả hôm nay, dùng dữ liệu tới giờ) ─
+  // ─── Pass 1 — "ngày đạt" + "ngày trọn vẹn 6/6" cho MỌI ngày (kể cả hôm nay, dùng dữ liệu tới
+  // giờ) — "trọn vẹn" chỉ dùng để cứu chuỗi ngày-đạt sau 1 ngày ân hạn (isDayPerfect), tách khỏi
+  // "đạt" thường (isDayAchieved, đã nới theo thứ trong tuần).
   const dayAchievedByDay = new Map<DayKey, boolean>();
+  const dayPerfectByDay = new Map<DayKey, boolean>();
   for (const day of allDays) {
     const sessionCountByLabel = countByLabel(sessionsByDay.get(day) ?? []);
     const habitScoreByHabitId = scoreMapFor(habitEntriesByDay.get(day) ?? []);
     const hasJournalText = dayLogByDay.get(day)?.hasJournalText ?? false;
-    dayAchievedByDay.set(
-      day,
-      isDayAchieved({
-        dayKey: day,
-        dailyTasks: raw.dailyTasks,
-        completedSessionCountByLabelId: sessionCountByLabel,
-        habitScoreByHabitId,
-        journalHabitId,
-        hasJournalText,
-      }),
-    );
+    const dayAchievedInput = {
+      dayKey: day,
+      dailyTasks: raw.dailyTasks,
+      completedSessionCountByLabelId: sessionCountByLabel,
+      habitScoreByHabitId,
+      journalHabitId,
+      hasJournalText,
+    };
+    dayAchievedByDay.set(day, isDayAchieved(dayAchievedInput));
+    dayPerfectByDay.set(day, isDayPerfect(dayAchievedInput));
   }
 
   // ─── Pass 2 — gấp từng ngày ──────────────────────────────────────────────
@@ -85,9 +95,9 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
   const prevLevelByStat = zeroByStat();
   let prevStage = 1;
 
-  let liveDayAchievedStreak: StreakState = INITIAL_STREAK_STATE;
+  let liveDayAchievedStreak: DayAchievedStreakState = INITIAL_DAY_ACHIEVED_STREAK_STATE;
   let liveJournalStreak: StreakState = INITIAL_STREAK_STATE;
-  let displayDayAchievedStreak: StreakState = INITIAL_STREAK_STATE;
+  let displayDayAchievedStreak: DayAchievedStreakState = INITIAL_DAY_ACHIEVED_STREAK_STATE;
   let displayJournalStreak: StreakState = INITIAL_STREAK_STATE;
 
   const dayAchievedMilestonesAwarded = new Set<number>();
@@ -101,10 +111,11 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
   for (const day of allDays) {
     const isToday = day === todayKey;
     const dayAchievedToday = dayAchievedByDay.get(day) ?? false;
+    const dayPerfectToday = dayPerfectByDay.get(day) ?? false;
     const hasJournalToday = dayLogByDay.get(day)?.hasJournalText ?? false;
 
     // Streak SỐNG advance trước — để biết "vừa chạm mốc mới" trước khi gộp vào XP hôm nay.
-    liveDayAchievedStreak = advanceStreak(liveDayAchievedStreak, dayAchievedToday);
+    liveDayAchievedStreak = advanceDayAchievedStreak(liveDayAchievedStreak, dayAchievedToday, dayPerfectToday);
     liveJournalStreak = advanceStreak(liveJournalStreak, hasJournalToday);
 
     const sessionsToday = sessionsByDay.get(day) ?? [];
@@ -204,7 +215,7 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
 
     // Chuỗi HIỂN THỊ — chỉ advance nếu đây không phải hôm nay (§4.6: tính tới hết hôm qua).
     if (!isToday) {
-      displayDayAchievedStreak = advanceStreak(displayDayAchievedStreak, dayAchievedToday);
+      displayDayAchievedStreak = advanceDayAchievedStreak(displayDayAchievedStreak, dayAchievedToday, dayPerfectToday);
       displayJournalStreak = advanceStreak(displayJournalStreak, hasJournalToday);
     }
   }

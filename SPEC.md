@@ -209,8 +209,17 @@ Còn nếu tôi làm hết cả 3 việc pomodoro thì là **10 phiên = 4 giờ
 
 Hai chuỗi chạy **song song, hoàn toàn độc lập** — gãy chuỗi này không được đụng chuỗi kia: **[CHỐT]**
 
-- **Chuỗi ngày-đạt** — đếm theo luật 4.5. **Chuỗi tính tới hết hôm qua.** Hôm nay chưa đạt thì con số vẫn đứng nguyên; hết ngày mà không đạt thì **sáng hôm sau về 0**. **[CHỐT — 2026-09-02]**
-- **Chuỗi nhật ký** — chỉ cần tôi có viết, không cần đạt cả ngày.
+- **Chuỗi ngày-đạt** — đếm theo luật 4.5. **Chuỗi tính tới hết hôm qua.** Hôm nay chưa đạt thì con số vẫn đứng nguyên. ~~hết ngày mà không đạt thì sáng hôm sau về 0~~ **[SỬA — 2026-09-04, xem "Một ngày ân hạn" ngay dưới đây — không còn về 0 ngay, có ân hạn 1 ngày trước khi gãy thật]**. *(Luật gốc chốt 2026-09-02, xem §11.2 R5 — đổi ở đây, không sửa lại sổ quyết định.)*
+- **Chuỗi nhật ký** — chỉ cần tôi có viết, không cần đạt cả ngày. **Không có ân hạn** — bỏ viết 1 ngày là về 0 ngay, đúng luật gốc, không đổi. **[CHỐT — 2026-09-04]**
+
+**Một ngày ân hạn cho chuỗi ngày-đạt — [CHỐT — 2026-09-04].** Bỏ lỡ đúng 1 ngày không làm chuỗi mất ngay — số hiện tại đứng yên, chuyển sang trạng thái **"nguy hiểm"** (hiện bằng đổi màu badge góc màn hình, không cần thêm chữ). Đúng NGÀY KẾ TIẾP là cơ hội duy nhất để cứu:
+
+- Ngày đó đạt **TRỌN VẸN CẢ 6 việc** (không phải ngưỡng "đạt" thường theo thứ ở 4.5 — kể cả Chủ nhật cũng cần đủ 6, không có ngoại lệ) → chuỗi **nối tiếp như chưa từng bỏ**: ngày bỏ không tính, không xoá; ngày cứu tính +1 bình thường.
+- Ngày đó KHÔNG đủ 6/6 (kể cả nếu vẫn đủ ngưỡng "đạt" thường) → **gãy thật**, về 0 ngay lúc đó.
+
+Chỉ đúng **một** ngày ân hạn — không phải "ân hạn dây chuyền": đang ở trạng thái nguy hiểm mà ngày cứu cũng bỏ luôn thì gãy thật ngay, không lùi thêm hạn nữa. Chưa có chuỗi nào (đang ở 0) thì bỏ 1 ngày không cần ân hạn gì — vẫn đứng yên tại 0 như cũ.
+
+*Câu chữ lúc gãy thật, giọng "hờn dỗi dễ thương" — chủ dự án duyệt trực tiếp ngày 2026-09-04:* **"Okay. {n} days, gone. We're not talking about it."** — đây là câu trách móc ĐẦU TIÊN trong app (§4.12, R3).
 
 **Gãy chuỗi không mất gì** — không mất XP, không mất đồ, không mất cấp. Số hiện tại về 0, **số dài nhất giữ vĩnh viễn**. Hiện hai con số song song. **[CHỐT]**
 
@@ -627,7 +636,7 @@ Stack: **Next.js + TypeScript, Postgres, react-three-fiber, deploy Vercel** — 
 | R2 | Con số trừ XP | Bắt đầu sau **3 ngày**, **−20 XP/ngày**, **có tụt cấp**, **có mất đồ** | 4.1 · *còn S3* |
 | R3 | Phạm vi trách móc | **Được trách hết** — gỡ mọi câu cấm chữ tiêu cực ở 4.9 và 4.12 | 4.9 · 4.12 · *còn S5* |
 | R4 | Ngưỡng Deep work | **2 → 4 phiên** | 4.5 · *nửa sau thành S2* |
-| R5 | Chuỗi | Tính tới hết hôm qua; hôm nay không đạt thì **sáng mai về 0** | 4.6 |
+| R5 | Chuỗi | Tính tới hết hôm qua; hôm nay không đạt thì **sáng mai về 0** | 4.6 · *phần "về 0 ngay" sửa lại 2026-09-04, xem "Một ngày ân hạn" ở 4.6* |
 | R6 | Phiên bỏ quên | **Tự dừng khi đủ thời lượng**, không có hạn quay lại | 4.3 |
 | R7 | Chương 12 | **26 tỉ VNĐ**, bỏ ý USD — *(đảo lại câu Q31)* | 4.9 |
 | R8 | Tương quan tuần | 6 cặp cố định · cần ≥ 14 ngày · không đủ thì im lặng | 5.2 |

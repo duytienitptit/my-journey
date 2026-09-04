@@ -85,6 +85,27 @@ function achievedDayFixture(dayKey: DayKey): {
   return { sessions, habitEntries, dayLog };
 }
 
+/** TRỌN VẸN cả 6 việc, bất kể thứ mấy — khác `achievedDayFixture` (rẻ nhất theo thứ). Dùng để
+ *  "cứu" chuỗi ngày-đạt sau 1 ngày ân hạn (§4.6, [CHỐT — 2026-09-04]). */
+function perfectDayFixture(dayKey: DayKey): {
+  sessions: RawCompletedSession[];
+  habitEntries: RawHabitEntry[];
+  dayLog: RawDayLog;
+} {
+  return {
+    sessions: [
+      ...Array.from({ length: 4 }, () => ({ dayKey, labelId: ENGLISH_ID })),
+      ...Array.from({ length: 4 }, () => ({ dayKey, labelId: DEEP_WORK_ID })),
+      ...Array.from({ length: 2 }, () => ({ dayKey, labelId: NEW_KNOWLEDGE_ID })),
+    ],
+    habitEntries: [
+      { dayKey, habitId: SPORT_ID, score: 4, done: null },
+      { dayKey, habitId: SLEEP_ID, score: 4, done: null },
+    ],
+    dayLog: { dayKey, hasJournalText: true, closedAtMs: null },
+  };
+}
+
 /** Gộp nhiều `achievedDayFixture` liên tiếp thành một `EngineRawData`. */
 function rawFromAchievedRange(startKey: DayKey, endKey: DayKey): EngineRawData {
   const days = enumerateDayKeys(startKey, endKey);
@@ -116,7 +137,7 @@ describe("core/engine/timeline — nền tảng", () => {
     expect(result.xpByStat).toEqual({ mind: 0, health: 0, spirit: 0 });
     expect(result.levelByStat).toEqual({ mind: 0, health: 0, spirit: 0 });
     expect(result.stage).toBe(1);
-    expect(result.dayAchievedStreak).toEqual({ current: 0, longest: 0 });
+    expect(result.dayAchievedStreak).toEqual({ current: 0, longest: 0, danger: false });
     expect(result.journalStreak).toEqual({ current: 0, longest: 0 });
   });
 });
@@ -216,15 +237,76 @@ describe("core/engine/timeline — chuỗi ngày-đạt: hiển thị tính tớ
     expect(result.dayAchievedStreak.current).toBe(3); // 3 ngày (START..day3) đã tính, day4 (hôm nay) chưa
   });
 
-  it("gãy chuỗi — hôm nay không đạt, hôm qua có → sáng nay hiển thị về 0", () => {
-    const day3 = addDays(START, 2); // đạt 3 ngày: START, +1, +2
+});
+
+describe("core/engine/timeline — chuỗi ngày-đạt: MỘT NGÀY ÂN HẠN trước khi gãy thật (§4.6, [CHỐT — 2026-09-04])", () => {
+  it("bỏ 1 ngày sau khi đã có chuỗi → vào 'nguy hiểm', số hiện tại CHƯA mất", () => {
+    const day3 = addDays(START, 2); // đạt 3 ngày liên tiếp: START, +1, +2 → current=3
+    const missDay = addDays(START, 3); // Thứ Năm — không có dữ liệu gì, bỏ hẳn
     const raw = rawFromAchievedRange(START, day3);
-    // Ngày thứ 4 (addDays(START,3)) không có dữ liệu đạt gì — coi như "hôm nay" của nó chưa
-    // làm gì. Sáng ngày kế (day5) mới thấy chuỗi về 0, vì hiển thị tính tới hết hôm qua.
-    const day5 = addDays(START, 4);
-    const result = foldTimeline(raw, endOfDayMs(day5));
-    expect(result.dayAchievedStreak.current).toBe(0);
-    expect(result.dayAchievedStreak.longest).toBe(3); // số dài nhất giữ vĩnh viễn
+    // Đánh giá ở ngày KẾ TIẾP missDay, để missDay đã "chốt" (không còn là hôm nay của phép tính).
+    const dayAfterMiss = addDays(missDay, 1);
+    const result = foldTimeline(raw, endOfDayMs(dayAfterMiss));
+    expect(result.dayAchievedStreak).toEqual({ current: 3, longest: 3, danger: true });
+  });
+
+  it("cứu được — ngày kế tiếp đủ CẢ 6 việc (không chỉ ngưỡng 'đạt' thường) → nối tiếp như chưa từng bỏ", () => {
+    const day3 = addDays(START, 2);
+    const missDay = addDays(START, 3); // Thứ Năm, bỏ hẳn → vào nguy hiểm
+    const rescueDay = addDays(missDay, 1); // Thứ Sáu, TRỌN VẸN 6/6 → cứu
+    const base = rawFromAchievedRange(START, day3);
+    const rescue = perfectDayFixture(rescueDay);
+    const raw: EngineRawData = {
+      ...base,
+      completedSessions: [...base.completedSessions, ...rescue.sessions],
+      habitEntries: [...base.habitEntries, ...rescue.habitEntries],
+      dayLogs: [...base.dayLogs, rescue.dayLog],
+    };
+    // Đánh giá ở ngày SAU rescueDay, để rescueDay đã chốt.
+    const result = foldTimeline(raw, endOfDayMs(addDays(rescueDay, 1)));
+    // Ngày bỏ không tính (+0), ngày cứu tính +1 bình thường — 3 → 4, y hệt không hề gián đoạn.
+    expect(result.dayAchievedStreak).toEqual({ current: 4, longest: 4, danger: false });
+  });
+
+  it("không cứu được — ngày kế tiếp KHÔNG đủ 6/6 (kể cả nếu vẫn đạt ngưỡng thường) → gãy thật, về 0", () => {
+    const day3 = addDays(START, 2);
+    const missDay = addDays(START, 3); // Thứ Năm, bỏ hẳn → vào nguy hiểm
+    const notEnoughDay = addDays(missDay, 1); // Thứ Sáu — chỉ đạt NGƯỠNG THƯỜNG (4/6), không đủ 6/6
+    const base = rawFromAchievedRange(START, day3);
+    const cheap = achievedDayFixture(notEnoughDay); // "rẻ nhất" — không đụng English/Deep work
+    const raw: EngineRawData = {
+      ...base,
+      completedSessions: [...base.completedSessions, ...cheap.sessions],
+      habitEntries: [...base.habitEntries, ...cheap.habitEntries],
+      dayLogs: [...base.dayLogs, cheap.dayLog],
+    };
+    const result = foldTimeline(raw, endOfDayMs(addDays(notEnoughDay, 1)));
+    expect(result.dayAchievedStreak).toEqual({ current: 0, longest: 3, danger: false });
+  });
+
+  it("chưa có chuỗi nào (current=0) mà bỏ 1 ngày — KHÔNG vào nguy hiểm, không có gì để cứu", () => {
+    const raw = emptyRaw(START); // không có bản ghi nào — bỏ luôn từ đầu
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 1)));
+    expect(result.dayAchievedStreak).toEqual({ current: 0, longest: 0, danger: false });
+  });
+
+  it("đang nguy hiểm mà ngày cứu CŨNG bỏ luôn (không chỉ thiếu điểm) — gãy thật ngay, không lùi thêm hạn", () => {
+    const day3 = addDays(START, 2);
+    const missDay = addDays(START, 3); // vào nguy hiểm
+    const alsoMissDay = addDays(missDay, 1); // bỏ tiếp, không có gì cả — không phải "ân hạn dây chuyền"
+    const raw = rawFromAchievedRange(START, day3);
+    const result = foldTimeline(raw, endOfDayMs(addDays(alsoMissDay, 1)));
+    expect(result.dayAchievedStreak).toEqual({ current: 0, longest: 3, danger: false });
+  });
+
+  it("chuỗi nhật ký KHÔNG có ân hạn — bỏ viết 1 ngày là về 0 ngay, đúng luật cũ", () => {
+    // 7 ngày chỉ viết nhật ký (không làm gì khác) để dựng chuỗi nhật ký thuần, không đụng chuỗi ngày-đạt.
+    const raw = emptyRaw(START);
+    const days = enumerateDayKeys(START, addDays(START, 2));
+    raw.dayLogs = days.map((d) => ({ dayKey: d, hasJournalText: true, closedAtMs: null }));
+    const missDay = addDays(START, 3); // không viết — chuỗi nhật ký phải gãy ngay, không ân hạn
+    const result = foldTimeline(raw, endOfDayMs(addDays(missDay, 1)));
+    expect(result.journalStreak).toEqual({ current: 0, longest: 3 }); // vẫn StreakInfo trơn, không có "danger"
   });
 });
 
