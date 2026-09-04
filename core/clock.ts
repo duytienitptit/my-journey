@@ -11,11 +11,22 @@
  * cùng: trang, route API, hoặc test — lấy một mốc thời gian rồi truyền xuống.
  */
 
-let overrideMs: number | null = null;
+// Lưu vào `globalThis`, KHÔNG phải biến module-scope thường (`let overrideMs`) — bắt gặp lúc
+// soi mốc 4 (2026-09-04): route `/api/dev/clock` (Route Handler) và Server Action gọi từ client
+// (vd `getComputedStatsAction` sau khi bấm nút) hoá ra KHÔNG dùng chung một instance module của
+// chính file này dưới Next.js 16 + Turbopack — mỗi "đơn vị biên dịch" (route handler / server
+// action / page render) dường như tự nạp lại module riêng trong dev mode, nên `let overrideMs`
+// đặt ở route này không hề thấy được từ route/action khác. `globalThis` là object toàn cục THẬT
+// của tiến trình Node — không bị nhân bản theo module, dùng chung được xuyên suốt mọi ngữ cảnh
+// biên dịch. Đặt tên khoá dài, đặc thù để không đụng global nào khác.
+const OVERRIDE_KEY = "__myJourneyClockOverrideMs__";
+
+type GlobalWithOverride = typeof globalThis & { [OVERRIDE_KEY]?: number | null };
 
 /** Số mili-giây hiện tại (epoch UTC). Hàm DUY NHẤT được phép đọc đồng hồ thật. */
 export function now(): number {
-  return overrideMs ?? Date.now();
+  const override = (globalThis as GlobalWithOverride)[OVERRIDE_KEY];
+  return override ?? Date.now();
 }
 
 /**
@@ -23,5 +34,5 @@ export function now(): number {
  * Gọi lại với `null` để trả về đồng hồ thật.
  */
 export function setClockOverride(ms: number | null): void {
-  overrideMs = ms;
+  (globalThis as GlobalWithOverride)[OVERRIDE_KEY] = ms;
 }
