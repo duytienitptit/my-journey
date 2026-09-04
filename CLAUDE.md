@@ -18,9 +18,11 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Mốc 5 (tài sản + chương + nâng cấp nhà,
   SPEC.md §4.9): `core/engine/chapters.ts` (chương từ tổng tài sản, chương trung gian khi nhảy
   vọt, điều kiện "Trưởng thành" = Thanh niên + Chương 12) · `net_worth_entries`/`chapter_events`
-  nối thật qua `db/queries.ts` + `app/actions/assets.ts` · nút "Add net worth" kín đáo góc màn
-  chính (`components/assets/NetWorthControl.tsx`) — ẩn/hiện số lưu vào `profile.hide_money`,
-  xác nhận sống sót qua tải lại trang. **5 vỏ nhà gốc theo chương** (`components/room/shells/`)
+  nối thật qua `db/queries.ts` + `app/actions/assets.ts` · số tài sản **[SỬA — 2026-09-05]**
+  giờ LUÔN HIỆN, đặt nổi bật giữa màn hình chính (`components/assets/NetWorthControl.tsx`,
+  `profile.hide_money` đổi mặc định `false`) — chủ dự án tự dùng thử rồi đổi ý, không còn mặc
+  định làm mờ như bản đầu; đã sửa SPEC.md §4.9 cùng lúc, ghi rõ đây là ngoại lệ CÓ CHỦ Ý với
+  nguyên tắc 4 (§2). **5 vỏ nhà gốc theo chương** (`components/room/shells/`)
   dựng ĐỦ ngay trong lượt này (chủ dự án chọn, không hoãn): phòng trọ → phòng rộng/studio → căn
   hộ (thêm sofa/TV/bếp) → căn hộ cao tầng (skyline thủ công, không tải model) → nhà phố (cầu
   thang trang trí) → nhà có sân/vườn (Kenney Nature Kit) — camera + sương mù co giãn theo cỡ

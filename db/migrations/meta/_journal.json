@@ -15,6 +15,13 @@
       "when": 1788548604605,
       "tag": "0001_left_ultimates",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1788549694910,
+      "tag": "0002_funny_lilandra",
+      "breakpoints": true
     }
   ]
 }

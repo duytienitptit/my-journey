@@ -103,8 +103,14 @@ export function TimerOverlay({
             )}
           </div>
 
-          <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
+          <div className="pointer-events-auto absolute right-4 top-4">
             <BackfillButton labels={labels} onBackfill={backfill} />
+          </div>
+
+          {/* Tài sản — GIỮA màn hình, nổi bật (SPEC.md §4.9, [SỬA — 2026-09-05]) — ngoại lệ CÓ
+              CHỦ Ý với nguyên tắc 4 (§2), xem NetWorthControl.tsx. Đặt cao gần mép trên, tránh
+              đè lên nhân vật/đồ đạc bên dưới và cụm nhãn+Start ở đáy màn hình. */}
+          <div className="pointer-events-auto absolute left-1/2 top-4 -translate-x-1/2">
             <NetWorthControl netWorth={netWorth} hideMoney={hideMoney} onChanged={onNetWorthChanged} />
           </div>
         </>

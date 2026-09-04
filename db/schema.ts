@@ -50,8 +50,9 @@ export const profile = pgTable("profile", {
   displayName: text("display_name").notNull(),
   avatarConfig: jsonb("avatar_config").notNull().default({}),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull(),
-  /** Số tài sản mặc định làm mờ (§4.9) — mặc định true, đúng "mặc định làm mờ". */
-  hideMoney: boolean("hide_money").notNull().default(true),
+  /** Mặc định HIỆN (false) — đổi ngày 2026-09-05 (§4.9, SPEC.md): chủ dự án muốn thấy tài sản
+   *  ngay, không cần bấm. Vẫn có nút ẩn nếu muốn, chỉ đổi mặc định. */
+  hideMoney: boolean("hide_money").notNull().default(false),
 });
 
 // ─── labels — nhãn pomodoro, SPEC.md §4.2 ────────────────────────────────

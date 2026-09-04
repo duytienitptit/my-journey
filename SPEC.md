@@ -324,7 +324,7 @@ Tôi nhập tổng tài sản từ hai nguồn: **chứng khoán** và **vàng**
 
 **Mỗi lần tôi chạm một chương mới lần đầu tiên, ghi lại thành một sự kiện có thật trong dữ liệu** (ngày giờ, ảnh chụp trạng thái). **Đừng tính lại bằng `max()` mỗi lần đọc** — thư viện hành trình cần đọc được "tôi lên Chương 3 vào ngày nào". **[CHỐT — bản cũ sai chỗ này]**
 
-**Số tài sản mặc định làm mờ**, tôi bấm mới hiện. **Trạng thái ẩn/hiện phải lưu lại**, đừng để mất khi tải lại trang. **[CHỐT — bản cũ sai chỗ này]**
+~~Số tài sản mặc định làm mờ, tôi bấm mới hiện.~~ **[SỬA — 2026-09-05]** Đổi ý: **số tài sản LUÔN HIỆN, đặt nổi bật ở giữa màn hình chính** — tôi muốn biết ngay mình đang nghèo hay giàu mỗi lần mở app, không cần bấm gì cả. Đây là ngoại lệ CÓ CHỦ Ý với nguyên tắc 4 ở §2 ("thống kê không đập vào mặt") — chỉ áp cho MỘT con số này, vì chính nó là trục quyết định kích thước nhà (§1), không phải một biểu đồ phụ. Vẫn giữ nút ẩn đi nếu tôi muốn (một khoảnh khắc không muốn nhìn con số), nhưng mặc định là HIỆN. **Trạng thái ẩn/hiện phải lưu lại**, đừng để mất khi tải lại trang. **[CHỐT — 2026-09-05]**
 
 Mọi mốc chương ghi bằng **VNĐ**, kể cả chương 12 — **26.000.000.000 đ**, không quy đổi tỉ giá, không cần USD. **[CHỐT — 2026-09-02]**
 

@@ -1,0 +1,1 @@
+ALTER TABLE "profile" ALTER COLUMN "hide_money" SET DEFAULT false;
