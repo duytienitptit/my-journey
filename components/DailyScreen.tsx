@@ -5,6 +5,7 @@ import { EveningPanel } from "@/components/evening/EveningPanel";
 import { RoomScene, type TimeOfDay } from "@/components/room/RoomScene";
 import type { CharacterPose } from "@/components/room/Character";
 import { LevelUpToast } from "@/components/stats/LevelUpToast";
+import { StreakMilestoneToast } from "@/components/stats/StreakMilestoneToast";
 import { useComputedStats } from "@/components/stats/useComputedStats";
 import type { ComputedStats } from "@/app/actions/stats";
 import { TimerOverlay, type TimerLabel } from "@/components/timer/TimerOverlay";
@@ -38,7 +39,7 @@ export function DailyScreen({
   initialEveningData,
   initialStats,
 }: Props) {
-  const { stats, refresh: refreshStats, levelUpNotice } = useComputedStats(initialStats);
+  const { stats, refresh: refreshStats, levelUpNotice, streakMilestoneNotice } = useComputedStats(initialStats);
 
   const timer = useSessionTimer({
     initialActiveSession,
@@ -98,6 +99,7 @@ export function DailyScreen({
       <div className="relative h-svh w-full">
         <TimerOverlay {...timer} labels={labels} dayAchievedStreak={stats.dayAchievedStreak} />
         <LevelUpToast notice={levelUpNotice} />
+        <StreakMilestoneToast notice={streakMilestoneNotice} />
       </div>
 
       {/* Nghi thức tối — cuộn tới là gặp. `relative` BẮT BUỘC phải có ở đây, không chỉ
