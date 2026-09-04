@@ -14,15 +14,21 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. **Mốc 4 (chuỗi + mốc thưởng + ngày "đạt")
-  gần xong**, chỉ còn đúng MỘT việc: engine (`core/engine/streaks.ts`, `dayAchievedStreak` trong
-  `foldTimeline`) đã có sẵn từ mốc 3; đã nối chuỗi ngày-đạt hiện ở góc màn chính (`🔥{current}`,
-  chỉ hiện khi > 0, số dài nhất xem qua hover) và ăn mừng lúc chạm mốc 7/30/100/365
-  (`StreakMilestoneToast.tsx`, cùng khuôn `LevelUpToast`) — cả hai đã xác nhận trực tiếp trên
-  trình duyệt bằng dữ liệu giả. **Còn thiếu:** câu chữ trách móc thật lúc GÃY chuỗi (§4.12, R3)
-  — CHƯA viết dòng nào, **đang chờ chủ dự án duyệt câu chữ** trước khi viết (đã hỏi, chưa có câu
-  trả lời) — đây là việc DUY NHẤT còn lại để đóng mốc 4.
+- Giai đoạn: **xong mốc 1, 2, 3, 4**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Mốc 4 (chuỗi + mốc thưởng + ngày "đạt"):
+  chuỗi ngày-đạt hiện ở góc màn chính (`🔥{current}`, chỉ hiện khi > 0, số dài nhất xem qua
+  hover, đổi màu cam khi "nguy hiểm"), ăn mừng lúc chạm mốc 7/30/100/365
+  (`StreakMilestoneToast.tsx`), và **câu trách móc THẬT ĐẦU TIÊN trong app** (§4.12, R3, chủ dự
+  án tự duyệt câu chữ ngày 2026-09-04): *"Okay. {n} days, gone. We're not talking about it."*
+  lúc chuỗi gãy thật (`StreakBrokenToast.tsx`). Kèm luật mới **một ngày ân hạn** trước khi gãy
+  thật (bỏ 1 ngày → "nguy hiểm", số giữ nguyên; hôm sau đủ TRỌN VẸN 6/6 thì cứu được, không đủ
+  thì gãy) — đổi luật [CHỐT] cũ ở §4.6/R5, đã hỏi rõ 3 nhánh trước khi code, đã sửa SPEC.md cùng
+  lúc. **Tiếp theo: mốc 5** (tài sản + chương + nâng cấp nhà).
+- **Phát hiện đáng nhớ lúc soi mốc 4:** công cụ tua thời gian (§8.3) từng không tới được Server
+  Action dưới Next.js 16 + Turbopack (route và action không share module instance của
+  `core/clock.ts` trong dev mode) — đã sửa bằng cách lưu override vào `globalThis` thay vì biến
+  module thường. Ảnh hưởng mọi lần verify trước đây theo kiểu "tua rồi bấm nút mà không tải lại
+  trang" (khác kiểu "tua rồi tải lại cả trang" ở mốc 3, không bị ảnh hưởng).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
