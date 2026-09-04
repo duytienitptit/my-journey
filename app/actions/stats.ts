@@ -3,6 +3,7 @@
 import { now } from "@/core/clock";
 import { unlockedRoomItems, type RoomItemCatalogEntry } from "@/core/engine/room";
 import { foldTimeline } from "@/core/engine/timeline";
+import type { StreakInfo } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
 import { getEngineRawData, getRoomItemsCatalog } from "@/db/queries";
 
@@ -10,6 +11,8 @@ export type ComputedStats = {
   levelByStat: Record<StatKey, number>;
   stage: number;
   unlockedItems: RoomItemCatalogEntry[];
+  /** Chuỗi ngày-đạt, tính TỚI HẾT HÔM QUA (§4.6/R5) — hiện ở góc màn chính (§5.1), mốc 4. */
+  dayAchievedStreak: StreakInfo;
 };
 
 /**
@@ -23,5 +26,6 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
     levelByStat: result.levelByStat,
     stage: result.stage,
     unlockedItems: unlockedRoomItems(catalog, result.levelByStat),
+    dayAchievedStreak: result.dayAchievedStreak,
   };
 }

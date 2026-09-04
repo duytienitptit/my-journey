@@ -14,9 +14,15 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2 và 3**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Tiếp theo là **mốc 4** (chuỗi + mốc thưởng
-  + ngày "đạt") — mốc này cần chủ dự án duyệt câu chữ trách móc trước khi đưa vào (§4.12, R3).
+- Giai đoạn: **xong mốc 1, 2, 3**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. **Mốc 4 (chuỗi + mốc thưởng + ngày "đạt")
+  gần xong**: phần engine (`core/engine/streaks.ts`, `dayAchievedStreak` trong `foldTimeline`)
+  đã có sẵn từ mốc 3; đã nối chuỗi ngày-đạt hiện ở góc màn chính (`🔥{current}`, chỉ hiện khi
+  > 0, số dài nhất xem qua hover) — xác nhận trực tiếp bằng dữ liệu giả 7 ngày liên tục qua
+  trình duyệt. **Còn thiếu:** câu chữ trách móc thật (§4.12, R3) — CHƯA viết dòng nào, đang chờ
+  chủ dự án duyệt câu chữ trước; và mốc chuỗi 7/30/100/365 (`STREAK_DAY_ACHIEVED_MILESTONES` đã
+  có trong `balance.ts`, đã tính XP trong `foldTimeline`, nhưng chưa có UI ăn mừng riêng lúc
+  chạm mốc — hiện chỉ cộng XP âm thầm, không có thông báo nào).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi

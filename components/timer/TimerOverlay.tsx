@@ -1,6 +1,7 @@
 "use client";
 
 import { DAILY_SESSION_GOAL_DEFAULT } from "@/core/balance";
+import type { StreakInfo } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
 import { BackfillButton } from "./BackfillButton";
 import { CircularProgress } from "./CircularProgress";
@@ -18,7 +19,11 @@ function formatClock(totalSeconds: number): string {
 // Nhận state từ useSessionTimer() qua props thay vì tự gọi hook — DailyScreen là nơi DUY NHẤT
 // gọi useSessionTimer(), vì RoomScene cũng cần đọc "pose" từ cùng một trạng thái đó. Gọi hook
 // ở cả hai nơi sẽ tạo hai bản sao độc lập cùng ghi/đọc một phiên trong DB — dễ lệch nhau.
-type Props = ReturnType<typeof useSessionTimer> & { labels: readonly TimerLabel[] };
+type Props = ReturnType<typeof useSessionTimer> & {
+  labels: readonly TimerLabel[];
+  /** Chuỗi ngày-đạt, TỚI HẾT HÔM QUA (§4.6/R5) — mốc 4. */
+  dayAchievedStreak: StreakInfo;
+};
 
 export function TimerOverlay({
   labels,
@@ -32,6 +37,7 @@ export function TimerOverlay({
   start,
   abandon,
   backfill,
+  dayAchievedStreak,
 }: Props) {
   const activeLabel = labels.find((l) => l.id === (running?.labelId ?? selectedLabelId)) ?? labels[0];
   const goalProgress = todaySessions.length / DAILY_SESSION_GOAL_DEFAULT;
@@ -43,9 +49,23 @@ export function TimerOverlay({
           nguyên tắc 1 (§2) "tĩnh ở chỗ tập trung". */}
       {!running && (
         <>
-          {/* Duy nhất một chỗ được hiện thống kê ban ngày: dải chấm phiên hôm nay. Chuỗi ngày
-              hiện tại chờ mốc 4 (cần lịch sử nhiều ngày). */}
+          {/* Duy nhất một chỗ được hiện thống kê ban ngày (§5.1): chuỗi ngày-đạt + dải chấm
+              phiên hôm nay. Chuỗi chỉ hiện SỐ (🔥 + con số), không kèm chữ nào — mốc 4 chưa có
+              câu chữ "trách móc" nào được duyệt (§4.12/R3), nên chỗ này cố ý không cần chữ để
+              không phải chờ duyệt. Chỉ hiện khi current > 0 — chuỗi 0 để im lặng, không có số
+              0 nào đập vào mắt lúc mới gãy hoặc chưa từng có. Số dài nhất xem qua title (hover). */}
           <div className="pointer-events-auto absolute left-4 top-4 flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
+            {dayAchievedStreak.current > 0 && (
+              <>
+                <span
+                  className="flex items-center gap-0.5 px-1 text-sm font-semibold text-foreground/70"
+                  title={`Longest day-streak: ${dayAchievedStreak.longest}`}
+                >
+                  🔥{dayAchievedStreak.current}
+                </span>
+                <span className="h-4 w-px bg-foreground/15" />
+              </>
+            )}
             {todaySessions.length === 0 ? (
               <span className="px-1 text-sm text-foreground/50">No sessions yet today</span>
             ) : (

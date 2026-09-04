@@ -96,7 +96,7 @@ export function DailyScreen({
 
       {/* Khung nhìn đầu — cao đúng một màn hình, đồng hồ nổi ở đây. */}
       <div className="relative h-svh w-full">
-        <TimerOverlay {...timer} labels={labels} />
+        <TimerOverlay {...timer} labels={labels} dayAchievedStreak={stats.dayAchievedStreak} />
         <LevelUpToast notice={levelUpNotice} />
       </div>
 
