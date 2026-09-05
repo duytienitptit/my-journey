@@ -98,14 +98,14 @@ export function NetWorthControl({ netWorth, hideMoney, onChanged }: Props) {
       <button
         onClick={() => setEditing(true)}
         title="Update net worth"
-        className="rounded-full bg-surface/80 px-6 py-3 shadow-md backdrop-blur transition-transform hover:scale-[1.02] active:scale-95"
+        className="rounded-full bg-surface/80 px-4 py-2 shadow-md backdrop-blur transition-transform hover:scale-[1.02] active:scale-95"
       >
         {netWorth === null ? (
-          <span className="text-lg font-medium text-foreground/50">Add net worth</span>
+          <span className="text-base font-medium text-foreground/50">Add net worth</span>
         ) : hideMoney ? (
-          <span className="text-3xl font-bold tracking-tight text-foreground/80 sm:text-4xl">•••••• ₫</span>
+          <span className="text-xl font-bold tracking-tight text-foreground/80 sm:text-2xl">•••••• ₫</span>
         ) : (
-          <span className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">
+          <span className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
             {formatVnd(netWorth.totalVnd)}
           </span>
         )}
