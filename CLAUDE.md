@@ -33,6 +33,17 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   Xác nhận bằng mắt qua trình duyệt + DB thật: viết/sửa đúc kết tuần (xác nhận `created_at`
   KHÔNG đổi khi sửa — tránh dời ngày tính XP), seed dữ liệu 20 ngày ngoài tuần hiện tại để xác
   nhận câu tương quan hiện đúng rồi xoá sạch.
+- **Ô đúc kết tuần thêm 4 câu hỏi cố định [THÊM — 2026-09-05]** — chủ dự án xem bản một-ô-trắng
+  xong, muốn thêm câu hỏi và gộp lại đúng cơ chế nhật ký hằng ngày (mỗi câu một ô, gộp chung
+  xuống MỘT trường `week_reviews.text`, không đổi DB). Tách thuật toán gộp/tách dùng chung ra
+  `core/qaCompose.ts` (trước nằm cứng trong `journalCompose.ts`) — `journalCompose.ts` giờ chỉ
+  còn câu hỏi + hàm mỏng gọi `qaCompose`, `core/weekReviewCompose.ts` (MỚI) làm y hệt cho 4 câu
+  hỏi tuần, giữ nguyên câu gốc ("What stood out...") làm câu đầu vì chủ dự án khen tốt cho tinh
+  thần. `WeekReviewCard.tsx` dựng lại theo đúng khuôn `JournalCard.tsx`. 5 test mới xác nhận
+  round-trip + không lẫn lộn giữa hai bộ câu hỏi (tổng 254 test). Bẫy công cụ lúc QA: pane trình
+  duyệt ẩn khiến `computer` click+type thất bại ÂM THẦM (không báo lỗi, chỉ không gõ được chữ) —
+  chuyển sang `form_input` (gán giá trị thẳng qua DOM ref) mới thành công; luôn xác nhận bằng
+  `javascript_tool` đọc `textarea.value` thật thay vì tin chắc thao tác click/type đã tới đích.
 - **Tiếp theo: mốc 7** (thư viện hành trình + kho lưu trữ + hôm nay năm ngoái + xuất dữ liệu tự động hằng tuần).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB

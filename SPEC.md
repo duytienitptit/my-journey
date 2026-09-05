@@ -433,7 +433,18 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
     logic. Xem `core/engine/correlations.ts`.
 - Bao nhiêu phần trăm phiên là ghi bù.
 - **Trích lại vài dòng tôi đã viết trong tuần** — thường đây mới là thứ khiến tôi khựng lại.
-- Ô trắng để tôi đúc kết tuần.
+- Ô trắng để tôi đúc kết tuần. **[THÊM — 2026-09-05]** Sau khi xem bản đầu (một ô trắng, một câu
+  gợi ý), tôi muốn thêm — đúng cơ chế đã dùng cho nhật ký hằng ngày (§5.1): **4 câu hỏi cố định**
+  (không xoay vòng), mỗi câu một ô riêng, cộng một ô tự do — gộp chung xuống MỘT trường
+  `week_reviews.text` (không thêm cột/bảng), `core/weekReviewCompose.ts`. Bốn câu (giữ nguyên
+  câu gốc làm câu đầu — tôi thấy nó tốt cho tinh thần):
+  1. *"What stood out this week? What will you do differently next week?"*
+  2. *"What's a moment this week you're proud of, even a small one?"*
+  3. *"What pattern do you want to repeat — or break — next week?"*
+  4. *"Looking at Mind, Health, and Spirit this week, which one needs more of your attention next week?"*
+
+  Không có ngưỡng số từ tối thiểu như nhật ký (§5.1, `JOURNAL_MIN_WORDS`) — đúc kết tuần không bị
+  chặn cứng, viết ít hay nhiều đều lưu được.
 - Chỗ nhập tài sản (nếu tôi muốn — đừng ép). **[CHỐT — 2026-09-05]** Có ô nhập RIÊNG ở CẢ HAI màn
   hình (màn chính, mốc 5, và ở đây) — chủ dự án muốn màn tuần đóng luôn vai trò một lời nhắc nhẹ
   để cập nhật tài chính mỗi tuần, không chỉ xem lại số cũ.
