@@ -14,37 +14,29 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần)**, kế hoạch đã duyệt ngày 2026-09-02 — xem
   `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
-- **Mốc 6 (nhìn lại tuần, SPEC.md §5.2) — trang riêng đầu tiên ngoài `/`**: `app/week/page.tsx` +
-  `components/week/` (magazine-style, không phải bảng số liệu, đúng luật nghiệm thu). Ba hỏi
-  trước khi code (AskUserQuestion, vì spec §5.2 gốc chưa nói rõ): khung tương quan = **8 tuần
-  gần nhất (56 ngày, lăn)**, không phải toàn bộ lịch sử; nhiều cặp cùng đủ mẫu → chọn **|r| mạnh
-  nhất**, yếu hơn ngưỡng 0,3 thì im lặng dù đủ 14 ngày; ô nhập tài sản có ở **CẢ HAI** màn (chính
-  + tuần) — chủ dự án muốn màn tuần đóng vai lời nhắc cập nhật tài chính. Cả ba đã ghi vào
-  SPEC.md §5.2 cùng lúc.
-  Engine mới, đủ test: `core/engine/correlations.ts` (Pearson, 6 cặp cố định, chọn-mạnh-nhất-
-  vượt-ngưỡng) · `core/engine/weeklyStats.ts` (ba thanh chỉ số, tỉ lệ giữ thói quen TÁI DÙNG
-  đúng `isDailyTaskDone`, đường cong tâm trạng, % ghi bù). Mở rộng `RawCompletedSession`/
-  `RawDayLog` (`core/engine/types.ts`) thêm `source`/`mood`/`journalText` — vẫn MỘT hàm fetch
-  thô duy nhất (`getEngineRawData`) phục vụ cả `foldTimeline` lẫn hai module mới (§8.1). Viết
-  đúc kết tuần (+100 XP) và thưởng tuần trọn vẹn (+200) đã có SẴN từ mốc 3 trong `timeline.ts`,
-  chỉ chưa từng có UI ghi vào `week_reviews` — mốc 6 mới thật sự kích hoạt hai khoản này lần đầu.
-  Xác nhận bằng mắt qua trình duyệt + DB thật: viết/sửa đúc kết tuần (xác nhận `created_at`
-  KHÔNG đổi khi sửa — tránh dời ngày tính XP), seed dữ liệu 20 ngày ngoài tuần hiện tại để xác
-  nhận câu tương quan hiện đúng rồi xoá sạch.
-- **Ô đúc kết tuần thêm 4 câu hỏi cố định [THÊM — 2026-09-05]** — chủ dự án xem bản một-ô-trắng
-  xong, muốn thêm câu hỏi và gộp lại đúng cơ chế nhật ký hằng ngày (mỗi câu một ô, gộp chung
-  xuống MỘT trường `week_reviews.text`, không đổi DB). Tách thuật toán gộp/tách dùng chung ra
-  `core/qaCompose.ts` (trước nằm cứng trong `journalCompose.ts`) — `journalCompose.ts` giờ chỉ
-  còn câu hỏi + hàm mỏng gọi `qaCompose`, `core/weekReviewCompose.ts` (MỚI) làm y hệt cho 4 câu
-  hỏi tuần, giữ nguyên câu gốc ("What stood out...") làm câu đầu vì chủ dự án khen tốt cho tinh
-  thần. `WeekReviewCard.tsx` dựng lại theo đúng khuôn `JournalCard.tsx`. 5 test mới xác nhận
-  round-trip + không lẫn lộn giữa hai bộ câu hỏi (tổng 254 test). Bẫy công cụ lúc QA: pane trình
-  duyệt ẩn khiến `computer` click+type thất bại ÂM THẦM (không báo lỗi, chỉ không gõ được chữ) —
-  chuyển sang `form_input` (gán giá trị thẳng qua DOM ref) mới thành công; luôn xác nhận bằng
-  `javascript_tool` đọc `textarea.value` thật thay vì tin chắc thao tác click/type đã tới đích.
-- **Tiếp theo: mốc 7** (thư viện hành trình + kho lưu trữ + hôm nay năm ngoái + xuất dữ liệu tự động hằng tuần).
+- **Mốc 7 — CHỈ thư viện hành trình + kho lưu trữ, KHÔNG làm phần cron [SỬA PHẠM VI — 2026-09-05]**.
+  Chủ dự án chủ động bỏ qua "Vercel Cron xuất JSON hằng tuần" — app chưa deploy ở đâu cả (vẫn
+  local + GitHub-only), cron của Vercel không chạy/test được ở local dev, và sau khi tôi hỏi thẳng
+  thì chủ dự án nói thẳng "chưa cần làm mốc này" rồi quyết định chỉ giữ hai màn còn lại. **Đừng tự
+  ý dựng phần cron/backup tự động sau này** — đây là quyết định phạm vi, không phải việc quên.
+  - `app/library/page.tsx` (Thư viện hành trình, §5.4): `core/engine/journeyLibrary.ts`
+    (`buildChapterCards`, hàm thuần) — đọc lại `chapter_events` LẦN ĐẦU kể từ khi ghi ở mốc 5.
+    Chương 1 không có dòng trong `chapter_events` (cố ý, xem chapters.ts) → tự tổng hợp một "mốc
+    ảo" từ `profileStartedDayKey`. "Hình hài cuối chương" = gọi LẠI `foldTimeline` với `nowMs` =
+    cuối ngày cuối cùng chương đó còn sống (chương đang sống thì = hôm nay) — không lưu gì thêm,
+    đúng §8.1. Không dựng cảnh 3D thu nhỏ cho từng khung (mọi giai đoạn hiện dùng CHUNG một model
+    placeholder — cảnh riêng sẽ trông giống hệt nhau, vô nghĩa) — dùng chữ (`CHAPTER_NAMES` mới
+    trong `balance.ts`, dịch từ bảng đã [CHỐT] ở §4.9) thay cho hình.
+  - `app/archive/page.tsx` (Kho lưu trữ, §5.5): lọc theo ngày (input date thường) + **"hôm nay
+    năm ngoái"** (`core/day.ts` thêm `oneYearAgo`/`endOfDayMs`, có test riêng kể cả biên 29/2).
+  - 11 test mới cho `journeyLibrary.ts` + `day.ts` (tổng 265 test). QA bằng mắt qua trình duyệt +
+    seed tạm rồi xoá sạch — **suýt xoá nhầm dữ liệu THẬT của chủ dự án lần nữa** lúc dọn dẹp
+    (`delete from net_worth_entries;` không có `where`) — bắt kịp và khôi phục đúng giá trị cũ
+    trong cùng lượt, xem [[feedback-shared-dev-db-caution]] (đã cập nhật, đây là lần LẶP LẠI lỗi
+    đã ghi nhớ trước đó — cẩn thận hơn nữa ở các mốc sau).
+- **Tiếp theo:** phần cron/backup của mốc 7 gốc (nếu chủ dự án đổi ý) hoặc mốc 8 (cài đặt đầy đủ + đánh bóng).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
@@ -97,8 +89,16 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   đòi tới 26 tỉ (Chương 12) — sửa bằng `bigint`, migrate không mất dữ liệu cũ; (2) sương mù cảnh
   3D cố định không co theo camera lùi xa dần theo cỡ phòng — phòng lớn bị mờ trắng như lỗi
   render — sửa bằng co giãn `fogNear`/`fogFar` cùng hệ số camera.
+- Đã xong trong mốc 6 (nhìn lại tuần, SPEC.md §5.2): trang riêng đầu tiên ngoài `/`
+  (`app/week/page.tsx`) — ba thanh chỉ số, tỉ lệ giữ thói quen, đường cong tâm trạng, % ghi bù,
+  trích nhật ký, một câu tương quan (`core/engine/correlations.ts`, Pearson trên khung lăn 8 tuần,
+  chọn |r| mạnh nhất vượt ngưỡng 0,3), ô đúc kết tuần (`core/weekReviewCompose.ts`, 4 câu hỏi cố
+  định — thêm sau khi chủ dự án khen câu hỏi gốc, tách thuật toán gộp/tách dùng chung ra
+  `core/qaCompose.ts` để nhật ký hằng ngày và đúc kết tuần cùng dùng). Kích hoạt lần đầu hai
+  khoản thưởng (+100 viết đúc kết, +200 tuần trọn vẹn) đã có sẵn từ mốc 3 nhưng chưa từng có UI.
+  Mở rộng `RawCompletedSession`/`RawDayLog` thêm `source`/`mood`/`journalText`. 254 test.
 - **Bốn nguyên tắc kỹ thuật §8 đã có `core/day.ts`, `core/session.ts`, `core/summary.ts`,
-  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (249 test qua `npm test`),
+  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (265 test qua `npm test`),
   không đụng DB/React.**
 - Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, thẻ cho
   nhật ký, mốc chương trung gian, và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới

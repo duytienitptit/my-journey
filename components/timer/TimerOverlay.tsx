@@ -112,14 +112,21 @@ export function TimerOverlay({
 
           <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
             <BackfillButton labels={labels} onBackfill={backfill} />
-            {/* Lối vào duy nhất tới "Nhìn lại tuần" (SPEC.md §5.2, mốc 6) — chưa có thanh điều
-                hướng chung nào trong app, một liên kết nhỏ kín đáo là đủ cho mốc này. */}
-            <Link
-              href="/week"
-              className="rounded-full bg-surface/80 px-3 py-2 text-xs font-medium text-foreground/60 shadow-md backdrop-blur hover:text-foreground"
-            >
-              This week →
-            </Link>
+            {/* Lối vào 3 màn phụ (tuần, thư viện, kho lưu trữ — mốc 6/7) — chưa có thanh điều
+                hướng chung nào trong app, gộp chung một cụm nhỏ kín đáo là đủ cho tới giờ. */}
+            <div className="flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
+              <Link href="/week" className="text-xs font-medium text-foreground/60 hover:text-foreground">
+                This week
+              </Link>
+              <span className="h-3 w-px bg-foreground/15" />
+              <Link href="/library" className="text-xs font-medium text-foreground/60 hover:text-foreground">
+                Journey
+              </Link>
+              <span className="h-3 w-px bg-foreground/15" />
+              <Link href="/archive" className="text-xs font-medium text-foreground/60 hover:text-foreground">
+                Archive
+              </Link>
+            </div>
           </div>
 
           {/* Tài sản — GIỮA màn hình, nổi bật (SPEC.md §4.9, [SỬA — 2026-09-05]) — ngoại lệ CÓ

@@ -2,9 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   addDays,
   dayKeyOf,
+  endOfDayMs,
   enumerateDayKeys,
   isoWeekdayOf,
   mondayOf,
+  oneYearAgo,
   parseDayKey,
   startOfDayMs,
   weekOf,
@@ -171,5 +173,31 @@ describe("core/day — enumerateDayKeys", () => {
   it("so sánh chuỗi YYYY-MM-DD xếp đúng thứ tự thời gian (không cần hàm so sánh riêng)", () => {
     expect("2026-09-02" < "2026-09-10").toBe(true); // không bị lỗi so sánh "9" > "1" kiểu chuỗi tự do — nhờ số 0 đệm trước
     expect("2026-12-31" < "2027-01-01").toBe(true);
+  });
+});
+
+describe("core/day — endOfDayMs, đối xứng với startOfDayMs", () => {
+  it("đúng 1ms trước mốc bắt đầu của ngày hôm sau", () => {
+    const key = "2026-09-05" as DayKey;
+    expect(endOfDayMs(key)).toBe(startOfDayMs(addDays(key, 1)) - 1);
+  });
+
+  it("dayKeyOf(endOfDayMs(key)) quay lại đúng key ban đầu — còn trong ngày đó, chưa qua mốc 4h", () => {
+    const key = "2026-09-05" as DayKey;
+    expect(dayKeyOf(endOfDayMs(key))).toBe(key);
+  });
+});
+
+describe("core/day — oneYearAgo, SPEC.md §5.5 'hôm nay năm ngoái'", () => {
+  it("đúng ngày này năm trước, ngày thường", () => {
+    expect(oneYearAgo("2026-09-05" as DayKey)).toBe("2025-09-05");
+  });
+
+  it("qua năm mới vẫn đúng", () => {
+    expect(oneYearAgo("2027-01-01" as DayKey)).toBe("2026-01-01");
+  });
+
+  it("29/2 năm nhuận, năm trước không nhuận → cuộn sang 1/3 (ngữ nghĩa Date.UTC, hiếm gặp)", () => {
+    expect(oneYearAgo("2028-02-29" as DayKey)).toBe("2027-03-01");
   });
 });

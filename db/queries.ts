@@ -5,7 +5,7 @@
  * File này KHÔNG phải "hàm thuần" (đụng DB thật) nên không nằm trong `core/`. Nó gọi các hàm
  * thuần ở `core/` (dayKeyOf, isSessionComplete…) để tính toán, rồi mới đọc/ghi.
  */
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
@@ -448,4 +448,33 @@ export async function upsertWeekReview(weekStart: DayKey, text: string): Promise
     .insert(schema.weekReviews)
     .values({ weekStart, text, createdAt: new Date(now()) })
     .onConflictDoUpdate({ target: schema.weekReviews.weekStart, set: { text } });
+}
+
+// ─── chapter_events — thư viện hành trình, SPEC.md §5.4, dùng từ mốc 7 ────
+// Ghi ở mốc 5 (submitNetWorthEntry), ĐỌC LẠI lần đầu ở đây — xem core/engine/journeyLibrary.ts.
+
+export type ChapterEventRow = { chapterIndex: number; reachedAtDayKey: DayKey; snapshotTotalVnd: number };
+
+export async function listChapterEvents(): Promise<ChapterEventRow[]> {
+  const rows = await db
+    .select()
+    .from(schema.chapterEvents)
+    .orderBy(asc(schema.chapterEvents.chapterIndex));
+  return rows.map((r) => ({
+    chapterIndex: r.chapterIndex,
+    reachedAtDayKey: dayKeyOf(r.reachedAt.getTime()),
+    // snapshot lưu dạng jsonb tự do (§7) — đọc lại đúng hình dạng đã ghi ở submitNetWorthEntry.
+    snapshotTotalVnd: (r.snapshot as { totalVnd: number }).totalVnd,
+  }));
+}
+
+// ─── Kho lưu trữ — SPEC.md §5.5, dùng từ mốc 7 ────────────────────────────
+
+/** Mọi day_logs có CHỮ NHẬT KÝ trong khoảng [from, to] (hai đầu đều gồm), mới nhất trước. */
+export async function listDayLogsInRange(fromDayKey: DayKey, toDayKey: DayKey) {
+  return db
+    .select()
+    .from(schema.dayLogs)
+    .where(and(gte(schema.dayLogs.dayKey, fromDayKey), lte(schema.dayLogs.dayKey, toDayKey)))
+    .orderBy(desc(schema.dayLogs.dayKey));
 }

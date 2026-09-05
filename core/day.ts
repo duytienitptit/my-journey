@@ -87,6 +87,12 @@ export function startOfDayMs(key: DayKey): number {
   return Date.UTC(year, month - 1, day, DAY_BOUNDARY_HOUR - 7);
 }
 
+/** Mốc kết thúc (03:59:59.999 giờ Việt Nam hôm SAU) của một `DayKey`, dạng mili-giây epoch —
+ *  đối xứng với `startOfDayMs`, dùng khi cần "tính tới hết ngày X" (mốc 7, thư viện hành trình). */
+export function endOfDayMs(key: DayKey): number {
+  return startOfDayMs(addDays(key, 1)) - 1;
+}
+
 /** Phân rã một `DayKey` thành năm/tháng/ngày. Ném lỗi nếu không đúng định dạng `YYYY-MM-DD`. */
 export function parseDayKey(key: DayKey): { year: number; month: number; day: number } {
   if (!dayKeyPattern.test(key)) {
@@ -100,6 +106,16 @@ export function parseDayKey(key: DayKey): { year: number; month: number; day: nu
 export function addDays(key: DayKey, delta: number): DayKey {
   const { year, month, day } = parseDayKey(key);
   const shifted = new Date(Date.UTC(year, month - 1, day + delta, 12));
+  return formatDayKey(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+}
+
+/**
+ * Đúng ngày này NĂM TRƯỚC — SPEC.md §5.5 ("hôm nay năm ngoái"). 29/2 năm nhuận mà năm trước
+ * không nhuận thì tự cuộn sang 1/3 (đúng ngữ nghĩa `Date.UTC`, hiếm gặp, chấp nhận).
+ */
+export function oneYearAgo(key: DayKey): DayKey {
+  const { year, month, day } = parseDayKey(key);
+  const shifted = new Date(Date.UTC(year - 1, month - 1, day, 12));
   return formatDayKey(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
 }
 

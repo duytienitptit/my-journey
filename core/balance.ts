@@ -173,6 +173,26 @@ export const CHAPTER_NET_WORTH_THRESHOLDS_VND: readonly number[] = [
   26_000_000_000, // Ch.12 — "Trưởng thành"
 ];
 
+/**
+ * Tên chương để HIỂN THỊ (Thư viện hành trình, mốc 7, §5.4) — cùng chỉ số mảng với
+ * `CHAPTER_NET_WORTH_THRESHOLDS_VND` ở trên (chương n = phần tử n-1). Chữ hiển thị trong app
+ * bằng tiếng Anh (CLAUDE.md) — dịch trực tiếp từ tên tiếng Việt đã [CHỐT] ở SPEC.md §4.9.
+ */
+export const CHAPTER_NAMES: readonly string[] = [
+  "Small rented room", // Ch.1
+  "Rented room with a window", // Ch.2
+  "Spacious room with a desk", // Ch.3
+  "Studio", // Ch.4
+  "Studio with a balcony", // Ch.5
+  "1-bedroom apartment", // Ch.6
+  "2-bedroom apartment", // Ch.7
+  "High-rise apartment, city view", // Ch.8
+  "Small townhouse", // Ch.9
+  "House with a yard", // Ch.10
+  "House with a garden", // Ch.11
+  "Large house with a garden", // Ch.12 — "Trưởng thành"
+];
+
 // ─── §4.11 · Ghi bù ──────────────────────────────────────────────────────
 
 /** Nghi thức tối (thói quen, tâm trạng, nhật ký, đóng ngày): hôm nay hoặc hôm qua. */
