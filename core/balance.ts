@@ -191,6 +191,21 @@ export const ABSENCE_SOFTEN_AFTER_DAYS = 3;
 /** Cần ít nhất ngần này ngày có đủ dữ liệu cả hai vế mới được nói một câu tương quan; không đủ thì im lặng. */
 export const CORRELATION_MIN_SAMPLE_DAYS = 14;
 
+/**
+ * Khung thời gian tính tương quan — 8 tuần gần nhất, KHÔNG phải toàn bộ lịch sử [CHỐT —
+ * 2026-09-05]. Toàn bộ lịch sử càng lâu càng đứng yên (một khi đã đủ dữ liệu thì gần như không
+ * đổi qua các tuần), mất cảm giác "MỖI TUẦN" — chủ dự án chọn khung lăn 56 ngày để câu tương
+ * quan vẫn "sống", phản ánh giai đoạn gần đây.
+ */
+export const CORRELATION_WINDOW_DAYS = 56;
+
+/**
+ * Ngưỡng |hệ số tương quan Pearson| tối thiểu để coi là "đáng nói" — [CHỐT — 2026-09-05]. Cặp
+ * mạnh nhất trong 6 cặp cố định vẫn phải vượt ngưỡng này mới được nói; nếu tất cả đều yếu hơn
+ * thì im lặng hoàn toàn, không ép ra một câu tương quan gần như không có ý nghĩa gì.
+ */
+export const CORRELATION_MIN_STRENGTH = 0.3;
+
 // ─── Thang điểm dùng chung ───────────────────────────────────────────────
 
 /** Tâm trạng: 😢🙁😐🙂😁 = 1–5 (SPEC.md §5.1, đổi [CHỐT — 2026-09-03] — bản 😞😕😐🙂😄 cũ ở §11.2 Q18). */

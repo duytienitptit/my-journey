@@ -40,8 +40,8 @@ describe("core/engine/xp — xpEarnedForDay, từng nguồn riêng (§4.4)", () 
   it("hai phiên hoàn thành cùng nhãn → 2×30 vào đúng chỉ số của nhãn", () => {
     const input = baseInput({
       completedSessionsToday: [
-        { dayKey: DAY, labelId: 1 },
-        { dayKey: DAY, labelId: 1 },
+        { dayKey: DAY, labelId: 1, source: "timer" },
+        { dayKey: DAY, labelId: 1, source: "timer" },
       ],
     });
     expect(xpEarnedForDay(input).mind).toBe(60);
@@ -60,10 +60,10 @@ describe("core/engine/xp — xpEarnedForDay, từng nguồn riêng (§4.4)", () 
   it("nhãn đạt ngưỡng KHÔNG được +20 — chỉ thói quen mới có (§4.5 câu Q10)", () => {
     const input = baseInput({
       completedSessionsToday: [
-        { dayKey: DAY, labelId: 1 },
-        { dayKey: DAY, labelId: 1 },
-        { dayKey: DAY, labelId: 1 },
-        { dayKey: DAY, labelId: 1 },
+        { dayKey: DAY, labelId: 1, source: "timer" },
+        { dayKey: DAY, labelId: 1, source: "timer" },
+        { dayKey: DAY, labelId: 1, source: "timer" },
+        { dayKey: DAY, labelId: 1, source: "timer" },
       ],
     });
     // 4 phiên = 120 XP từ phiên, không có khoản +20 "giữ được" nào cộng thêm cho nhãn.
@@ -94,7 +94,7 @@ describe("core/engine/xp — xpEarnedForDay, từng nguồn riêng (§4.4)", () 
 
   it("cộng dồn nhiều nguồn cùng lúc — không có phép nhân/combo nào (§4.4)", () => {
     const input = baseInput({
-      completedSessionsToday: [{ dayKey: DAY, labelId: 1 }],
+      completedSessionsToday: [{ dayKey: DAY, labelId: 1, source: "timer" }],
       habitScoreByHabitId: new Map([[10, 5]]),
       hasJournalText: true,
       closedToday: true,

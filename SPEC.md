@@ -423,10 +423,20 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
   - Chỉ soi **6 cặp cố định**: thể thao↔tâm trạng · ngủ↔số phiên · nhật ký↔tâm trạng · số phiên↔tâm trạng · ngủ↔tâm trạng · thể thao↔số phiên.
   - Cần **≥ 14 ngày** có dữ liệu cả hai vế mới được nói.
   - Không đủ thì **im lặng hoàn toàn** — không hiện gì, không bịa.
+  - **[CHỐT — 2026-09-05, chi tiết còn thiếu khi dựng mốc 6]** Ba điều bản 2026-09-02 chưa nói rõ:
+    (1) **Khung thời gian** tính hệ số tương quan = **8 tuần gần nhất (56 ngày, khung LĂN)**, không
+    phải toàn bộ lịch sử — để câu tương quan vẫn "sống" qua các tuần thay vì đứng yên mãi một khi
+    đã đủ dữ liệu; (2) khi nhiều cặp trong 6 cặp cùng đủ 14 ngày, **chọn cặp |hệ số tương quan
+    Pearson| LỚN NHẤT**; (3) cặp mạnh nhất đó vẫn phải vượt ngưỡng **|r| ≥ 0,3** mới được nói —
+    yếu hơn thì im lặng luôn dù đủ mẫu, không ép ra một câu gần như vô nghĩa. Cả ba số nằm trong
+    `core/balance.ts` (`CORRELATION_WINDOW_DAYS`, `CORRELATION_MIN_STRENGTH`), sửa được không đụng
+    logic. Xem `core/engine/correlations.ts`.
 - Bao nhiêu phần trăm phiên là ghi bù.
 - **Trích lại vài dòng tôi đã viết trong tuần** — thường đây mới là thứ khiến tôi khựng lại.
 - Ô trắng để tôi đúc kết tuần.
-- Chỗ nhập tài sản (nếu tôi muốn — đừng ép).
+- Chỗ nhập tài sản (nếu tôi muốn — đừng ép). **[CHỐT — 2026-09-05]** Có ô nhập RIÊNG ở CẢ HAI màn
+  hình (màn chính, mốc 5, và ở đây) — chủ dự án muốn màn tuần đóng luôn vai trò một lời nhắc nhẹ
+  để cập nhật tài chính mỗi tuần, không chỉ xem lại số cũ.
 
 ### 5.3 Căn phòng / ngôi nhà
 
@@ -657,7 +667,7 @@ Stack: **Next.js + TypeScript, Postgres, react-three-fiber, deploy Vercel** — 
 | R5 | Chuỗi | Tính tới hết hôm qua; hôm nay không đạt thì **sáng mai về 0** | 4.6 · *phần "về 0 ngay" sửa lại 2026-09-04, xem "Một ngày ân hạn" ở 4.6* |
 | R6 | Phiên bỏ quên | **Tự dừng khi đủ thời lượng**, không có hạn quay lại | 4.3 |
 | R7 | Chương 12 | **26 tỉ VNĐ**, bỏ ý USD — *(đảo lại câu Q31)* | 4.9 |
-| R8 | Tương quan tuần | 6 cặp cố định · cần ≥ 14 ngày · không đủ thì im lặng | 5.2 |
+| R8 | Tương quan tuần | 6 cặp cố định · cần ≥ 14 ngày · không đủ thì im lặng | 5.2 · *khung thời gian/cách chọn cặp/ngưỡng mạnh-yếu chốt thêm 2026-09-05, xem 5.2* |
 | R9 | Nghỉ dài | *(tôi chưa hiểu "4 phiên rồi nghỉ dài")* | *xem S4* |
 | R10 | Sport / Sleep | *"chỉ cần tích là coi như đạt"* — **đá vào 4.2 và câu Q2** | *xem S1* |
 

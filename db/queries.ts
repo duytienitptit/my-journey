@@ -307,7 +307,7 @@ export async function getEngineRawData(): Promise<EngineRawData> {
       db.select().from(schema.habits),
       db.select().from(schema.dailyTasks).where(eq(schema.dailyTasks.active, true)),
       db
-        .select({ dayKey: schema.sessions.dayKey, labelId: schema.sessions.labelId })
+        .select({ dayKey: schema.sessions.dayKey, labelId: schema.sessions.labelId, source: schema.sessions.source })
         .from(schema.sessions)
         .where(eq(schema.sessions.status, "completed")),
       db.select().from(schema.habitEntries),
@@ -323,7 +323,7 @@ export async function getEngineRawData(): Promise<EngineRawData> {
     labels: labelRows.map((l) => ({ id: l.id, stat: l.stat })),
     habits: habitRows.map((h) => ({ id: h.id, slug: h.slug, stat: h.stat, kind: h.kind })),
     dailyTasks: dailyTaskRows.map((t) => ({ refType: t.refType, refId: t.refId, threshold: t.threshold })),
-    completedSessions: sessionRows.map((s) => ({ dayKey: s.dayKey as DayKey, labelId: s.labelId })),
+    completedSessions: sessionRows.map((s) => ({ dayKey: s.dayKey as DayKey, labelId: s.labelId, source: s.source })),
     habitEntries: habitEntryRows.map((e) => ({
       dayKey: e.dayKey as DayKey,
       habitId: e.habitId,
@@ -334,6 +334,8 @@ export async function getEngineRawData(): Promise<EngineRawData> {
       dayKey: d.dayKey as DayKey,
       hasJournalText: (d.journalText?.trim().length ?? 0) > 0,
       closedAtMs: d.closedAt ? d.closedAt.getTime() : null,
+      mood: d.mood,
+      journalText: d.journalText,
     })),
     weekReviews: weekReviewRows.map((w) => ({
       weekStart: w.weekStart as DayKey,
@@ -417,9 +419,33 @@ export async function submitNetWorthEntry(
 /** Số tài sản mặc định làm mờ (§4.9) — đọc/ghi `profile.hide_money`. Một dòng profile duy nhất. */
 export async function getHideMoney(): Promise<boolean> {
   const rows = await db.select({ hideMoney: schema.profile.hideMoney }).from(schema.profile).limit(1);
-  return rows[0]?.hideMoney ?? true;
+  return rows[0]?.hideMoney ?? false;
 }
 
 export async function setHideMoney(hide: boolean): Promise<void> {
   await db.update(schema.profile).set({ hideMoney: hide });
+}
+
+// ─── week_reviews — đúc kết tuần, SPEC.md §5.2, dùng từ mốc 6 ─────────────
+
+export async function getWeekReview(weekStart: DayKey): Promise<{ text: string } | null> {
+  const rows = await db
+    .select({ text: schema.weekReviews.text })
+    .from(schema.weekReviews)
+    .where(eq(schema.weekReviews.weekStart, weekStart))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
+/**
+ * Không khoá ngày lại (§11.2 câu Q16) — sửa được nhiều lần trong tuần, giống nhật ký. CHỈ cập
+ * nhật `text` khi đã có dòng — GIỮ NGUYÊN `created_at` gốc, vì đó là "ngày viết" mà `foldTimeline`
+ * đọc để tính +100 XP (§4.4) và điều kiện tuần trọn vẹn (§4.6); nếu bump theo mỗi lần sửa, sửa
+ * đúc kết muộn vài ngày sẽ âm thầm dời khoản XP đó sang ngày khác.
+ */
+export async function upsertWeekReview(weekStart: DayKey, text: string): Promise<void> {
+  await db
+    .insert(schema.weekReviews)
+    .values({ weekStart, text, createdAt: new Date(now()) })
+    .onConflictDoUpdate({ target: schema.weekReviews.weekStart, set: { text } });
 }

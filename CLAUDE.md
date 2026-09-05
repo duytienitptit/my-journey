@@ -14,42 +14,26 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3, 4, 5**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Mốc 5 (tài sản + chương + nâng cấp nhà,
-  SPEC.md §4.9): `core/engine/chapters.ts` (chương từ tổng tài sản, chương trung gian khi nhảy
-  vọt, điều kiện "Trưởng thành" = Thanh niên + Chương 12) · `net_worth_entries`/`chapter_events`
-  nối thật qua `db/queries.ts` + `app/actions/assets.ts` · số tài sản **[SỬA — 2026-09-05]**
-  giờ LUÔN HIỆN, đặt nổi bật giữa màn hình chính (`components/assets/NetWorthControl.tsx`,
-  `profile.hide_money` đổi mặc định `false`) — chủ dự án tự dùng thử rồi đổi ý, không còn mặc
-  định làm mờ như bản đầu; đã sửa SPEC.md §4.9 cùng lúc, ghi rõ đây là ngoại lệ CÓ CHỦ Ý với
-  nguyên tắc 4 (§2). **5 vỏ nhà gốc theo chương** (`components/room/shells/`)
-  dựng ĐỦ ngay trong lượt này (chủ dự án chọn, không hoãn): phòng trọ → phòng rộng/studio → căn
-  hộ (thêm sofa/TV/bếp) → căn hộ cao tầng (skyline thủ công, không tải model) → nhà phố (cầu
-  thang trang trí) → nhà có sân/vườn (Kenney Nature Kit) — camera + sương mù co giãn theo cỡ
-  phòng (`shells/footprint.ts`). Xác nhận bằng mắt qua trình duyệt cho ĐỦ CẢ 12 chương (không
-  chỉ vài mẫu) + luồng thật bấm nút/gõ số/lưu, không chỉ seed thẳng DB.
-- **Chế độ tập trung nâng cấp [SỬA/THÊM — 2026-09-05]** (SPEC.md §5.1) — chủ dự án tự bấm Start
-  xem trực tiếp rồi cho ba phản hồi liên tiếp: (1) hạt sáng đom đóm `components/room/Fireflies.tsx`
-  (InstancedMesh, mờ dần vào/ra theo `focusMode`) đổi từ "quanh nhân vật, bán kính hẹp" sang
-  **rải khắp cả khung hình** (neo vào `framing.target` — điểm camera nhìn vào — không phải vị
-  trí nhân vật, bán kính 5.5, ~90 hạt); (2) vòng tròn quanh đồng hồ đổi từ "số phiên trong ngày"
-  (đứng yên suốt phiên, chủ dự án chê "không chuẩn xác") sang **thời gian phiên đang chạy** (đầy
-  dần tới lúc hết giờ); (3) đồng hồ đếm ngược + vòng tròn **to hơn hẳn** (340→480, text-7xl→9xl).
-  Đụng nguyên tắc 1 ở §2 ("gần như trống" lúc tập trung) — đã hỏi trước khi code (AskUserQuestion:
-  mở rộng ambient trong phòng tối sẵn có, KHÔNG phải nền trừu tượng tách biệt), đã sửa SPEC.md
-  cùng lúc ghi rõ đây là ngoại lệ có chủ ý, có giới hạn. `Math.random()` trong hạt sáng phải sinh
-  ở `useEffect` (sau render), không phải `useMemo` — React Compiler/`react-hooks/purity` cấm gọi
-  hàm không thuần ngay trong thân render, kể cả trong factory của useMemo.
-- **Tiếp theo: mốc 6**
-  (nhìn lại tuần + thống kê + tương quan).
-- **Phát hiện đáng nhớ lúc soi mốc 5 — lỗi schema có thật, không chỉ lỗi hiển thị:**
-  `net_worth_entries.stocks_vnd`/`gold_vnd` từng khai `integer` (Postgres, trần ~2,1 tỉ) trong
-  khi SPEC.md §4.9 tự đòi tới 26.000.000.000 (Chương 12) — nhập bất kỳ số nào ≥ Chương 8 (3 tỉ)
-  là lỗi INSERT ngay. Sửa bằng `bigint` (Drizzle `{mode:"number"}`, đủ an toàn tới 2^53), migrate
-  `0001_left_ultimates.sql` (ALTER COLUMN, không mất dữ liệu cũ). Lỗi thứ hai: sương mù cảnh 3D
-  cố định [9,19] không co giãn theo camera — phòng lớn (mốc 5 camera lùi xa hơn theo cỡ phòng)
-  rơi hẳn vào dải sương mù, cả cảnh mờ trắng trông như vỡ hình dù không phải — sửa bằng co giãn
-  `fogNear`/`fogFar` cùng hệ số với camera.
+- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6**, kế hoạch đã duyệt ngày 2026-09-02 — xem
+  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
+- **Mốc 6 (nhìn lại tuần, SPEC.md §5.2) — trang riêng đầu tiên ngoài `/`**: `app/week/page.tsx` +
+  `components/week/` (magazine-style, không phải bảng số liệu, đúng luật nghiệm thu). Ba hỏi
+  trước khi code (AskUserQuestion, vì spec §5.2 gốc chưa nói rõ): khung tương quan = **8 tuần
+  gần nhất (56 ngày, lăn)**, không phải toàn bộ lịch sử; nhiều cặp cùng đủ mẫu → chọn **|r| mạnh
+  nhất**, yếu hơn ngưỡng 0,3 thì im lặng dù đủ 14 ngày; ô nhập tài sản có ở **CẢ HAI** màn (chính
+  + tuần) — chủ dự án muốn màn tuần đóng vai lời nhắc cập nhật tài chính. Cả ba đã ghi vào
+  SPEC.md §5.2 cùng lúc.
+  Engine mới, đủ test: `core/engine/correlations.ts` (Pearson, 6 cặp cố định, chọn-mạnh-nhất-
+  vượt-ngưỡng) · `core/engine/weeklyStats.ts` (ba thanh chỉ số, tỉ lệ giữ thói quen TÁI DÙNG
+  đúng `isDailyTaskDone`, đường cong tâm trạng, % ghi bù). Mở rộng `RawCompletedSession`/
+  `RawDayLog` (`core/engine/types.ts`) thêm `source`/`mood`/`journalText` — vẫn MỘT hàm fetch
+  thô duy nhất (`getEngineRawData`) phục vụ cả `foldTimeline` lẫn hai module mới (§8.1). Viết
+  đúc kết tuần (+100 XP) và thưởng tuần trọn vẹn (+200) đã có SẴN từ mốc 3 trong `timeline.ts`,
+  chỉ chưa từng có UI ghi vào `week_reviews` — mốc 6 mới thật sự kích hoạt hai khoản này lần đầu.
+  Xác nhận bằng mắt qua trình duyệt + DB thật: viết/sửa đúc kết tuần (xác nhận `created_at`
+  KHÔNG đổi khi sửa — tránh dời ngày tính XP), seed dữ liệu 20 ngày ngoài tuần hiện tại để xác
+  nhận câu tương quan hiện đúng rồi xoá sạch.
+- **Tiếp theo: mốc 7** (thư viện hành trình + kho lưu trữ + hôm nay năm ngoái + xuất dữ liệu tự động hằng tuần).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
@@ -88,8 +72,22 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   gian (§8.3) từng không tới được Server Action dưới Next.js 16 + Turbopack (route và action
   không share module instance của `core/clock.ts` trong dev mode) — sửa bằng lưu override vào
   `globalThis` thay vì biến module thường.
+- Đã xong trong mốc 5 (tài sản + chương + nâng cấp nhà, SPEC.md §4.9): `core/engine/chapters.ts`
+  (chương từ tổng tài sản, chương trung gian, điều kiện "Trưởng thành" = Thanh niên + Chương 12)
+  · **5 vỏ nhà gốc** theo chương (`components/room/shells/`, dựng đủ ngay một lượt theo yêu cầu
+  chủ dự án) · số tài sản **[SỬA — 2026-09-05]** đổi từ "mặc định làm mờ" sang LUÔN HIỆN, đặt
+  nổi bật giữa màn hình chính (`components/assets/NetWorthControl.tsx`, `profile.hide_money`
+  default `false`) sau khi chủ dự án tự dùng thử — ngoại lệ có chủ ý với nguyên tắc 4 (§2) · chế
+  độ tập trung thêm **hạt sáng đom đóm** rải khắp khung hình (`components/room/Fireflies.tsx`,
+  InstancedMesh) + đồng hồ/vòng tròn phóng to (340→480px) + vòng tròn đổi ý nghĩa từ "số phiên
+  ngày" sang "thời gian phiên đang chạy" — cả ba cũng chủ dự án tự xem rồi yêu cầu, đã hỏi trước
+  vì đụng nguyên tắc 1 (§2), đã sửa SPEC.md §5.1 cùng lúc. Hai lỗi thật bắt gặp lúc soi: (1)
+  `net_worth_entries.stocks_vnd`/`gold_vnd` từng khai `integer` (trần ~2,1 tỉ) trong khi SPEC.md
+  đòi tới 26 tỉ (Chương 12) — sửa bằng `bigint`, migrate không mất dữ liệu cũ; (2) sương mù cảnh
+  3D cố định không co theo camera lùi xa dần theo cỡ phòng — phòng lớn bị mờ trắng như lỗi
+  render — sửa bằng co giãn `fogNear`/`fogFar` cùng hệ số camera.
 - **Bốn nguyên tắc kỹ thuật §8 đã có `core/day.ts`, `core/session.ts`, `core/summary.ts`,
-  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (225 test qua `npm test`),
+  `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (249 test qua `npm test`),
   không đụng DB/React.**
 - Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, thẻ cho
   nhật ký, mốc chương trung gian, và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới

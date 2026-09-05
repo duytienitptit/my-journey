@@ -48,6 +48,15 @@ const DAILY_TASKS: DailyTaskConfig[] = [
   { refType: "habit", refId: JOURNAL_ID, threshold: null },
 ];
 
+/** `source`/`mood`/`journalText` không ảnh hưởng gì tới `foldTimeline` (thêm ở mốc 6 cho
+ *  `core/engine/weeklyStats.ts`/`correlations.ts`) — điền giá trị mặc định vô hại cho gọn. */
+function session(dayKey: DayKey, labelId: number): RawCompletedSession {
+  return { dayKey, labelId, source: "timer" };
+}
+function dayLogFixture(dayKey: DayKey, hasJournalText: boolean, closedAtMs: number | null = null): RawDayLog {
+  return { dayKey, hasJournalText, closedAtMs, mood: null, journalText: null };
+}
+
 function emptyRaw(profileStartedDayKey: DayKey): EngineRawData {
   return {
     profileStartedDayKey,
@@ -68,7 +77,7 @@ function achievedDayFixture(dayKey: DayKey): {
   dayLog: RawDayLog;
 } {
   const weekday = isoWeekdayOf(dayKey);
-  const dayLog: RawDayLog = { dayKey, hasJournalText: true, closedAtMs: null };
+  const dayLog: RawDayLog = dayLogFixture(dayKey, true);
   if (weekday === 7) return { sessions: [], habitEntries: [], dayLog }; // Chủ nhật: chỉ cần nhật ký
 
   const habitEntries: RawHabitEntry[] = [
@@ -78,10 +87,7 @@ function achievedDayFixture(dayKey: DayKey): {
   const sessions: RawCompletedSession[] =
     weekday === 6
       ? [] // Thứ Bảy: 3 thói quen rẻ (sport+sleep+journal) là đủ 3/6
-      : [
-          { dayKey, labelId: NEW_KNOWLEDGE_ID },
-          { dayKey, labelId: NEW_KNOWLEDGE_ID },
-        ];
+      : [session(dayKey, NEW_KNOWLEDGE_ID), session(dayKey, NEW_KNOWLEDGE_ID)];
   return { sessions, habitEntries, dayLog };
 }
 
@@ -94,15 +100,15 @@ function perfectDayFixture(dayKey: DayKey): {
 } {
   return {
     sessions: [
-      ...Array.from({ length: 4 }, () => ({ dayKey, labelId: ENGLISH_ID })),
-      ...Array.from({ length: 4 }, () => ({ dayKey, labelId: DEEP_WORK_ID })),
-      ...Array.from({ length: 2 }, () => ({ dayKey, labelId: NEW_KNOWLEDGE_ID })),
+      ...Array.from({ length: 4 }, () => session(dayKey, ENGLISH_ID)),
+      ...Array.from({ length: 4 }, () => session(dayKey, DEEP_WORK_ID)),
+      ...Array.from({ length: 2 }, () => session(dayKey, NEW_KNOWLEDGE_ID)),
     ],
     habitEntries: [
       { dayKey, habitId: SPORT_ID, score: 4, done: null },
       { dayKey, habitId: SLEEP_ID, score: 4, done: null },
     ],
-    dayLog: { dayKey, hasJournalText: true, closedAtMs: null },
+    dayLog: dayLogFixture(dayKey, true),
   };
 }
 
@@ -145,14 +151,14 @@ describe("core/engine/timeline — nền tảng", () => {
 describe("core/engine/timeline — XP tính SỐNG ngay trong ngày (không chờ)", () => {
   it("một phiên hoàn thành hôm nay → XP cộng ngay, dù hôm nay chưa 'chốt'", () => {
     const raw = emptyRaw(START);
-    raw.completedSessions = [{ dayKey: START, labelId: ENGLISH_ID }];
+    raw.completedSessions = [session(START, ENGLISH_ID)];
     const result = foldTimeline(raw, endOfDayMs(START));
     expect(result.xpByStat.mind).toBe(XP_SESSION_COMPLETE);
   });
 
   it("nhiều phiên cùng nhãn cộng dồn đúng", () => {
     const raw = emptyRaw(START);
-    raw.completedSessions = Array.from({ length: 4 }, () => ({ dayKey: START, labelId: DEEP_WORK_ID }));
+    raw.completedSessions = Array.from({ length: 4 }, () => session(START, DEEP_WORK_ID));
     const result = foldTimeline(raw, endOfDayMs(START));
     // 4 phiên Deep work đủ ngưỡng "ngày đạt" cho Deep work — nhưng chưa đủ 4/6 việc trong ngày
     // (chỉ 1 việc đạt), nên KHÔNG có +30 thưởng ngày đạt, chỉ có 4×30=120 từ phiên.
@@ -164,7 +170,7 @@ describe("core/engine/timeline — thói quen giữ được, chỉ áp cho habi
   it("Sport chấm đủ ngưỡng → +20 Health, English/Deep work không có khoản này dù đạt ngưỡng", () => {
     const raw = emptyRaw(START);
     raw.habitEntries = [{ dayKey: START, habitId: SPORT_ID, score: 4, done: null }];
-    raw.completedSessions = Array.from({ length: 4 }, () => ({ dayKey: START, labelId: ENGLISH_ID }));
+    raw.completedSessions = Array.from({ length: 4 }, () => session(START, ENGLISH_ID));
     const result = foldTimeline(raw, endOfDayMs(START));
     expect(result.xpByStat.health).toBe(20); // chỉ +20 giữ được, KHÔNG có ngày đạt (mới 2/6)
     expect(result.xpByStat.mind).toBe(4 * XP_SESSION_COMPLETE); // chỉ tiền phiên, không +20 nào
@@ -191,10 +197,7 @@ describe("core/engine/timeline — decay khi bỏ bê (§4.1)", () => {
   it("mind đạt cấp 1 rồi im lặng 5 ngày liên tiếp — decay đúng từ ngày thứ 4", () => {
     const raw = emptyRaw(START);
     const sessionsNeeded = xpRequiredForLevel(1) / XP_SESSION_COMPLETE; // 10 phiên = 300 XP = cấp 1
-    raw.completedSessions = Array.from({ length: sessionsNeeded }, () => ({
-      dayKey: START,
-      labelId: ENGLISH_ID,
-    }));
+    raw.completedSessions = Array.from({ length: sessionsNeeded }, () => session(START, ENGLISH_ID));
     const day5 = addDays(START, 5); // 5 ngày sau, mind im lặng suốt
     const result = foldTimeline(raw, endOfDayMs(day5));
     // Ngày 1,2,3 sau START không trừ (còn hạn). Ngày 4, ngày 5 mới trừ, mỗi ngày 20×cấp-tại-lúc-đó.
@@ -215,7 +218,7 @@ describe("core/engine/timeline — decay khi bỏ bê (§4.1)", () => {
 
   it("sàn 0 — không bao giờ âm dù im lặng rất lâu", () => {
     const raw = emptyRaw(START);
-    raw.completedSessions = [{ dayKey: START, labelId: ENGLISH_ID }]; // chỉ 30 XP, cấp 0
+    raw.completedSessions = [session(START, ENGLISH_ID)]; // chỉ 30 XP, cấp 0
     const farFuture = addDays(START, 60);
     const result = foldTimeline(raw, endOfDayMs(farFuture));
     expect(result.xpByStat.mind).toBe(0); // 30 XP ban đầu, cấp 0 → trừ 20/ngày, hết rất nhanh, sàn ở 0
@@ -303,7 +306,7 @@ describe("core/engine/timeline — chuỗi ngày-đạt: MỘT NGÀY ÂN HẠN t
     // 7 ngày chỉ viết nhật ký (không làm gì khác) để dựng chuỗi nhật ký thuần, không đụng chuỗi ngày-đạt.
     const raw = emptyRaw(START);
     const days = enumerateDayKeys(START, addDays(START, 2));
-    raw.dayLogs = days.map((d) => ({ dayKey: d, hasJournalText: true, closedAtMs: null }));
+    raw.dayLogs = days.map((d) => dayLogFixture(d, true));
     const missDay = addDays(START, 3); // không viết — chuỗi nhật ký phải gãy ngay, không ân hạn
     const result = foldTimeline(raw, endOfDayMs(addDays(missDay, 1)));
     expect(result.journalStreak).toEqual({ current: 0, longest: 3 }); // vẫn StreakInfo trơn, không có "danger"
@@ -345,7 +348,7 @@ describe("core/engine/timeline — thưởng mốc chuỗi, một lần trong đ
     const day7 = addDays(START, 6);
     const days = enumerateDayKeys(START, day7);
     const raw = emptyRaw(START);
-    raw.dayLogs = days.map((d) => ({ dayKey: d, hasJournalText: true, closedAtMs: null }));
+    raw.dayLogs = days.map((d) => dayLogFixture(d, true));
 
     const result = foldTimeline(raw, endOfDayMs(addDays(day7, 1)));
     const journalMilestones = result.events.streakMilestones.filter((e) => e.kind === "journal");
@@ -402,7 +405,7 @@ describe("core/engine/timeline — thưởng tuần trọn vẹn (§4.6)", () =>
 describe("core/engine/timeline — sự kiện lên cấp và đổi giai đoạn", () => {
   it("đủ 300 XP trong một ngày (10 phiên) → sự kiện lên cấp 0 → 1", () => {
     const raw = emptyRaw(START);
-    raw.completedSessions = Array.from({ length: 10 }, () => ({ dayKey: START, labelId: ENGLISH_ID }));
+    raw.completedSessions = Array.from({ length: 10 }, () => session(START, ENGLISH_ID));
     const result = foldTimeline(raw, endOfDayMs(START));
     expect(result.levelByStat.mind).toBe(1);
     expect(result.events.levelUps).toContainEqual({
@@ -416,10 +419,7 @@ describe("core/engine/timeline — sự kiện lên cấp và đổi giai đoạ
   it("tụt cấp cũng phát sự kiện (fromLevel cao hơn toLevel)", () => {
     const raw = emptyRaw(START);
     const sessionsNeeded = xpRequiredForLevel(1) / XP_SESSION_COMPLETE;
-    raw.completedSessions = Array.from({ length: sessionsNeeded }, () => ({
-      dayKey: START,
-      labelId: ENGLISH_ID,
-    }));
+    raw.completedSessions = Array.from({ length: sessionsNeeded }, () => session(START, ENGLISH_ID));
     const day5 = addDays(START, 5);
     const result = foldTimeline(raw, endOfDayMs(day5));
     const dropEvent = result.events.levelUps.find((e) => e.stat === "mind" && e.toLevel < e.fromLevel);

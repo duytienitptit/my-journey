@@ -34,10 +34,15 @@ export type HabitConfig = {
   kind: HabitKind;
 };
 
-/** Một phiên đã hoàn thành (source timer hoặc manual — cả hai cùng mức XP, §4.4). */
+/**
+ * Một phiên đã hoàn thành (source timer hoặc manual — cả hai cùng mức XP, §4.4). `source` không
+ * ảnh hưởng gì tới `foldTimeline` (chỉ đọc `labelId`) — thêm ở mốc 6 cho "% ghi bù" (§5.2,
+ * `core/engine/weeklyStats.ts`), dùng chung một lần fetch thô duy nhất (§8.1).
+ */
 export type RawCompletedSession = {
   dayKey: DayKey;
   labelId: number;
+  source: "timer" | "manual";
 };
 
 /** Một lần chấm thói quen (chỉ score_1_5 / boolean — journal đọc từ RawDayLog.hasJournalText). */
@@ -53,6 +58,13 @@ export type RawDayLog = {
   hasJournalText: boolean;
   /** null nếu chưa đóng ngày hôm đó. */
   closedAtMs: number | null;
+  /** null nếu chưa chấm tâm trạng hôm đó. `foldTimeline` không đọc field này — thêm ở mốc 6 cho
+   *  đường cong tâm trạng + tương quan tuần (§5.2). */
+  mood: number | null;
+  /** Toàn văn nhật ký, hoặc null nếu trống. `foldTimeline` không đọc field này — thêm ở mốc 6 để
+   *  trích vài dòng nhật ký trong tuần (§5.2). `hasJournalText` ở trên vẫn là nguồn thật cho mọi
+   *  phép tính XP/ngày-đạt hiện có, đừng suy từ field này để tránh hai nguồn sự thật. */
+  journalText: string | null;
 };
 
 export type RawWeekReview = {
