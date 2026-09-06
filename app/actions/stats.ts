@@ -28,7 +28,8 @@ export type ComputedStats = {
   chapter: number;
   /** Bản ghi tài sản mới nhất, hoặc `null` nếu chưa từng nhập (§4.9: "đừng bao giờ ép tôi nhập"). */
   netWorth: { stocksVnd: number; goldVnd: number; totalVnd: number } | null;
-  /** `profile.hide_money` — mặc định `true` (§4.9: "số tài sản mặc định làm mờ"). */
+  /** `profile.hide_money` — mặc định `false`: số tài sản LUÔN HIỆN ([SỬA/CHỐT — 2026-09-05],
+   *  §4.9). Nút ẩn vẫn còn cho khoảnh khắc không muốn nhìn, và trạng thái đó phải lưu lại. */
   hideMoney: boolean;
 };
 

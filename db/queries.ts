@@ -416,7 +416,8 @@ export async function submitNetWorthEntry(
   return { chapter: newChapter, newlyReachedChapters };
 }
 
-/** Số tài sản mặc định làm mờ (§4.9) — đọc/ghi `profile.hide_money`. Một dòng profile duy nhất. */
+/** Số tài sản mặc định LUÔN HIỆN ([SỬA/CHỐT — 2026-09-05], §4.9) — đọc/ghi `profile.hide_money`,
+ *  mặc định `false`. Một dòng profile duy nhất. */
 export async function getHideMoney(): Promise<boolean> {
   const rows = await db.select({ hideMoney: schema.profile.hideMoney }).from(schema.profile).limit(1);
   return rows[0]?.hideMoney ?? false;
