@@ -245,3 +245,13 @@ export const HABIT_SCORE_MAX = 5;
  * chủ dự án đã xác nhận muốn vậy sau khi tôi nêu rõ mâu thuẫn này.
  */
 export const JOURNAL_MIN_WORDS = 200;
+
+// ─── §5.8 · Thống kê dài hạn (/stats) ────────────────────────────────────
+
+/**
+ * Khung nhìn mặc định của cả màn `/stats` — 12 tháng gần nhất, khung LĂN (§5.8 [CHỐT —
+ * 2026-09-06]). Cùng tinh thần với khung lăn 8 tuần của câu tương quan (§5.2): trang phải "sống"
+ * theo thời gian chứ không dài vô hạn. Khối "tổng cộng dồn" là ngoại lệ DUY NHẤT — nó tính từ
+ * `profile.started_at`, vì đó mới đúng nghĩa "cả hành trình".
+ */
+export const STATS_WINDOW_MONTHS = 12;

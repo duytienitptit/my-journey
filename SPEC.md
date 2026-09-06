@@ -497,6 +497,91 @@ Nhân vật · **Nhãn** (tên + chỉ số + emoji + màu) · **Thói quen** ·
 - **Viết lời trong app như người nói chuyện, đừng như phần mềm.** *"Xong rồi, nghỉ chút đi"* chứ không phải *"Phiên đã hoàn tất"*.
 - Buổi tối giao diện tự dịu xuống: nền tối hơn, chữ to hơn, ít thành phần hơn.
 
+### 5.8 Thống kê dài hạn — màn riêng `/stats`
+
+**[CHỐT — 2026-09-06]** Trang thứ tư, mở từ màn chính cạnh *This week · Journey · Archive*.
+
+**Lý do tồn tại:** màn tuần (§5.2) chỉ nhìn được đúng bảy ngày, mà app này tôi định dùng 2–3 năm
+(§1). Tôi cần một chỗ trả lời *"ba tháng qua tôi đi lên hay đi xuống"* — màn tuần không bao giờ
+trả lời được câu đó.
+
+Nguyên tắc 4 (§2) vẫn giữ nguyên: **không một thứ gì trong màn này được leo lên màn chính.**
+Khung thời gian mặc định của cả trang: **12 tháng gần nhất, khung LĂN** (như khung lăn 8 tuần của
+câu tương quan §5.2 — để trang vẫn "sống" thay vì dài vô hạn).
+
+**[SỬA — 2026-09-06, sau khi tôi nhìn lưới thật]** Khung 12 tháng **không được lùi về trước ngày
+tôi bắt đầu dùng app**. Bản đầu luôn mở đủ 12 tháng, nên mới dùng một tuần mà lưới đã trải gần
+một năm ô rỗng phía trước — nhìn như một năm bỏ bê chứ không phải tuần đầu tiên. Từ nay:
+
+- **Cột đầu tiên của bản đồ nhiệt = TUẦN ĐẦU TIÊN của tôi.** Mỗi cột là một tuần của tôi (Thứ Hai
+  → Chủ nhật); những ngày trước ngày bắt đầu nằm trong chính tuần đó để trống.
+- Biểu đồ xu hướng tháng và biểu đồ giờ theo nhãn cũng cắt tương tự — không mở đầu bằng những
+  tháng tôi còn chưa dùng app.
+- 12 tháng lăn vẫn là **trần trên**: qua một năm sử dụng thì nó lại là cạnh quyết định, và lưới
+  thôi dài thêm. **[CHỐT — 2026-09-06]**
+
+**Năm khối, theo đúng thứ tự này.** Số thứ tự GIỮ NGUYÊN dù khối 4 và khối 7 đã gỡ —
+đánh số lại thì chú thích trong code và spec lệch nhau:
+
+1. **Tổng cộng dồn từ ngày đầu** — một dòng ở đầu trang: tổng phiên · tổng giờ · tổng ngày đạt.
+   Tính từ `profile.started_at`, KHÔNG giới hạn 12 tháng — đây chính là con số "cả hành trình".
+   Cùng với khối 5, đây là hai ngoại lệ duy nhất với khung 12 tháng.
+2. **Bản đồ nhiệt 12 tháng** — mỗi ngày một ô, đậm dần theo **số phiên hoàn thành** trong ngày.
+3. **Xu hướng theo tháng** — ba đường 📚 Mind · 💪 Health · 🧘 Spirit, lấy XP tại thời điểm cuối
+   mỗi tháng.
+4. ~~**Tổng giờ tập trung** — một ô riêng.~~ **[GỠ — 2026-09-06]** Tôi xem trên dữ liệu thật rồi
+   bỏ: ô này chỉ nói LẠI con số giờ mà khối 1 đã nói ở ngay đầu trang, thêm một câu giải thích
+   cách tính. Đúng như đã cảnh báo lúc chốt — tổng giờ tỉ lệ thuận với tổng phiên nên nó không
+   mang thông tin mới, và khi đứng thành một thẻ riêng thì sự thừa đó lộ hẳn ra. **Giờ vẫn còn
+   nguyên trong app**, chỉ là không có thẻ riêng nữa: khối 1 (tổng cộng dồn), khối 5 (tuần nhiều
+   giờ nhất) và khối 6 (giờ theo nhãn) đều hiển thị giờ. **Đừng dựng lại thẻ này.**
+
+   **Luật tính giờ — VẪN HIỆU LỰC, khối 1/5/6 đều dùng:** một phiên hoàn thành tính bằng
+   **`session_minutes + break_minutes`** (đọc từ bảng `settings`, hôm nay 25+5 = 30 phút = đúng
+   **0,5 giờ**). Viết theo công thức chứ không phải hằng số 0,5 để **không hỏng nếu sau này tôi
+   đổi độ dài phiên** (§4.3 [CHỐT]: "mặc định 25 phút, tôi chỉnh được"). Phiên **ghi bù tính đủ**
+   như phiên thật (đúng cách §4.4 đối xử với ghi bù); phiên **bỏ dở không tính**.
+5. **Kỷ lục cá nhân** — ngày nhiều phiên nhất · tuần nhiều giờ nhất · chuỗi ngày-đạt dài nhất
+   từng có (tính theo đúng luật ân hạn §4.6, không phải đếm ngày liên tiếp thô). **Toàn thời
+   gian, không giới hạn 12 tháng** — "kỷ lục" mà chỉ tính một năm thì không còn là kỷ lục.
+   Ngoại lệ thứ hai với khung 12 tháng, cùng khối 1.
+6. **Phân bổ giờ theo nhãn** — theo tháng, để thấy nhãn nào bị bỏ đói nhiều tháng liền. Ba thanh
+   ở màn tuần chỉ thấy được một tuần.
+   - **[SỬA — 2026-09-06] MỘT HÀNG cho mỗi nhãn, MỘT CỘT cho mỗi TUẦN.** Sửa hai lần liên tiếp,
+     đều sau khi tôi xem trên dữ liệu thật:
+     1. Bản đầu là cột xếp chồng theo tháng, chia đoạn theo nhãn — tôi nói *"các màu rất giống
+        nhau, biểu đồ chưa thể hiện được thông tin"*. Đúng vậy: ba nhãn khởi đầu đều là sắc xanh
+        của chỉ số Mind nên chồng lên nhau thì không thấy ranh giới. → tách thành **hàng riêng**,
+        vị trí làm việc phân biệt thay cho màu.
+     2. Vẫn theo tháng thì cả năm chỉ có 12 điểm, quá thô để thấy một nhãn bắt đầu bị bỏ đói từ
+        lúc nào. → đổi sang **TUẦN**, cùng đơn vị với bản đồ nhiệt ở khối 2, hai biểu đồ đọc
+        chung một nhịp.
+   - **Màu: dùng đúng ba màu chỉ số** (`--stat-mind` · `--stat-health` · `--stat-spirit`) — cùng
+     bộ màu biểu đồ ở khối 3, theo yêu cầu của tôi. CỐ Ý không dùng màu riêng của từng nhãn: màu
+     nhãn do tôi tự chọn trong Cài đặt (§5.6) và rất có thể lại là ba màu cùng họ, đúng vấn đề đã
+     phải sửa ở trên. *Đánh đổi đã biết và chấp nhận:* ở khối này xanh/cam/lục KHÔNG mang nghĩa
+     Mind/Health/Spirit như khối 3 — chúng chỉ là ba màu phân biệt, gán theo `labelId` tăng dần
+     nên ổn định giữa các lần mở. Tên và emoji nhãn nằm ngay đầu mỗi hàng nên không phải đoán.
+   - Mọi hàng dùng CHUNG một mốc cao nhất, nếu không biểu đồ nói dối. Tuần không có giờ nào để
+     lại một vạch mờ — để đếm được đã trống bao nhiêu tuần liền.
+7. ~~**Ngày không đạt thường thiếu gì** — khối DUY NHẤT trong app được *khuyên*, không chỉ kể.~~
+   **[GỠ — 2026-09-06]** Tôi xem trên dữ liệu thật rồi bỏ hẳn khối này. **Đừng dựng lại.**
+
+   Gỡ khối này cũng gỡ luôn **giọng KHUYÊN** khỏi toàn bộ app — thứ duy nhất từng có giọng đó là
+   nó. App quay về đúng ranh giới cũ: **kể và trách được, nhưng không khuyên** (§2 nguyên tắc 2,
+   §11.5). Nếu sau này muốn app khuyên trở lại thì phải chốt câu chữ từ đầu, đừng lấy lại câu cũ
+   như thể đã duyệt.
+
+   *Đã gỡ cùng nó (ghi lại để không ai dựng nửa vời):* câu đã duyệt *"Of 30 missed days, 22 were
+   missing just Sport. One habit is standing between you and most of them."*; luật đổi từ
+   "habit" → "thing" khi việc nêu tên là nhãn chứ không phải thói quen; luật Chủ nhật không đạt
+   chỉ tính thiếu nhật ký; luật im lặng dưới 10 ngày không đạt và khi từ ba việc trở lên cùng
+   hoà. Code tương ứng (`missedDayAnalysis`, hai hằng số `MISSED_DAY_*`, 8 test) đã xoá — không
+   để lại hàm không ai gọi.
+
+**Cảnh báo đã ghi nhận lúc chốt:** với lượng dữ liệu hiện có, màn này sẽ gần như trống trong
+2–3 tháng đầu. Đó là đúng, không phải lỗi — mỗi khối tự im lặng khi chưa đủ dữ liệu.
+
 ---
 
 ## 6. Nhắc nhở

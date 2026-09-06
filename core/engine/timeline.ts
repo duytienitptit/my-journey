@@ -31,6 +31,7 @@ import {
   type StreakState,
 } from "./streaks";
 import type {
+  DailyTimelinePoint,
   EngineRawData,
   LevelUpEvent,
   StageChangeEvent,
@@ -107,6 +108,10 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
   const levelUps: LevelUpEvent[] = [];
   const stageChanges: StageChangeEvent[] = [];
   const streakMilestones: StreakMilestoneEvent[] = [];
+
+  // Chuỗi theo ngày cho §5.8 — sinh ra dọc đường trong CHÍNH pass này, không thêm vòng lặp nào.
+  const dailySeries: DailyTimelinePoint[] = [];
+  let longestDayAchievedStreak = 0;
 
   for (const day of allDays) {
     const isToday = day === todayKey;
@@ -218,6 +223,13 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
       displayDayAchievedStreak = advanceDayAchievedStreak(displayDayAchievedStreak, dayAchievedToday, dayPerfectToday);
       displayJournalStreak = advanceStreak(displayJournalStreak, hasJournalToday);
     }
+
+    // §5.8 — chốt điểm của ngày này SAU khi đã cộng/trừ xong, nên `xpByStat` ở đây là XP lúc
+    // KẾT THÚC ngày. Phải sao chép: `xpByStat` là một object bị ghi đè suốt vòng lặp.
+    dailySeries.push({ dayKey: day, xpByStat: { ...xpByStat }, dayAchieved: dayAchievedToday });
+    if (liveDayAchievedStreak.current > longestDayAchievedStreak) {
+      longestDayAchievedStreak = liveDayAchievedStreak.current;
+    }
   }
 
   const totalXp = STAT_KEYS.reduce((sum, stat) => sum + xpByStat[stat], 0);
@@ -234,6 +246,8 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
     dayAchievedStreak: displayDayAchievedStreak,
     journalStreak: displayJournalStreak,
     events: { levelUps, stageChanges, streakMilestones },
+    dailySeries,
+    longestDayAchievedStreak,
   };
 }
 

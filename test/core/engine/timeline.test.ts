@@ -436,3 +436,57 @@ describe("core/engine/timeline — sàn XP không bao giờ âm dù nhiều ch�
     expect(result.stage).toBe(1);
   });
 });
+
+// ─── §5.8 — chuỗi theo ngày + kỷ lục chuỗi, thêm cho màn /stats ────────────
+
+describe("core/engine/timeline — dailySeries và longestDayAchievedStreak (§5.8)", () => {
+  it("một điểm mỗi ngày, đúng thứ tự, ngày cuối là hôm nay", () => {
+    const raw = emptyRaw(START);
+    const today = addDays(START, 9);
+    const result = foldTimeline(raw, endOfDayMs(today));
+    expect(result.dailySeries).toHaveLength(10);
+    expect(result.dailySeries[0].dayKey).toBe(START);
+    expect(result.dailySeries[9].dayKey).toBe(today);
+  });
+
+  it("xpByStat của mỗi điểm là ẢNH CHỤP riêng — không phải cùng một object bị ghi đè", () => {
+    const raw = emptyRaw(START);
+    raw.completedSessions = [session(START, ENGLISH_ID)];
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 4)));
+    // Ngày đầu có XP; sau vài ngày im lặng decay kéo xuống. Nếu bị chia sẻ chung một object thì
+    // tất cả các điểm sẽ bằng nhau — chính là lỗi mà bản sao `{ ...xpByStat }` phải chặn.
+    expect(result.dailySeries[0].xpByStat.mind).toBe(XP_SESSION_COMPLETE);
+    const distinct = new Set(result.dailySeries.map((p) => p.xpByStat.mind));
+    expect(distinct.size).toBeGreaterThan(1);
+  });
+
+  it("dayAchieved trong chuỗi khớp với ngày đạt thật", () => {
+    const raw = emptyRaw(START);
+    // Chủ nhật chỉ cần nhật ký (§4.5) — tìm một Chủ nhật rồi cho nó có chữ.
+    const days = enumerateDayKeys(START, addDays(START, 13));
+    const sunday = days.find((d) => isoWeekdayOf(d) === 7)!;
+    raw.dayLogs = [dayLogFixture(sunday, true)];
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 13)));
+    const achievedDays = result.dailySeries.filter((p) => p.dayAchieved).map((p) => p.dayKey);
+    expect(achievedDays).toContain(sunday);
+  });
+
+  it("longestDayAchievedStreak giữ ĐỈNH cũ kể cả sau khi chuỗi đã gãy", () => {
+    const raw = emptyRaw(START);
+    // Ba Chủ nhật liên tiếp có nhật ký → mỗi Chủ nhật là một ngày đạt, nhưng các ngày giữa thì
+    // không → chuỗi gãy liên tục, đỉnh vẫn phải ≥ 1 và không âm.
+    const days = enumerateDayKeys(START, addDays(START, 27));
+    raw.dayLogs = days.filter((d) => isoWeekdayOf(d) === 7).map((d) => dayLogFixture(d, true));
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 27)));
+    expect(result.longestDayAchievedStreak).toBeGreaterThanOrEqual(1);
+    // Chuỗi HIỂN THỊ lúc này đã về 0 (ngày cuối không đạt), nhưng kỷ lục thì không được quên.
+    expect(result.longestDayAchievedStreak).toBeGreaterThanOrEqual(result.dayAchievedStreak.current);
+  });
+
+  it("chưa có dữ liệu gì → chuỗi vẫn đủ ngày, kỷ lục bằng 0", () => {
+    const result = foldTimeline(emptyRaw(START), endOfDayMs(addDays(START, 3)));
+    expect(result.dailySeries).toHaveLength(4);
+    expect(result.longestDayAchievedStreak).toBe(0);
+    expect(result.dailySeries.every((p) => !p.dayAchieved)).toBe(true);
+  });
+});

@@ -118,6 +118,19 @@ export type StreakMilestoneEvent = {
   xpAwarded: number;
 };
 
+/**
+ * Một điểm trong chuỗi theo ngày mà `foldTimeline` nhả ra dọc đường — thêm ở §5.8 (mốc /stats).
+ * Đây KHÔNG phải dữ liệu lưu trữ: nó sinh ra trong cùng một pass đã có sẵn rồi biến mất, đúng
+ * §8.1 (không lưu XP). Có nó thì màn thống kê dài hạn lấy được "XP cuối mỗi tháng" mà không phải
+ * gọi `foldTimeline` lại 12 lần như `journeyLibrary.ts` buộc phải làm cho từng chương.
+ */
+export type DailyTimelinePoint = {
+  dayKey: DayKey;
+  /** XP của ba chỉ số tại thời điểm KẾT THÚC ngày này — đã cộng, đã trừ decay. */
+  xpByStat: Record<StatKey, number>;
+  dayAchieved: boolean;
+};
+
 export type TimelineResult = {
   /** XP hiện tại của từng chỉ số — đã trừ decay, sàn 0. */
   xpByStat: Record<StatKey, number>;
@@ -133,4 +146,9 @@ export type TimelineResult = {
     stageChanges: readonly StageChangeEvent[];
     streakMilestones: readonly StreakMilestoneEvent[];
   };
+  /** Một điểm mỗi ngày kể từ `profile.started_at` tới hôm nay — dùng cho §5.8. */
+  dailySeries: readonly DailyTimelinePoint[];
+  /** Chuỗi ngày-đạt DÀI NHẤT từng có, tính theo đúng luật ân hạn §4.6 (không phải đếm ngày liên
+   *  tiếp thô) — "kỷ lục cá nhân" ở §5.8. Tính trên bộ đếm SỐNG nên hôm nay cũng được kể. */
+  longestDayAchievedStreak: number;
 };

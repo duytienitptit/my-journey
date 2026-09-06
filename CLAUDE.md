@@ -36,6 +36,59 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
     (`delete from net_worth_entries;` không có `where`) — bắt kịp và khôi phục đúng giá trị cũ
     trong cùng lượt, xem [[feedback-shared-dev-db-caution]] (đã cập nhật, đây là lần LẶP LẠI lỗi
     đã ghi nhớ trước đó — cẩn thận hơn nữa ở các mốc sau).
+- **Màn `/stats` — thống kê dài hạn (SPEC.md §5.8, THÊM NGOÀI §9 ngày 2026-09-06).** Không thuộc
+  8 mốc gốc — chủ dự án tự đề xuất sau khi dùng thử, chốt qua bốn vòng hỏi đáp trong cùng phiên.
+  NĂM khối: tổng cộng dồn · heatmap 12 tháng (đậm theo SỐ PHIÊN) · xu hướng 3 chỉ số theo tháng ·
+  kỷ lục · phân bổ giờ theo nhãn (một hàng mỗi nhãn, một cột mỗi TUẦN, màu lấy từ ba màu chỉ số).
+  **HAI khối đã [GỠ — 2026-09-06]** theo yêu cầu chủ dự án sau khi xem trên dữ liệu thật, **đừng
+  dựng lại cái nào**:
+  - Khối 4 "Focus time" — thẻ riêng cho tổng giờ, chỉ nói lại con số khối 1 đã nói. **Luật tính
+    giờ (`session_minutes + break_minutes`) thì VẪN HIỆU LỰC** — khối 1, 5, 6 đều dùng, đừng xoá
+    theo.
+  - Khối 7 "What's in your way" — cùng với nó, **giọng KHUYÊN biến mất khỏi toàn bộ app**. App
+    quay về ranh giới cũ: kể và trách được, KHÔNG khuyên. Muốn khuyên trở lại thì chốt câu chữ
+    lại từ đầu (§11.5), đừng lấy lại câu cũ như thể đã duyệt. `missedDayAnalysis` + hai hằng số
+    `MISSED_DAY_*` + 8 test đã xoá theo, không để lại hàm không ai gọi (luật cứng 3).
+
+  Số thứ tự các khối còn lại giữ nguyên (1, 2, 3, 5, 6) để chú thích trong code và SPEC khớp nhau.
+  - **Giọng MỚI:** khối 7 là chỗ ĐẦU TIÊN app *khuyên* chứ không chỉ kể/trách. Câu chữ đã được
+    chủ dự án tự duyệt (phương án A trong ba phương án đưa ra) — *"Of 30 missed days, 22 were
+    missing just Sport. One habit is standing between you and most of them."* Đừng tự mở rộng
+    giọng khuyên này sang khối khác mà không hỏi (§11.5).
+  - **Giờ = `session_minutes + break_minutes`**, KHÔNG phải hằng số 0,5 giờ. Chủ dự án nói "0,5
+    tiếng thay vì 25 phút"; tôi hỏi lại và chốt viết theo công thức để không hỏng khi đổi độ dài
+    phiên (§4.3 [CHỐT] cho phép đổi). Hệ quả đã nói rõ với chủ dự án và được chấp nhận: tổng giờ
+    luôn tỉ lệ thuận với tổng phiên, là cách ĐỌC khác chứ không phải thông tin mới.
+  - `foldTimeline` được MỞ RỘNG (không phải gọi lặp như `journeyLibrary.ts`): nhả thêm
+    `dailySeries` (XP + ngày-đạt mỗi ngày) và `longestDayAchievedStreak`, sinh trong CHÍNH pass
+    đã có. Toàn bộ tính toán ở `core/engine/longTermStats.ts` (thuần) + `app/actions/longTermStats.ts`.
+  - **Luật Chủ nhật ở khối 7** — §4.5 nói Chủ nhật chỉ cần nhật ký, nên Chủ nhật không đạt CHỈ
+    tính thiếu nhật ký, không đổ lỗi cho Sport/Deep work. Bắt gặp lúc dựng, đã ghi vào SPEC.md.
+  - 30 test mới (tổng 295). Ba lỗi bắt được lúc soi bằng mắt: "1 sessions" (số ít/số nhiều),
+    nhãn tháng CUỐI biến mất khỏi heatmap (mùng 1 nằm chung cột với ngày cuối tháng trước), và
+    **biểu đồ cột trống trơn** vì `h-full` lồng trong khung cao tự động — `height: %` không có mốc
+    quy chiếu. Cả ba chỉ lộ ra khi có dữ liệu thật, không lộ qua test.
+  - **[SỬA — 2026-09-06, chủ dự án nhìn lưới thật rồi yêu cầu]** Khung KHÔNG lùi về trước ngày
+    bắt đầu dùng app: cột đầu của bản đồ nhiệt = TUẦN ĐẦU TIÊN của chủ dự án, những ngày trước
+    ngày bắt đầu trong chính tuần đó để trống. 12 tháng lăn còn lại vai trò TRẦN TRÊN.
+    `windowDaysOf`/`windowMonthsOf` nhận thêm `startedDayKey`. Hai lỗi lộ ra ngay sau đó: nhãn
+    tháng ĐẦU biến mất (luật gắn nhãn cần ô "mùng 1", mà mùng 1 nằm ngoài khung) và câu khối 7
+    gọi *New knowledge* — một NHÃN — là "habit". Câu khuyên nay đổi từ: toàn thói quen thì giữ
+    "habit", có nhãn thì dùng "thing". Đã ghi cả hai vào SPEC.md §5.8.
+  - **[SỬA — 2026-09-06, vòng soi thứ hai của chủ dự án]** Ba lỗi trình bày nữa, đều chỉ lộ khi
+    NHÌN chứ không test nào bắt được: (1) khối 6 xếp chồng ba nhãn cùng sắc xanh Mind → không
+    thấy ranh giới, đổi thành **một hàng mỗi nhãn** (§5.8, đừng gộp lại); (2) chú giải heatmap
+    "Less → More" hiện 4 ô GIỐNG HỆT lúc dữ liệu còn ít, vì quy ngược bậc qua số phiên mà
+    `max` mới bằng 1 — nay vẽ thẳng theo BẬC; (3) biểu đồ xu hướng khi cả ba chỉ số bằng 0 vẽ ba
+    đường chồng khít dưới đáy, chỉ còn thấy màu vẽ sau cùng (trông như chỉ có Spirit tồn tại) —
+    nay im lặng, ẩn cả thẻ.
+  - **DB demo `myjourney_demo` GIỮ LẠI** (13 tuần, 7/9→6/12/2026, 692 phiên) để chủ dự án tự xem
+    giao diện "sau 3 tháng". Trỏ `.env.local` sang nó rồi KHỞI ĐỘNG LẠI server, và tua đồng hồ
+    tới 12/2026 mới thấy dữ liệu. Nhớ trỏ ngược lại — nếu quên, mọi thao tác thật sẽ ghi vào DB
+    giả.
+  - **QA làm trên DB TẠM RIÊNG** (`myjourney_stats_qa`, tạo → đổ dữ liệu giả → soi → xoá), không
+    đụng một dòng nào của DB thật — xem [[feedback-shared-dev-db-caution]]. Cách này nên thành
+    thói quen cho mọi lần cần dữ liệu giả về sau.
 - **Tiếp theo:** phần cron/backup của mốc 7 gốc (nếu chủ dự án đổi ý) hoặc mốc 8 (cài đặt đầy đủ + đánh bóng).
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
