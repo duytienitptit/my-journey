@@ -44,10 +44,13 @@ liệu là màu phẳng.
 Nguồn: https://kenney.nl/assets/mini-characters
 License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
 
-`characters/stage-1.glb` = `character-male-a.glb` gốc, đổi tên. Đây là placeholder cho **giai
-đoạn 1** — pack gốc có 12 nhân vật (6 nam/6 nữ, khác tóc/da/trang phục); việc chọn nhân vật mặc
-định + tuỳ chỉnh tóc/da/trang phục còn hoãn lại (`SPEC.md` §11.5, "chưa cần hỏi ngay"). Đổi model
-này bất cứ lúc nào chỉ cần thay file — không đụng code, xem `components/room/models.ts`.
+**Mốc 8 (Cài đặt, SPEC.md §5.6):** lấy ĐỦ cả 12 nhân vật gốc trong pack —
+`male-a`…`male-f`, `female-a`…`female-f` (6 nam/6 nữ). Pack KHÔNG tách rời tóc/da/trang phục để
+trộn (mỗi tên là một model dựng sẵn trọn bộ) — chọn NGUYÊN một bộ gần giống mình nhất qua Cài
+đặt, lưu ở `profile.avatar_config.characterKey`, xem `components/room/models.ts`. `male-a.glb`
+trước đây tên `stage-1.glb` (mốc 1) — đã đổi tên khớp quy ước 12 model, nội dung file y hệt.
+Mỗi hình dáng hiện chỉ có ĐÚNG một model (giai đoạn 1, §4.8) — biến thể theo cấp cho từng hình
+dáng thêm dần sau, cùng tinh thần "đồ chỉ đến khi đủ điểm" ở §5.3.
 
 Kèm `characters/Textures/colormap.png` — texture atlas dùng chung, GLB tham chiếu tương đối tới
 file này (đừng di chuyển hai file tách rời nhau).

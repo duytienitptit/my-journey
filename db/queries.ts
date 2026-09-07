@@ -5,7 +5,7 @@
  * File này KHÔNG phải "hàm thuần" (đụng DB thật) nên không nằm trong `core/`. Nó gọi các hàm
  * thuần ở `core/` (dayKeyOf, isSessionComplete…) để tính toán, rồi mới đọc/ghi.
  */
-import { and, asc, desc, eq, gte, lte } from "drizzle-orm";
+import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
@@ -38,6 +38,9 @@ export type DailyTaskWithRef = {
   name: string;
   emoji: string;
   stat: StatKey;
+  /** Chỉ có khi refType="habit" — Cài đặt (mốc 8) cần biết đây là habit "journal" (đạt = có
+   *  chữ, không có ngưỡng số, §4.5) để không vẽ ô nhập ngưỡng cho dòng này. */
+  habitKind: "score_1_5" | "boolean" | "journal" | null;
 };
 
 /** 6 việc trong ngày kèm tên/emoji/chỉ số thật của nhãn hoặc thói quen — SPEC.md §4.5, §12.4. */
@@ -66,6 +69,7 @@ export async function listDailyTasksWithRef(): Promise<DailyTaskWithRef[]> {
         name: ref.name,
         emoji: ref.emoji,
         stat: ref.stat,
+        habitKind: t.refType === "habit" ? (ref as (typeof habitRows)[number]).kind : null,
       },
     ];
   });
@@ -74,6 +78,116 @@ export async function listDailyTasksWithRef(): Promise<DailyTaskWithRef[]> {
 export async function getSettings() {
   const rows = await db.select().from(schema.settings).where(eq(schema.settings.id, 1)).limit(1);
   return rows[0] ?? null;
+}
+
+// ─── Cài đặt: nhãn/thói quen/6 việc/câu gợi ý/độ dài phiên — mốc 8, SPEC.md §5.6 ──
+// §12.4: thêm/xoá/đổi tên nhãn không được làm hỏng phép tính "ngày đạt" — engine đọc mọi thứ
+// động từ DB (id, không phải tên), nên CRUD ở đây an toàn với foldTimeline/dayAchieved.
+
+function slugify(text: string): string {
+  const base = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // bỏ dấu tiếng Việt nếu tên có dấu (NFD tách dấu ra thành ký tự riêng ở dải này)
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-+|-+$)/g, "");
+  return base || "item";
+}
+
+async function uniqueSlug(base: string, table: typeof schema.labels | typeof schema.habits): Promise<string> {
+  let slug = slugify(base);
+  let suffix = 2;
+  while (true) {
+    const existing = await db.select({ id: table.id }).from(table).where(eq(table.slug, slug)).limit(1);
+    if (existing.length === 0) return slug;
+    slug = `${slugify(base)}-${suffix++}`;
+  }
+}
+
+export async function createLabel(input: { name: string; emoji: string; color: string; stat: StatKey }) {
+  const slug = await uniqueSlug(input.name, schema.labels);
+  const rows = await db.select({ v: schema.labels.sortOrder }).from(schema.labels).orderBy(desc(schema.labels.sortOrder)).limit(1);
+  const [row] = await db
+    .insert(schema.labels)
+    .values({ ...input, slug, sortOrder: (rows[0]?.v ?? 0) + 1 })
+    .returning();
+  return row;
+}
+
+export async function updateLabel(id: number, input: { name: string; emoji: string; color: string; stat: StatKey }) {
+  await db.update(schema.labels).set(input).where(eq(schema.labels.id, id));
+}
+
+/** Không xoá thật (khoá ngoại từ sessions) — đánh dấu lưu trữ + tự gỡ khỏi "6 việc" nếu có. */
+export async function archiveLabel(id: number) {
+  await db.update(schema.labels).set({ archived: true }).where(eq(schema.labels.id, id));
+  await db
+    .update(schema.dailyTasks)
+    .set({ active: false })
+    .where(and(eq(schema.dailyTasks.refType, "label"), eq(schema.dailyTasks.refId, id)));
+}
+
+export async function createHabit(input: { name: string; emoji: string; stat: StatKey; kind: "score_1_5" | "boolean" }) {
+  const slug = await uniqueSlug(input.name, schema.habits);
+  const [row] = await db.insert(schema.habits).values({ ...input, slug }).returning();
+  return row;
+}
+
+export async function updateHabit(id: number, input: { name: string; emoji: string; stat: StatKey }) {
+  await db.update(schema.habits).set(input).where(eq(schema.habits.id, id));
+}
+
+export async function archiveHabit(id: number) {
+  await db.update(schema.habits).set({ archived: true }).where(eq(schema.habits.id, id));
+  await db
+    .update(schema.dailyTasks)
+    .set({ active: false })
+    .where(and(eq(schema.dailyTasks.refType, "habit"), eq(schema.dailyTasks.refId, id)));
+}
+
+export async function addDailyTask(input: { refType: "label" | "habit"; refId: number; threshold: number | null }) {
+  const rows = await db
+    .select({ v: schema.dailyTasks.sortOrder })
+    .from(schema.dailyTasks)
+    .orderBy(desc(schema.dailyTasks.sortOrder))
+    .limit(1);
+  await db.insert(schema.dailyTasks).values({ ...input, sortOrder: (rows[0]?.v ?? 0) + 1, active: true });
+}
+
+export async function updateDailyTaskThreshold(id: number, threshold: number | null) {
+  await db.update(schema.dailyTasks).set({ threshold }).where(eq(schema.dailyTasks.id, id));
+}
+
+/** "Xoá" khỏi 6 việc = active=false, không xoá dòng — giữ đúng tinh thần không xoá thật ở đây. */
+export async function removeDailyTask(id: number) {
+  await db.update(schema.dailyTasks).set({ active: false }).where(eq(schema.dailyTasks.id, id));
+}
+
+export async function listAllPrompts() {
+  return db.select().from(schema.prompts).where(eq(schema.prompts.active, true)).orderBy(asc(schema.prompts.id));
+}
+
+export async function createPrompt(text: string, category: string | null) {
+  await db.insert(schema.prompts).values({ text, category, active: true });
+}
+
+export async function updatePromptText(id: number, text: string) {
+  await db.update(schema.prompts).set({ text }).where(eq(schema.prompts.id, id));
+}
+
+export async function deactivatePrompt(id: number) {
+  await db.update(schema.prompts).set({ active: false }).where(eq(schema.prompts.id, id));
+}
+
+export async function updateSettingsRow(input: {
+  sessionMinutes: number;
+  dailySessionGoal: number;
+  reminderHour: number | null;
+}) {
+  await db
+    .update(schema.settings)
+    .set({ ...input, updatedAt: new Date(now()) })
+    .where(eq(schema.settings.id, 1));
 }
 
 // ─── Sessions — SPEC.md §4.3, §4.4 ────────────────────────────────────────
@@ -265,6 +379,8 @@ export async function exportAllData() {
     netWorthRows,
     chapterEventRows,
     settingsRows,
+    promptRows,
+    rareItemRows,
   ] = await Promise.all([
     db.select().from(schema.profile),
     db.select().from(schema.labels),
@@ -277,6 +393,8 @@ export async function exportAllData() {
     db.select().from(schema.netWorthEntries),
     db.select().from(schema.chapterEvents),
     db.select().from(schema.settings),
+    db.select().from(schema.prompts),
+    db.select().from(schema.rareItems),
   ]);
   return {
     exportedAt: new Date(now()).toISOString(),
@@ -291,7 +409,109 @@ export async function exportAllData() {
     netWorthEntries: netWorthRows,
     chapterEvents: chapterEventRows,
     settings: settingsRows,
+    prompts: promptRows,
+    rareItems: rareItemRows,
   };
+}
+
+export type ExportedData = Awaited<ReturnType<typeof exportAllData>>;
+
+function toDate(v: string | Date | null): Date | null {
+  if (v === null) return null;
+  return v instanceof Date ? v : new Date(v);
+}
+
+/**
+ * NHẬP dữ liệu — thay thế TOÀN BỘ bằng một bản đã xuất trước đó (§5.6, §8.5: "bản xuất JSON
+ * hằng tuần là lưới an toàn duy nhất" vì app công khai ai cũng sửa được). Trong MỘT transaction:
+ * xoá sạch rồi chèn lại ĐÚNG id cũ (giữ nguyên quan hệ sessions/habit_entries ↔ labels/habits),
+ * chỉnh lại các sequence sau khi chèn để lần tạo mới tiếp theo không trùng id với dữ liệu vừa
+ * nhập. KHÔNG gộp với dữ liệu hiện có — đúng ngữ nghĩa "khôi phục từ bản sao lưu", không phải
+ * "hợp nhất hai nguồn". Tầng gọi (Server Action) chịu trách nhiệm xác nhận với người dùng trước.
+ */
+export async function importAllData(data: ExportedData): Promise<void> {
+  await db.transaction(async (tx) => {
+    // Xoá theo thứ tự phụ thuộc khoá ngoại — bảng con trước, bảng cha sau.
+    await tx.delete(schema.chapterEvents);
+    await tx.delete(schema.netWorthEntries);
+    await tx.delete(schema.weekReviews);
+    await tx.delete(schema.dayLogs);
+    await tx.delete(schema.habitEntries);
+    await tx.delete(schema.sessions);
+    await tx.delete(schema.dailyTasks);
+    await tx.delete(schema.rareItems);
+    await tx.delete(schema.prompts);
+    await tx.delete(schema.habits);
+    await tx.delete(schema.labels);
+    await tx.delete(schema.profile);
+    await tx.delete(schema.settings);
+
+    if (data.profile?.length) {
+      await tx
+        .insert(schema.profile)
+        .values(data.profile.map((p) => ({ ...p, startedAt: toDate(p.startedAt)! })));
+    }
+    if (data.labels?.length) await tx.insert(schema.labels).values(data.labels);
+    if (data.habits?.length) await tx.insert(schema.habits).values(data.habits);
+    if (data.dailyTasks?.length) await tx.insert(schema.dailyTasks).values(data.dailyTasks);
+    if (data.sessions?.length) {
+      await tx.insert(schema.sessions).values(
+        data.sessions.map((s) => ({ ...s, startedAt: toDate(s.startedAt)!, endsAt: toDate(s.endsAt)!, endedAt: toDate(s.endedAt) })),
+      );
+    }
+    if (data.habitEntries?.length) {
+      await tx.insert(schema.habitEntries).values(data.habitEntries.map((e) => ({ ...e, updatedAt: toDate(e.updatedAt)! })));
+    }
+    if (data.dayLogs?.length) {
+      await tx.insert(schema.dayLogs).values(data.dayLogs.map((d) => ({ ...d, closedAt: toDate(d.closedAt) })));
+    }
+    if (data.weekReviews?.length) {
+      await tx.insert(schema.weekReviews).values(data.weekReviews.map((w) => ({ ...w, createdAt: toDate(w.createdAt)! })));
+    }
+    if (data.netWorthEntries?.length) {
+      await tx
+        .insert(schema.netWorthEntries)
+        .values(data.netWorthEntries.map((n) => ({ ...n, recordedAt: toDate(n.recordedAt)! })));
+    }
+    if (data.chapterEvents?.length) {
+      await tx
+        .insert(schema.chapterEvents)
+        .values(data.chapterEvents.map((c) => ({ ...c, reachedAt: toDate(c.reachedAt)! })));
+    }
+    if (data.prompts?.length) await tx.insert(schema.prompts).values(data.prompts);
+    if (data.rareItems?.length) {
+      await tx.insert(schema.rareItems).values(data.rareItems.map((r) => ({ ...r, receivedAt: toDate(r.receivedAt)! })));
+    }
+    if (data.settings?.length) {
+      await tx
+        .insert(schema.settings)
+        .values(data.settings.map((s) => ({ ...s, updatedAt: toDate(s.updatedAt)! })));
+    }
+  });
+
+  // Serial id đã chèn THẲNG từ file nhập (giữ đúng quan hệ) — sequence của mỗi bảng cần chỉnh
+  // lại về sau MAX(id) hiện có, nếu không lần INSERT tự-sinh-id tiếp theo sẽ trùng id vừa nhập.
+  const idTables = [
+    "profile",
+    "labels",
+    "habits",
+    "daily_tasks",
+    "sessions",
+    "habit_entries",
+    "day_logs",
+    "week_reviews",
+    "net_worth_entries",
+    "chapter_events",
+    "prompts",
+    "rare_items",
+  ];
+  for (const table of idTables) {
+    await db.execute(
+      sql.raw(
+        `select setval(pg_get_serial_sequence('${table}', 'id'), coalesce((select max(id) from ${table}), 1), (select max(id) from ${table}) is not null)`,
+      ),
+    );
+  }
 }
 
 // ─── Bản ghi thô cho core/engine/ — SPEC.md §8.1, §8.4 ────────────────────
@@ -425,6 +645,20 @@ export async function getHideMoney(): Promise<boolean> {
 
 export async function setHideMoney(hide: boolean): Promise<void> {
   await db.update(schema.profile).set({ hideMoney: hide });
+}
+
+/** Hình dáng nhân vật đã chọn (mốc 8, §5.6) — lưu ở `profile.avatar_config.characterKey`, một
+ *  trường jsonb tự do (§7) chứ không phải cột riêng. `null` nếu chưa từng chọn (dùng mặc định). */
+export async function getCharacterLook(): Promise<string | null> {
+  const rows = await db.select({ avatarConfig: schema.profile.avatarConfig }).from(schema.profile).limit(1);
+  const config = rows[0]?.avatarConfig as { characterKey?: string } | undefined;
+  return config?.characterKey ?? null;
+}
+
+export async function setCharacterLook(characterKey: string): Promise<void> {
+  const rows = await db.select({ avatarConfig: schema.profile.avatarConfig }).from(schema.profile).limit(1);
+  const current = (rows[0]?.avatarConfig as Record<string, unknown> | undefined) ?? {};
+  await db.update(schema.profile).set({ avatarConfig: { ...current, characterKey } });
 }
 
 // ─── week_reviews — đúc kết tuần, SPEC.md §5.2, dùng từ mốc 6 ─────────────

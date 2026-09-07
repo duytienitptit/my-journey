@@ -112,10 +112,10 @@ export function TimerOverlay({
 
           <div className="pointer-events-auto absolute right-4 top-4 flex flex-col items-end gap-2">
             <BackfillButton labels={labels} onBackfill={backfill} />
-            {/* Lối vào 4 màn phụ (tuần, thống kê, thư viện, kho lưu trữ — mốc 6/7 + §5.8) —
-                chưa có thanh điều hướng chung nào trong app, gộp chung một cụm nhỏ kín đáo là đủ
-                cho tới giờ. Nguyên tắc 4 (§2) vẫn giữ: đây chỉ là LỐI VÀO, không có con số thống
-                kê nào rò rỉ ra màn chính. */}
+            {/* Lối vào 5 màn phụ (tuần, thống kê, thư viện, kho lưu trữ, cài đặt — mốc 6/7/8 +
+                §5.8) — chưa có thanh điều hướng chung nào trong app, gộp chung một cụm nhỏ kín
+                đáo là đủ cho tới giờ. Nguyên tắc 4 (§2) vẫn giữ: đây chỉ là LỐI VÀO, không có
+                con số thống kê nào rò rỉ ra màn chính. */}
             <div className="flex items-center gap-1.5 rounded-full bg-surface/80 px-3 py-2 shadow-md backdrop-blur">
               <Link href="/week" className="text-xs font-medium text-foreground/60 hover:text-foreground">
                 This week
@@ -131,6 +131,10 @@ export function TimerOverlay({
               <span className="h-3 w-px bg-foreground/15" />
               <Link href="/archive" className="text-xs font-medium text-foreground/60 hover:text-foreground">
                 Archive
+              </Link>
+              <span className="h-3 w-px bg-foreground/15" />
+              <Link href="/settings" className="text-xs font-medium text-foreground/60 hover:text-foreground">
+                Settings
               </Link>
             </div>
           </div>

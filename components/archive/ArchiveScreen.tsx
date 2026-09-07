@@ -98,13 +98,6 @@ export function ArchiveScreen({ initialData }: { initialData: ArchiveData }) {
           data.entries.map((e) => <EntryCard key={e.dayKey} dayKey={e.dayKey} mood={e.mood} text={e.text} />)
         )}
       </div>
-
-      <a
-        href="/api/export"
-        className="mx-auto text-xs font-medium text-foreground/40 underline decoration-dotted underline-offset-4 hover:text-foreground/60"
-      >
-        Export all data
-      </a>
     </main>
   );
 }

@@ -14,8 +14,8 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần)**, kế hoạch đã duyệt ngày 2026-09-02 — xem
-  `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
+- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần), 8a (Cài đặt — CHƯA làm 8b đánh bóng)**,
+  kế hoạch đã duyệt ngày 2026-09-02 — xem `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
 - **Mốc 7 — CHỈ thư viện hành trình + kho lưu trữ, KHÔNG làm phần cron [SỬA PHẠM VI — 2026-09-05]**.
   Chủ dự án chủ động bỏ qua "Vercel Cron xuất JSON hằng tuần" — app chưa deploy ở đâu cả (vẫn
   local + GitHub-only), cron của Vercel không chạy/test được ở local dev, và sau khi tôi hỏi thẳng
@@ -89,7 +89,52 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   - **QA làm trên DB TẠM RIÊNG** (`myjourney_stats_qa`, tạo → đổ dữ liệu giả → soi → xoá), không
     đụng một dòng nào của DB thật — xem [[feedback-shared-dev-db-caution]]. Cách này nên thành
     thói quen cho mọi lần cần dữ liệu giả về sau.
-- **Tiếp theo:** phần cron/backup của mốc 7 gốc (nếu chủ dự án đổi ý) hoặc mốc 8 (cài đặt đầy đủ + đánh bóng).
+- **Mốc 8a — Cài đặt (chức năng), 2026-09-08.** Chủ dự án gộp hai yêu cầu trong một câu: "bắt đầu
+  mốc 8 đi và xóa toàn bộ data hiện tại". Đã hỏi 2 câu trước khi làm: phạm vi xoá → **xoá SẠCH cả
+  14 bảng, seed lại từ đầu**; cách tiếp cận mốc 8 → **chia 2 phần, 8a (chức năng) trước, 8b (đánh
+  bóng) sau**. **Sự cố an toàn nghiêm trọng lúc xoá dữ liệu — đã sửa nhưng PHẢI đọc trước khi làm
+  việc tương tự lần sau:** xem [[feedback-stated-boundary-must-hold-same-turn]].
+
+  Dựng đủ theo đúng SPEC.md §5.6: `app/settings/page.tsx` + 8 file trong `components/settings/`
+  (Card dùng chung, CharacterSection, LabelsSection, HabitsSection, DailyTasksSection,
+  SessionSection, PromptsSection, DataSection, SettingsScreen) + `app/actions/settings.ts`. Nav
+  "Settings" thêm vào cụm góc màn chính (`TimerOverlay.tsx`). Hai link "Export all data" tạm thời
+  ở `EveningPanel`/`ArchiveScreen` (đã đánh dấu "chỗ tạm cho tới khi có Cài đặt" từ mốc 2/7) đã
+  GỠ — Cài đặt giờ là nơi duy nhất cho xuất/nhập dữ liệu.
+
+  **Nhân vật đổi từ 1 model sang 12 hình dáng chọn được** (`male-a`…`f`, `female-a`…`f`, tải lại
+  từ Kenney Mini Characters) — pack KHÔNG hỗ trợ tách tóc/da/trang phục để trộn riêng như câu chữ
+  gốc SPEC.md từng ngụ ý, mỗi tên là một nhân vật hoàn chỉnh dựng sẵn. Đã hỏi chủ dự án xác nhận
+  hướng "chọn nguyên một bộ có sẵn" trước khi tải asset. `components/room/models.ts` đổi trục đơn
+  (stage) sang trục kép (`CHARACTER_LOOKS × stage`), lưu lựa chọn ở `profile.avatar_config.characterKey`.
+  Bảng "6 việc" (`DailyTaskWithRef`) thêm field `habitKind` để phân biệt habit "journal" (không
+  có ngưỡng số) — Cài đặt cần biết điều này mà mốc 3/4 chưa từng cần. Habit tạo mới qua Cài đặt
+  LUÔN `kind="score_1_5"` (đúng [CHỐT] §4.2) — `kind="boolean"` có trong schema nhưng không có
+  đường render nào, cố ý không cho chọn.
+
+  **Bug thật bắt được lúc TỰ CHẠY `importAllData` (không phải lúc soi code):** thiếu
+  `tx.delete(schema.settings)` trong danh sách xoá trước khi ghi lại — nhập file sẽ luôn văng lỗi
+  `duplicate key value violates unique constraint "settings_pkey"` vì bảng `settings` chỉ có đúng
+  1 dòng cố định id=1. Phát hiện bằng script gọi thẳng hàm (Claude_Browser không có cách chọn file
+  cho `<input type=file>`, `form_input` bị trình duyệt chặn với `InvalidStateError`). Đã sửa, chạy
+  lại thành công, đối chiếu `psql` khớp 100% với file gốc — dùng luôn lần chạy này để dọn dữ liệu
+  QA vì file nhập là bản chụp TRƯỚC lúc QA. **Hàm "khôi phục toàn bộ" kiểu này phải tự chạy thật
+  ít nhất một lần trước khi báo xong — review tĩnh không bắt được một dòng `delete` bị thiếu.**
+
+  **[CHƯA HỎI — cần chủ dự án xác nhận ở lượt báo cáo tới]** Nghĩa "nhập dữ liệu" = THAY THẾ TOÀN
+  BỘ, không gộp — SPEC.md §5.6 chỉ nói "xuất/nhập", không nói rõ ngữ nghĩa. Tôi tự chọn cách đọc
+  duy nhất hợp lý thay vì dừng lại hỏi trước — đúng ra phải hỏi theo luật cứng 1. Đã ghi flag
+  `[CHƯA HỎI]` ngay trong SPEC.md §5.6.
+
+  297 test, `tsc`/`eslint`/`npm run build` sạch.
+- **Còn nợ, đã hỏi và chủ dự án đồng ý hoãn tới sau mốc 8 — ĐỪNG QUÊN:** đổi phong cách 3D "giống
+  game hơn thay vì hình khối" — chủ dự án chủ động yêu cầu giữa lúc dựng mốc 8, xác nhận phạm vi
+  là **TOÀN BỘ phòng/đồ đạc** (không phải một món riêng lẻ), và chọn qua AskUserQuestion **"xong
+  mốc 8 (Cài đặt) trước, rồi quay lại"**. Đây là việc CÒN NỢ, không phải bị huỷ.
+- **Tiếp theo:** mốc 8b (đánh bóng — mùa thật/ngày lễ, vật phẩm hiếm, nhắc 22h THẬT SỰ CHẠY —
+  hiện chỉ có Ô CÀI ĐẶT giờ nhắc, chưa có cơ chế bắn thông báo, hoạt ảnh, phím tắt, dark mode) —
+  RỒI mới quay lại đổi phong cách 3D đã hoãn ở trên. Hoặc phần cron/backup của mốc 7 gốc nếu chủ
+  dự án đổi ý.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
@@ -153,12 +198,15 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 - **Bốn nguyên tắc kỹ thuật §8 đã có `core/day.ts`, `core/session.ts`, `core/summary.ts`,
   `core/journalPrompt.ts`, `core/engine/*` — thuần, đủ unit test (265 test qua `npm test`),
   không đụng DB/React.**
-- Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — số lựa chọn tóc/da/trang phục, thẻ cho
-  nhật ký, mốc chương trung gian, và **câu chữ cụ thể khi app trách móc**. Hỏi khi dựng tới
-  đúng chỗ cần.
+- Những thứ chủ dự án **cố ý hoãn** (`SPEC.md` §11.5) — thẻ cho nhật ký, mốc chương trung gian
+  (UI/cách trình bày — engine đã xử lý từ mốc 5), và **câu chữ cụ thể khi app trách móc**. Hỏi
+  khi dựng tới đúng chỗ cần. ~~Số lựa chọn tóc/da/trang phục~~ đã giải quyết ở mốc 8a — không
+  phải slider độc lập (asset không hỗ trợ), mà 12 hình dáng dựng sẵn chọn nguyên bộ, chủ dự án
+  đã xác nhận hướng này trước khi tải asset.
 - **30 câu gợi ý nhật ký đã seed** (mốc 2, tiếng Anh — bảng `prompts`) làm bộ khởi đầu, chưa
-  phải bản duyệt cuối cùng "~60 câu" mà chủ dự án nhắc — mở rộng/sửa khi có Cài đặt (mốc 8),
-  hoặc sớm hơn nếu được yêu cầu.
+  phải bản duyệt cuối cùng "~60 câu" mà chủ dự án nhắc. **Từ mốc 8a, Cài đặt đã có CRUD đầy đủ**
+  (thêm/sửa/xoá câu gợi ý, `components/settings/PromptsSection.tsx`) — công cụ đã sẵn sàng, chỉ
+  còn chờ chủ dự án tự duyệt/viết thêm khi rảnh, không cần tôi động tay vào code nữa cho việc này.
 
 ---
 

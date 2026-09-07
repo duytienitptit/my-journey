@@ -117,13 +117,6 @@ export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine,
             )}
           </div>
 
-          {/* Xuất dữ liệu thủ công (SPEC.md §5.5) — chỗ tạm cho tới khi có Cài đặt (mốc 8). */}
-          <a
-            href="/api/export"
-            className="mx-auto text-xs font-medium text-foreground/40 underline decoration-dotted underline-offset-4 hover:text-foreground/60"
-          >
-            Export all data
-          </a>
         </>
       )}
     </section>

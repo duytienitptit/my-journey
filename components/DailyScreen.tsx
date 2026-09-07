@@ -97,6 +97,7 @@ export function DailyScreen({
           pose={pose}
           timeOfDay={timeOfDay}
           characterStage={stats.characterStage}
+          characterLook={stats.characterLook}
           chapter={stats.chapter}
           unlockedItems={stats.unlockedItems}
           focusMode={timer.running !== null}

@@ -66,16 +66,45 @@ export const ROOM_ITEM_MODEL_URLS: Readonly<Record<string, string>> = {
 };
 
 /**
- * Model nhân vật theo giai đoạn (SPEC.md §4.8) — chỉ giai đoạn 1 có model thật, các giai đoạn
- * sau thêm dần khi nhân vật thật sự tới cấp đó (§5.3: "đồ chỉ đến khi đủ điểm", không phải rơi
- * theo thời gian). `characterModelForStage` dùng tạm giai đoạn gần nhất đã có model.
+ * 12 hình dáng nhân vật CÓ SẴN (Cài đặt, mốc 8, SPEC.md §5.3/§5.6) — cùng pack CC0 đã dùng từ
+ * mốc 1 (Kenney Mini Characters), chọn NGUYÊN một bộ gần giống mình nhất chứ không tách rời
+ * tóc/da/trang phục để trộn (pack không hỗ trợ — xem public/models/CREDITS.md). Lưu lựa chọn ở
+ * `profile.avatar_config.characterKey`.
  */
-export const CHARACTER_MODEL_URLS_BY_STAGE: Readonly<Record<number, string>> = {
-  1: "/models/characters/stage-1.glb",
-};
+export const CHARACTER_LOOKS: readonly string[] = [
+  "male-a",
+  "male-b",
+  "male-c",
+  "male-d",
+  "male-e",
+  "male-f",
+  "female-a",
+  "female-b",
+  "female-c",
+  "female-d",
+  "female-e",
+  "female-f",
+];
 
-export function characterModelForStage(stage: number): string {
-  const available = Object.keys(CHARACTER_MODEL_URLS_BY_STAGE).map(Number);
+export const DEFAULT_CHARACTER_LOOK = "male-a";
+
+export function isValidCharacterLook(key: string): boolean {
+  return (CHARACTER_LOOKS as readonly string[]).includes(key);
+}
+
+/**
+ * Model nhân vật theo giai đoạn (SPEC.md §4.8) × hình dáng đã chọn (mốc 8) — chỉ giai đoạn 1 có
+ * model thật cho MỖI hình dáng, các giai đoạn sau thêm dần khi nhân vật thật sự tới cấp đó
+ * (§5.3: "đồ chỉ đến khi đủ điểm", không phải rơi theo thời gian). `characterModelForStage`
+ * dùng tạm giai đoạn gần nhất đã có model — TRONG hình dáng đã chọn, không lẫn giữa các hình
+ * dáng với nhau.
+ */
+const CHARACTER_MODEL_URLS_BY_LOOK_AND_STAGE: Readonly<Record<string, Readonly<Record<number, string>>>> =
+  Object.fromEntries(CHARACTER_LOOKS.map((look) => [look, { 1: `/models/characters/${look}.glb` }]));
+
+export function characterModelForStage(stage: number, look: string = DEFAULT_CHARACTER_LOOK): string {
+  const table = CHARACTER_MODEL_URLS_BY_LOOK_AND_STAGE[look] ?? CHARACTER_MODEL_URLS_BY_LOOK_AND_STAGE[DEFAULT_CHARACTER_LOOK];
+  const available = Object.keys(table).map(Number);
   const bestAvailable = available.filter((s) => s <= stage).sort((a, b) => b - a)[0];
-  return CHARACTER_MODEL_URLS_BY_STAGE[bestAvailable ?? Math.min(...available)];
+  return table[bestAvailable ?? Math.min(...available)];
 }

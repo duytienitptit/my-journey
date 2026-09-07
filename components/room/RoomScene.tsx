@@ -8,7 +8,7 @@ import { RoomShell } from "./RoomShell";
 import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
 import { Character, type CharacterPose } from "./Character";
 import { Fireflies } from "./Fireflies";
-import { characterModelForStage } from "./models";
+import { DEFAULT_CHARACTER_LOOK, characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
 import { cameraFramingForFootprint, footprintForChapter } from "./shells/footprint";
 import type { StatKey } from "@/core/types";
@@ -20,6 +20,8 @@ type Props = {
   pose: CharacterPose;
   /** Giai đoạn nhân vật (SPEC.md §4.8) — mặc định 1, chưa có model cho giai đoạn khác. */
   characterStage?: number;
+  /** Hình dáng nhân vật đã chọn (Cài đặt, mốc 8) — một trong CHARACTER_LOOKS, mặc định male-a. */
+  characterLook?: string;
   /** Chương hiện tại (SPEC.md §4.9) — mặc định 1, quyết định vỏ nhà + khung camera (mốc 5). */
   chapter?: number;
   /** Cuộn tới phần buổi tối → phòng dịu xuống (SPEC.md §5.1: "ánh sáng phòng chuyển tối"). */
@@ -136,6 +138,7 @@ function useTouchScrollFix() {
 export function RoomScene({
   pose,
   characterStage = 1,
+  characterLook = DEFAULT_CHARACTER_LOOK,
   chapter = 1,
   timeOfDay = "day",
   unlockedItems = [],
@@ -170,7 +173,7 @@ export function RoomScene({
         <RoomShell chapter={chapter} />
         <RoomItems items={unlockedItems} />
         <Character
-          url={characterModelForStage(characterStage)}
+          url={characterModelForStage(characterStage, characterLook)}
           pose={pose}
           position={characterSpot}
           rotation={[0, Math.PI, 0]}

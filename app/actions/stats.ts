@@ -6,7 +6,8 @@ import { unlockedRoomItems, type RoomItemCatalogEntry } from "@/core/engine/room
 import { foldTimeline } from "@/core/engine/timeline";
 import type { DayAchievedStreakInfo, StreakMilestoneEvent } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
-import { getEngineRawData, getHideMoney, getLatestNetWorth, getRoomItemsCatalog } from "@/db/queries";
+import { DEFAULT_CHARACTER_LOOK } from "@/components/room/models";
+import { getCharacterLook, getEngineRawData, getHideMoney, getLatestNetWorth, getRoomItemsCatalog } from "@/db/queries";
 
 export type ComputedStats = {
   levelByStat: Record<StatKey, number>;
@@ -31,6 +32,8 @@ export type ComputedStats = {
   /** `profile.hide_money` — mặc định `false`: số tài sản LUÔN HIỆN ([SỬA/CHỐT — 2026-09-05],
    *  §4.9). Nút ẩn vẫn còn cho khoảnh khắc không muốn nhìn, và trạng thái đó phải lưu lại. */
   hideMoney: boolean;
+  /** Hình dáng nhân vật đã chọn (mốc 8, §5.6) — một trong 12 CHARACTER_LOOKS, mặc định male-a. */
+  characterLook: string;
 };
 
 /**
@@ -42,11 +45,12 @@ export type ComputedStats = {
  * trục độc lập với XP, xem ghi chú kiến trúc trong core/engine/chapters.ts.
  */
 export async function getComputedStatsAction(): Promise<ComputedStats> {
-  const [raw, catalog, latestNetWorth, hideMoney] = await Promise.all([
+  const [raw, catalog, latestNetWorth, hideMoney, characterLook] = await Promise.all([
     getEngineRawData(),
     getRoomItemsCatalog(),
     getLatestNetWorth(),
     getHideMoney(),
+    getCharacterLook(),
   ]);
   const result = foldTimeline(raw, now());
   const chapter = chapterForNetWorth(latestNetWorth?.totalVnd ?? 0);
@@ -62,5 +66,6 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
       ? { stocksVnd: latestNetWorth.stocksVnd, goldVnd: latestNetWorth.goldVnd, totalVnd: latestNetWorth.totalVnd }
       : null,
     hideMoney,
+    characterLook: characterLook ?? DEFAULT_CHARACTER_LOOK,
   };
 }

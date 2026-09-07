@@ -488,6 +488,18 @@ Các chương tôi đã đi qua, mỗi chương một khung: nhân vật ở hì
 
 Nhân vật · **Nhãn** (tên + chỉ số + emoji + màu) · **Thói quen** · **6 việc trong ngày + ngưỡng mỗi việc** · Độ dài phiên · Mục tiêu phiên/ngày · Giờ nhắc · Bộ câu hỏi gợi ý · Ẩn/hiện số tài sản · Xuất/nhập dữ liệu.
 
+**[CHƯA HỎI — dựng mốc 8a, 2026-09-08, cần chủ dự án xác nhận]** Spec không nói rõ "nhập dữ liệu"
+nghĩa là gì khi đã có dữ liệu sẵn trong máy — dựng tạm theo nghĩa duy nhất hợp lý với một file
+"xuất toàn bộ": **THAY THẾ TOÀN BỘ**, không gộp. Chọn file → app xoá sạch 14 bảng → chèn lại đúng
+y hệt nội dung file (giữ nguyên id, giữ nguyên quan hệ khoá ngoại). Không có đường "gộp hai
+nguồn" (phiên nào trùng ngày thì sao, XP tính lại kiểu gì) — coi đây là *khôi phục từ bản sao lưu*
+đúng nghĩa máy tính vẫn dùng, không phải đồng bộ. Màn Cài đặt chặn bằng một bước xác nhận rõ ràng
+(cảnh báo đỏ, phải bấm lần hai) trước khi chạm DB, vì đây là hành động phá huỷ nặng nhất trong
+toàn app. Ký hiệu **[CHƯA HỎI]** vì tôi (Claude) tự chọn nghĩa này khi thấy chỉ có một cách đọc
+hợp lý — đúng luật cứng 1 (đầu `CLAUDE.md`) thì lẽ ra phải dừng lại hỏi trước, không tự chọn.
+Nếu chủ dự án muốn khác (vd. có thêm đường "gộp") thì đổi ở đây và ở `db/queries.ts` (hàm
+`importAllData`) cùng lúc.
+
 ### 5.7 Ngôn ngữ thiết kế tôi muốn
 
 - Nền màu **ấm** (kem/be), không trắng tinh, không đen tuyền. Có chế độ tối cho buổi đêm.
