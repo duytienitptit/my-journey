@@ -3,6 +3,24 @@
  * đây, không đụng component nào khác (SPEC.md §5.3: "5-6 vỏ nhà gốc... tránh rigging").
  */
 
+/**
+ * THỬ NGHIỆM — phong cách 3D chi tiết hơn (Quaternius, xem CREDITS.md), chỉ dùng cho Chương 1
+ * qua `RoomShellV2Trial.tsx` để chủ dự án xem trước khi quyết mở rộng ra cả 12 chương. Đừng
+ * dùng ở đâu khác cho tới khi có quyết định — nếu chốt dùng thật thì SÁP NHẬP vào
+ * `ROOM_MODEL_URLS` ở trên (xoá key trùng của Kenney) thay vì giữ hai bộ song song mãi mãi.
+ */
+export const ROOM_MODEL_URLS_V2_TRIAL = {
+  bed: "/models/room-v2/bedSingle.glb",
+  desk: "/models/room-v2/desk.glb",
+  chair: "/models/room-v2/chairDesk.glb",
+  bookcase: "/models/room-v2/bookcase.glb",
+  sideTable: "/models/room-v2/sideTable.glb",
+  lamp: "/models/room-v2/lamp.glb",
+  rug: "/models/room-v2/rug.glb",
+  plant: "/models/room-v2/plant.glb",
+  wallWindow: "/models/room-v2/wallWindow.glb",
+} as const;
+
 export const ROOM_MODEL_URLS = {
   floor: "/models/room/floorFull.glb",
   wall: "/models/room/wall.glb",

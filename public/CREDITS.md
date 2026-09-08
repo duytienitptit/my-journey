@@ -7,6 +7,26 @@ Ghi công ở đây là tự nguyện, theo đúng tinh thần Kenney đề ngh�
 Quyết định dùng model 3D (thay vì ảnh render xếp lớp như bản v3 gốc) — xem `SPEC.md` §5.3, §8.5,
 đổi ngày 2026-09-02.
 
+## Đồ đạc phòng — `room-v2/` (THỬ NGHIỆM, xem RoomShellV2Trial.tsx)
+
+**Quaternius — Furniture Pack** và **Ultimate House Interior Pack** (qua poly.pizza, cùng tác
+giả Quaternius)
+Nguồn: https://poly.pizza/bundle/Furniture-Pack-pgvx8Zkq8v ·
+https://poly.pizza/bundle/Ultimate-House-Interior-Pack-2SXnFbwFzm
+License: CC0 1.0 / Public Domain — ghi rõ trên từng trang poly.pizza
+
+Chi tiết hơn hẳn Kenney Furniture Kit (vân gỗ, sách trên kệ, đường viền bo tròn) — chủ dự án chê
+phòng "trông đồ hoạ rất cũ... khối vuông vức", chọn hướng "tìm pack khác chi tiết hơn" (không
+chọn tự tạo bằng AI) và "thử nhỏ trước" qua AskUserQuestion. 9 model lấy cho Chương 1:
+`bedSingle` (Bed Twin), `desk` (Desk), `chairDesk` (Office Chair), `bookcase` (Bookcase with
+Books), `sideTable` (Night Stand) — từ Furniture Pack; `lamp` (Table Lamp), `rug` (Rug), `plant`
+(Houseplant), `wallWindow` (Window Small) — từ Ultimate House Interior Pack. Tường/sàn/nhân vật
+GIỮ NGUYÊN Kenney/Mini Characters — chỉ đổi đồ đạc rời.
+
+**Đây CHƯA phải quyết định cuối** — chỉ Chương 1, bật/tắt bằng một hằng số ở `RoomShell.tsx`
+(`V2_TRIAL_CHAPTER_1`). Nếu chủ dự án ưng, việc tiếp theo là tải đủ model cho 11 chương còn lại
+và sáp nhập hẳn vào `ROOM_MODEL_URLS`/`zones.tsx`, xoá bộ Kenney cũ — không giữ hai bộ song song.
+
 ## Đồ đạc phòng — `room/`
 
 **Kenney — Furniture Kit** (2.0, phát hành 2018)

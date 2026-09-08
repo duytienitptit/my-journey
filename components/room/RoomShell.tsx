@@ -2,6 +2,7 @@
 
 import { GltfModel } from "./GltfModel";
 import { ROOM_MODEL_URLS } from "./models";
+import { RoomShellV2TrialFurniture } from "./RoomShellV2Trial";
 import { footprintForChapter, totalWidthOf } from "./shells/footprint";
 import {
   BalconyZone,
@@ -86,14 +87,21 @@ function CitySkyline({ interiorDepth }: { interiorDepth: number }) {
   );
 }
 
+// THỬ NGHIỆM — bật/tắt bằng đúng một hằng số này để dễ so sánh trước/sau hoặc gỡ hoàn toàn nếu
+// chủ dự án không ưng (xem RoomShellV2Trial.tsx). Chỉ ảnh hưởng Chương 1.
+const V2_TRIAL_CHAPTER_1 = true;
+
 export function RoomShell({ chapter = 1 }: { chapter?: number }) {
   const fp = footprintForChapter(chapter);
   const { interiorWidth, interiorDepth, outdoorWidth } = fp;
   const backWallKind: BackWallKind = chapter === 1 ? "wall" : chapter <= 7 ? "window" : "slide";
+  const useV2Trial = V2_TRIAL_CHAPTER_1 && chapter === 1;
 
   // Đồ CHUNG cho mọi chương ≥ 1 — y hệt Chương 1, không đổi khi phòng lớn dần (§5.3: đồ chỉ
   // ĐẾN theo chương, không có món nào của chương trước bị dọn đi).
-  const core = (
+  const core = useV2Trial ? (
+    <RoomShellV2TrialFurniture />
+  ) : (
     <>
       <SleepZone anchor={[0, 0]} double={chapter >= 6} />
       <DeskZone corner={[interiorWidth, -interiorDepth]} />
@@ -111,8 +119,10 @@ export function RoomShell({ chapter = 1 }: { chapter?: number }) {
 
       {core}
 
-      {/* Chương 1-2: đúng ba món — giường, bàn học, kệ sách, không hơn (SPEC.md §4.9 Chương 1-2). */}
-      {chapter <= 2 && <Rug anchor={[0.75, -2.1]} />}
+      {/* Chương 1-2: đúng ba món — giường, bàn học, kệ sách, không hơn (SPEC.md §4.9 Chương 1-2).
+          Thảm Chương 1 đã có SẴN trong RoomShellV2TrialFurniture khi bật thử nghiệm — bỏ qua ở
+          đây để không chồng hai thảm. */}
+      {chapter <= 2 && !useV2Trial && <Rug anchor={[0.75, -2.1]} />}
 
       {/* Chương 3+: phòng rộng hơn — thảm to hơn cho vừa không gian mới. */}
       {chapter >= 3 && <Rug anchor={[1.1, -2.8]} wide />}

@@ -466,6 +466,13 @@ Phòng là **không gian 3D thật**, tôi xoay và zoom được.
 
 *Ghi chú sản xuất tôi muốn bạn theo:* 12 chương **không** có nghĩa 12 mô hình 3D riêng. Dùng **5–6 vỏ nhà gốc**, mỗi vỏ vài biến thể (thêm ban công, đổi nội thất, mở thêm phòng, đổi cảnh ngoài cửa sổ).
 
+**[ĐANG THỬ — 2026-09-08]** Sau khi dùng app một thời gian, tôi chê đồ đạc "trông đồ hoạ rất cũ,
+các khối vuông vức" (pack Kenney Furniture Kit gốc). Đã cân nhắc 3 hướng qua AskUserQuestion:
+nâng chất lượng render (đổ bóng/ánh sáng — ĐÃ LÀM, áp dụng mọi chương ngay) · đổi hẳn sang pack
+đồ hoạ khác chi tiết hơn (Quaternius, CC0 — ĐANG THỬ, chỉ Chương 1) · tự tạo model bằng AI (KHÔNG
+chọn — rủi ro lệch phong cách khi tạo rời rạc hàng chục món). Xem `RoomShellV2Trial.tsx` +
+`public/CREDITS.md` — chưa quyết mở rộng ra 11 chương còn lại, đang chờ tôi xem rồi chốt.
+
 **Nhân vật — đổi ngày 2026-09-02, khi lập kế hoạch dựng mốc 1:** dùng **model 3D low-poly có sẵn** (asset pack CC0, cùng nguồn với đồ đạc và nhà), không phải ảnh render xếp lớp như bản gốc viết. **[CHỐT]**
 
 *Lý do đổi:* phòng là không gian 3D **xoay và zoom được** (mục này, đoạn trên). Một ảnh phẳng dán vào cảnh 3D luôn quay mặt về phía camera như tấm bìa — xoay phòng một góc là lộ ngay. Model 3D thật thì không có vấn đề đó, và cùng phong cách với đồ đạc quanh nó.

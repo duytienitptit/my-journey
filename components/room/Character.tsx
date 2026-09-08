@@ -31,6 +31,18 @@ export function Character({ url, pose, ...groupProps }: Props) {
   const { scene, animations } = useGLTF(url);
   const { actions } = useAnimations(animations, group);
 
+  // Đổ bóng (mốc "nâng cấp phong cách 3D") — KHÔNG clone (mesh có xương, clone tay dễ hỏng
+  // skinning), chỉ traverse gán cờ lên scene gốc. `useGLTF` cache theo `url` nên đây là an toàn,
+  // không gán lại tốn kém trên mọi render — effect chỉ chạy lại khi `scene` đổi.
+  useEffect(() => {
+    scene.traverse((child) => {
+      if ((child as unknown as { isMesh?: boolean }).isMesh) {
+        child.castShadow = true;
+        child.receiveShadow = true;
+      }
+    });
+  }, [scene]);
+
   useEffect(() => {
     const clipName = CLIP_BY_POSE[pose];
     const action = actions[clipName];

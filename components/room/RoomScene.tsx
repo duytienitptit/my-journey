@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls } from "@react-three/drei";
+import { ContactShadows, OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomShell } from "./RoomShell";
 import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
@@ -12,7 +12,7 @@ import { Character, type CharacterPose } from "./Character";
 import { Fireflies } from "./Fireflies";
 import { DEFAULT_CHARACTER_LOOK, characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
-import { cameraFramingForFootprint, footprintForChapter } from "./shells/footprint";
+import { cameraFramingForFootprint, footprintForChapter, totalWidthOf } from "./shells/footprint";
 import type { StatKey } from "@/core/types";
 import type { SeasonKey } from "@/core/engine/seasons";
 
@@ -76,6 +76,7 @@ function SceneAtmosphere({
   season,
   fogNear,
   fogFar,
+  shadowExtent,
 }: {
   lightColor: string;
   timeOfDay: TimeOfDay;
@@ -83,6 +84,8 @@ function SceneAtmosphere({
   season: SeasonKey;
   fogNear: number;
   fogFar: number;
+  /** Nửa bề rộng khung camera đổ bóng (đèn hướng), co giãn theo cỡ phòng — xem RoomScene. */
+  shadowExtent: number;
 }) {
   const bgRef = useRef<THREE.Color>(null);
   const fogRef = useRef<THREE.Fog>(null);
@@ -119,7 +122,25 @@ function SceneAtmosphere({
       {/* Màu đèn nền theo nhãn (§5.1) — đổi qua prop React bình thường, không cần lerp riêng:
           đây vốn đã là "nhẹ", không cần thêm hoạt ảnh cho chính màu sắc. */}
       <ambientLight ref={ambientRef} color={lightColor} intensity={SCENE_TONE.day.ambient} />
-      <directionalLight ref={dirRef} color="#fff4de" intensity={SCENE_TONE.day.directional} position={[4, 6, 3]} />
+      {/* Đổ bóng (mốc "nâng cấp phong cách 3D", 2026-09-08) — trước đó phòng KHÔNG có bóng đổ
+          nào, một phần lớn lý do trông "phẳng". `shadow-mapSize` vừa đủ nét cho phòng nhỏ mà
+          không quá nặng; `shadow-camera-*` co theo `shadowExtent` (bề rộng phòng hiện tại) —
+          xem RoomScene, cùng tinh thần co giãn với sương mù (footprint.ts). */}
+      <directionalLight
+        ref={dirRef}
+        color="#fff4de"
+        intensity={SCENE_TONE.day.directional}
+        position={[4, 6, 3]}
+        castShadow
+        shadow-mapSize={[1024, 1024]}
+        shadow-camera-left={-shadowExtent}
+        shadow-camera-right={shadowExtent}
+        shadow-camera-top={shadowExtent}
+        shadow-camera-bottom={-shadowExtent}
+        shadow-camera-near={0.5}
+        shadow-camera-far={shadowExtent * 4}
+        shadow-bias={-0.0015}
+      />
       <hemisphereLight ref={hemiRef} color="#fff6e6" groundColor="#d8c9a3" intensity={SCENE_TONE.day.hemi} />
     </>
   );
@@ -185,9 +206,13 @@ export function RoomScene({
     0.05,
     -footprint.interiorDepth + 0.7,
   ];
+  // Nửa bề rộng khung camera đổ bóng — đủ rộng để phủ hết phòng hiện tại (§ ghi chú ở
+  // SceneAtmosphere). Chưa cho đèn/target bám theo TÂM phòng như camera chính (chỉ mới tinh
+  // chỉnh cho phòng nhỏ, Chương 1 — phòng lớn hơn có thể cần soi lại nếu đổi luôn đồ đạc ở đó).
+  const shadowExtent = Math.max(totalWidthOf(footprint), footprint.interiorDepth) * 0.9;
 
   return (
-    <Canvas camera={{ position: framing.position, fov: 40 }}>
+    <Canvas shadows camera={{ position: framing.position, fov: 40 }}>
       <SceneAtmosphere
         lightColor={lightColor}
         timeOfDay={timeOfDay}
@@ -195,6 +220,7 @@ export function RoomScene({
         season={season}
         fogNear={framing.fogNear}
         fogFar={framing.fogFar}
+        shadowExtent={shadowExtent}
       />
 
       <Suspense fallback={null}>
@@ -209,6 +235,19 @@ export function RoomScene({
           rotation={[0, Math.PI, 0]}
         />
       </Suspense>
+
+      {/* Bóng đổ mềm sát chân đồ đạc (mốc "nâng cấp phong cách 3D") — bù cho việc `shadow-camera`
+          của đèn hướng (trên) không phải lúc nào cũng bắt trọn góc khuất SÁT MẶT SÀN ở khoảng
+          cách gần; đây là lớp "tiếp xúc" rẻ, không cần bật postprocessing riêng, giúp đồ đạc
+          trông THẬT SỰ đứng trên sàn thay vì lơ lửng — hiệu ứng rõ nhất với hình khối đơn giản. */}
+      <ContactShadows
+        position={[totalWidthOf(footprint) / 2, 0.052, -footprint.interiorDepth / 2]}
+        scale={Math.max(totalWidthOf(footprint), footprint.interiorDepth) * 1.4}
+        opacity={0.45}
+        blur={2.2}
+        far={2.5}
+        resolution={512}
+      />
 
       {/* Chế độ tập trung: hạt sáng đom đóm, SPEC.md §5.1 [THÊM/SỬA — 2026-09-05] — neo vào
           `framing.target` (điểm camera nhìn vào, giữa khung hình) chứ không phải vị trí nhân vật,

@@ -184,13 +184,31 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   329 test (tổng, +32 so với mốc 8a), `tsc`/`eslint`/`npm run build` sạch. Dọn dữ liệu QA (1
   session bỏ dở + 1 vật phẩm hiếm sinh ra lúc tua đồng hồ test) bằng xoá đúng id, xem
   [[feedback-shared-dev-db-caution]] — không đụng gì khác trong DB thật.
-- **Còn nợ, đã hỏi và chủ dự án đồng ý hoãn — ĐỪNG QUÊN:** đổi phong cách 3D "giống game hơn thay
-  vì hình khối" — chủ dự án chủ động yêu cầu giữa lúc dựng mốc 8, xác nhận phạm vi là **TOÀN BỘ
-  phòng/đồ đạc** (không phải một món riêng lẻ), và chọn qua AskUserQuestion **"xong mốc 8 (Cài
-  đặt) trước, rồi quay lại"** — mốc 8 (cả 8a lẫn 8b) nay đã xong, đây là việc CÒN NỢ tiếp theo.
-- **Tiếp theo:** quay lại đổi phong cách 3D đã hoãn ở trên. Hoặc phần cron/backup của mốc 7 gốc
-  nếu chủ dự án đổi ý. Còn hai flag `[CHƯA HỎI]` cần chủ dự án xác nhận (nghĩa "nhập dữ liệu" ở
-  mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại ở lượt báo cáo tới nếu chưa được hỏi.
+- **Phong cách 3D — ĐANG THỬ, 2026-09-08 (cùng ngày mốc 8b).** Chủ dự án chê phòng "trông đồ hoạ
+  rất cũ, khối vuông vức". Hỏi 2 câu AskUserQuestion: (1) hướng nào trước — chọn **nâng render
+  trước** (Recommended) + cân nhắc riêng câu đồ đạc; (2) đồ đạc — chọn **tìm pack khác chi tiết
+  hơn** (không chọn AI tự tạo, lý do rủi ro lệch phong cách khi tạo rời rạc hàng chục món) + **thử
+  nhỏ trước** (không làm hết 12 chương ngay).
+
+  **Đã làm (áp dụng MỌI chương ngay, không phải thử nghiệm):** đổ bóng thật lần đầu tiên
+  (`GltfModel.tsx`/`Character.tsx` traverse gán `castShadow`/`receiveShadow`, `directionalLight`
+  co `shadow-camera` theo cỡ phòng) + `<ContactShadows>` (drei) cho bóng mềm sát chân đồ — trước
+  đó phòng KHÔNG có bóng đổ nào. Bẫy nhỏ: đặt `ContactShadows` ở `y=0.001` bị CHÌM vào sàn (mặt
+  sàn thật ở `FLOOR_TOP_Y=0.05`, đúng lỗi đã gặp với hoa Tết ở mốc 8b) — sửa lên `y=0.052`.
+
+  **Thử nghiệm (CHỈ Chương 1, chưa quyết mở rộng):** tải 2 pack Quaternius (CC0, qua poly.pizza)
+  — `Furniture Pack` (desk/chair/bed/bookcase/nightstand) + `Ultimate House Interior Pack`
+  (lamp/rug/plant/window) — thay hẳn đồ đạc rời của Chương 1 qua `RoomShellV2Trial.tsx`, bật/tắt
+  bằng `V2_TRIAL_CHAPTER_1` ở đầu `RoomShell.tsx`. Tường/sàn/nhân vật GIỮ NGUYÊN Kenney. Kết quả
+  soi bằng mắt: khác biệt RÕ RỆT — vân gỗ, sách trên kệ, giường có khung/nệm nhìn thật, khác hẳn
+  khối phẳng cũ. Phải chỉnh scale nhiều lần (giường ban đầu to gần gấp đôi phòng) — cùng bài học
+  "mỗi pack CC0 có tỉ lệ gốc riêng, không đoán được, phải soi bằng mắt" đã gặp lặp lại nhiều lần
+  ở mốc 8b (Cube Pets, Nature Kit). **Đây CHƯA phải quyết định cuối** — đang chờ chủ dự án tự mở
+  app xem rồi chốt có mở rộng ra 11 chương còn lại không, hay đổi hướng khác.
+- **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
+  đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
+  mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
+  mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
