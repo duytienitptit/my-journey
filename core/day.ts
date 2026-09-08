@@ -8,6 +8,8 @@
 
 import {
   DAY_BOUNDARY_HOUR,
+  NIGHT_MODE_END_HOUR,
+  NIGHT_MODE_START_HOUR,
   TIMEZONE,
   WEEK_START_ISO_WEEKDAY,
 } from "./balance";
@@ -117,6 +119,22 @@ export function oneYearAgo(key: DayKey): DayKey {
   const { year, month, day } = parseDayKey(key);
   const shifted = new Date(Date.UTC(year - 1, month - 1, day, 12));
   return formatDayKey(shifted.getUTCFullYear(), shifted.getUTCMonth() + 1, shifted.getUTCDate());
+}
+
+/** Giờ Việt Nam (0-23) tại một thời điểm — mốc 8b, dùng cho chế độ tối tự động theo giờ thật
+ *  (§5.7) và cơ chế nhắc 22h (§6). KHÔNG phải giờ của "một ngày app" (đó là `dayKeyOf`, mốc
+ *  4h sáng) — đây là giờ đồng hồ treo tường bình thường, dùng để so với một mốc giờ cố định. */
+export function hourOfDay(ms: number): number {
+  return localPartsAt(ms).hour;
+}
+
+/** Đang trong khung "đêm" không — chế độ tối TỰ ĐỘNG theo giờ thật, KHÔNG theo cài đặt hệ
+ *  thống (SPEC.md §5.7, [CHỐT — 2026-09-08]). Từ NIGHT_MODE_START_HOUR tối tới trước
+ *  NIGHT_MODE_END_HOUR sáng hôm sau — khung này BĂNG QUA nửa đêm nên so sánh bằng `||`, không
+ *  phải `&&`, khác hẳn kiểu so sánh khoảng đóng trong ngày (vd cửa sổ Giáng sinh ở seasons.ts). */
+export function isNightHour(ms: number): boolean {
+  const hour = hourOfDay(ms);
+  return hour >= NIGHT_MODE_START_HOUR || hour < NIGHT_MODE_END_HOUR;
 }
 
 /** Thứ trong tuần của một `DayKey`, theo ISO: 1 = Thứ Hai … 7 = Chủ nhật. */

@@ -13,7 +13,7 @@
  * File này chỉ chứa DỮ LIỆU — không có hàm, không có logic, không đụng đồng hồ hay DB.
  */
 
-import type { IsoWeekday } from "./types";
+import type { DayKey, IsoWeekday } from "./types";
 
 // ─── §4.10 · Mốc ngày ──────────────────────────────────────────────────────
 
@@ -245,6 +245,63 @@ export const HABIT_SCORE_MAX = 5;
  * chủ dự án đã xác nhận muốn vậy sau khi tôi nêu rõ mâu thuẫn này.
  */
 export const JOURNAL_MIN_WORDS = 200;
+
+// ─── §5.3 · Mùa thật + ngày lễ (mốc 8b) ──────────────────────────────────
+
+/**
+ * Mùng 1 Tết theo TỪNG NĂM DƯƠNG LỊCH — bảng cứng, không phải công thức (lịch âm không tính
+ * đơn giản bằng vài phép toán). Tra cứu ngày 2026-09-08 qua WebSearch (publicholidays.vn + vài
+ * trang lịch vạn niên tiếng Việt) — kiểm lại nếu nghi ngờ sai lệch, đây là dữ liệu do Claude
+ * tổng hợp chứ không tự tính. Hết bảng (qua 2035) thì `seasonOf`/`tetEveOf` coi như năm đó
+ * không có Tết (an toàn, không throw) — nối dài bảng khi gần hết nếu app còn dùng.
+ */
+export const TET_FIRST_DAY: Readonly<Record<number, DayKey>> = {
+  2026: "2026-02-17" as DayKey,
+  2027: "2027-02-06" as DayKey,
+  2028: "2028-01-26" as DayKey,
+  2029: "2029-02-13" as DayKey,
+  2030: "2030-02-02" as DayKey,
+  2031: "2031-01-23" as DayKey,
+  2032: "2032-02-11" as DayKey,
+  2033: "2033-01-31" as DayKey,
+  2034: "2034-02-19" as DayKey,
+  2035: "2035-02-08" as DayKey,
+};
+
+/** Cửa sổ "không khí Tết" trong phòng — từ mùng 1 tới hết mùng N này (bao gồm cả hai đầu). */
+export const TET_WINDOW_DAYS = 7;
+
+/** Cửa sổ "không khí Giáng sinh" quanh 25/12 (bao gồm cả hai đầu), ngày dương lịch cố định. */
+export const CHRISTMAS_MONTH = 12;
+export const CHRISTMAS_DAY = 25;
+export const CHRISTMAS_WINDOW_DAYS_BEFORE = 5; // từ 20/12
+export const CHRISTMAS_WINDOW_DAYS_AFTER = 1; // tới 26/12
+
+/** Hai mùa SPEC.md §5.3 gọi tên ("mùa mưa, nắng hè") — chỉ đổi tông màu phòng theo THÁNG, không
+ *  cần độ chính xác khí hậu. Các tháng còn lại (trừ cửa sổ Tết/Giáng sinh) dùng tông mặc định. */
+export const SUMMER_MONTHS: readonly number[] = [6, 7, 8];
+export const RAINY_SEASON_MONTHS: readonly number[] = [9, 10, 11];
+
+// ─── §5.3 · Vật phẩm hiếm (mốc 8b) ───────────────────────────────────────
+
+/** "Ngày thứ N" kể từ `profile.started_at` (ngày bắt đầu = ngày 1) — một trong ba "khoảnh khắc
+ *  đáng nhớ" nêu ở SPEC.md §5.3. */
+export const RARE_ITEM_DAY_MILESTONE = 100;
+
+/** Xác suất một khoảnh khắc đáng nhớ THỰC SỰ cho ra vật phẩm — "ngẫu nhiên, xác suất thấp" theo
+ *  đúng chữ SPEC.md §5.3, không có con số cụ thể nào được chốt. Số [TẠM]. */
+export const RARE_ITEM_CHANCE = 0.25;
+
+/** 3 loại — thu hẹp từ ví dụ "mèo/tranh/chậu cây" trong SPEC.md, xem lý do ở public/CREDITS.md
+ *  (không dựng thêm hệ thống treo tranh lên tường cho một mục đích duy nhất này). */
+export const RARE_ITEM_KEYS: readonly string[] = ["cat", "dog", "panda"];
+
+// ─── §5.7 · Chế độ tối tự động theo giờ thật (mốc 8b) ────────────────────
+
+/** [CHỐT — 2026-09-08] Tự động theo GIỜ THẬT (giờ Việt Nam), không theo cài đặt hệ thống. Tối
+ *  từ giờ này tới trước NIGHT_MODE_END_HOUR sáng hôm sau. */
+export const NIGHT_MODE_START_HOUR = 19;
+export const NIGHT_MODE_END_HOUR = 6;
 
 // ─── §5.8 · Thống kê dài hạn (/stats) ────────────────────────────────────
 

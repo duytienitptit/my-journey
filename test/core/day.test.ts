@@ -4,6 +4,8 @@ import {
   dayKeyOf,
   endOfDayMs,
   enumerateDayKeys,
+  hourOfDay,
+  isNightHour,
   isoWeekdayOf,
   mondayOf,
   oneYearAgo,
@@ -199,5 +201,31 @@ describe("core/day — oneYearAgo, SPEC.md §5.5 'hôm nay năm ngoái'", () => 
 
   it("29/2 năm nhuận, năm trước không nhuận → cuộn sang 1/3 (ngữ nghĩa Date.UTC, hiếm gặp)", () => {
     expect(oneYearAgo("2028-02-29" as DayKey)).toBe("2027-03-01");
+  });
+});
+
+describe("core/day — hourOfDay, isNightHour (mốc 8b, chế độ tối tự động theo giờ thật)", () => {
+  it("hourOfDay đọc đúng giờ Việt Nam", () => {
+    expect(hourOfDay(vnLocal(2026, 8, 2, 14, 30))).toBe(14);
+    expect(hourOfDay(vnLocal(2026, 8, 2, 0, 5))).toBe(0);
+  });
+
+  it("18:59 chưa vào đêm, 19:00 (NIGHT_MODE_START_HOUR) đã vào đêm", () => {
+    expect(isNightHour(vnLocal(2026, 8, 2, 18, 59))).toBe(false);
+    expect(isNightHour(vnLocal(2026, 8, 2, 19, 0))).toBe(true);
+  });
+
+  it("nửa đêm và rạng sáng vẫn là đêm — khung băng qua 00:00", () => {
+    expect(isNightHour(vnLocal(2026, 8, 2, 0, 0))).toBe(true);
+    expect(isNightHour(vnLocal(2026, 8, 2, 3, 59))).toBe(true);
+  });
+
+  it("05:59 vẫn còn đêm, 06:00 (NIGHT_MODE_END_HOUR) hết đêm", () => {
+    expect(isNightHour(vnLocal(2026, 8, 2, 5, 59))).toBe(true);
+    expect(isNightHour(vnLocal(2026, 8, 2, 6, 0))).toBe(false);
+  });
+
+  it("giữa trưa chắc chắn không phải đêm", () => {
+    expect(isNightHour(vnLocal(2026, 8, 2, 12, 0))).toBe(false);
   });
 });

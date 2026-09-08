@@ -23,20 +23,25 @@
   --radius-md: 1.125rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Buổi tối giao diện tự dịu xuống — SPEC.md §5.7. */
-    --background: #211a10;
-    --foreground: #f1e6d2;
-    --surface: #2c2417;
-    --surface-muted: #3a3020;
-    --border: #4d4128;
-    --shadow-color: 20 40% 3%;
+/*
+ * Chế độ tối — SPEC.md §5.7, [CHỐT — 2026-09-08, mốc 8b]: TỰ ĐỘNG theo GIỜ THẬT (giờ Việt Nam,
+ * 19h → 6h sáng), KHÔNG theo cài đặt sáng/tối của hệ điều hành. `data-theme="dark"` được
+ * `components/theme/NightModeSync.tsx` gán thẳng lên `<html>` mỗi phút dựa trên
+ * `core/day.ts#isNightHour` (đi qua `core/clock.ts#now()` nên công cụ tua thời gian dev vẫn
+ * kiểm được, §8.3) — CỐ Ý không dùng `@media (prefers-color-scheme: dark)` như bản trước, vì
+ * OS tối vào giữa trưa (nhiều người bật dark mode cả ngày) không nên ép app cũng tối theo.
+ */
+:root[data-theme="dark"] {
+  --background: #211a10;
+  --foreground: #f1e6d2;
+  --surface: #2c2417;
+  --surface-muted: #3a3020;
+  --border: #4d4128;
+  --shadow-color: 20 40% 3%;
 
-    --stat-mind: #7ea0c9;
-    --stat-health: #e0955f;
-    --stat-spirit: #82ab92;
-  }
+  --stat-mind: #7ea0c9;
+  --stat-health: #e0955f;
+  --stat-spirit: #82ab92;
 }
 
 @theme inline {

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { setHideMoneyAction, submitNetWorthAction } from "@/app/actions/assets";
+import { useEscToClose } from "@/components/useEscToClose";
 
 type Props = {
   netWorth: { stocksVnd: number; goldVnd: number; totalVnd: number } | null;
@@ -27,6 +28,7 @@ export function NetWorthControl({ netWorth, hideMoney, onChanged }: Props) {
   const [stocks, setStocks] = useState("");
   const [gold, setGold] = useState("");
   const [pending, setPending] = useState(false);
+  useEscToClose(editing, () => setEditing(false));
 
   async function toggleHide() {
     await setHideMoneyAction(!hideMoney);

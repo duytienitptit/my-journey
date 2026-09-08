@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { NetWorthControl } from "@/components/assets/NetWorthControl";
 import type { DayAchievedStreakInfo } from "@/core/engine/types";
@@ -56,6 +57,32 @@ export function TimerOverlay({
   const sessionProgress = running
     ? 1 - secondsRemaining(running, nowMs) / Math.max(1, (running.endsAt - running.startedAt) / 1000)
     : 0;
+
+  // Phím tắt — mốc 8b (đánh bóng). CHỈ hoạt động lúc TĨNH (chưa Start) và KHÔNG đang gõ vào một
+  // ô nhập nào khác trên trang (journal/net-worth/backfill...) — tránh cướp phím Space/số khi
+  // người dùng đang gõ chữ ở nơi khác. Không có phím tắt cho Abandon (lúc đang chạy) — CỐ Ý,
+  // đây là hành động phá dở một phiên, không nên dễ bấm nhầm bằng một phím đơn.
+  useEffect(() => {
+    function isTypingTarget(target: EventTarget | null): boolean {
+      if (!(target instanceof HTMLElement)) return false;
+      const tag = target.tagName;
+      return tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" || target.isContentEditable;
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (running || isTypingTarget(e.target)) return;
+      if (e.code === "Space") {
+        e.preventDefault(); // mặc định Space cuộn trang xuống — chặn lại, dùng cho Start
+        if (!pending) start();
+        return;
+      }
+      const digit = Number(e.key);
+      if (Number.isInteger(digit) && digit >= 1 && digit <= labels.length) {
+        setSelectedLabelId(labels[digit - 1].id);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [running, pending, labels, start, setSelectedLabelId]);
 
   return (
     <>

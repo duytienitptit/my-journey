@@ -1,13 +1,24 @@
 "use server";
 
 import { now } from "@/core/clock";
+import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, effectiveCharacterStage } from "@/core/engine/chapters";
 import { unlockedRoomItems, type RoomItemCatalogEntry } from "@/core/engine/room";
+import { seasonOf, type SeasonKey } from "@/core/engine/seasons";
 import { foldTimeline } from "@/core/engine/timeline";
 import type { DayAchievedStreakInfo, StreakMilestoneEvent } from "@/core/engine/types";
 import type { StatKey } from "@/core/types";
 import { DEFAULT_CHARACTER_LOOK } from "@/components/room/models";
-import { getCharacterLook, getEngineRawData, getHideMoney, getLatestNetWorth, getRoomItemsCatalog } from "@/db/queries";
+import {
+  getCharacterLook,
+  getEngineRawData,
+  getHideMoney,
+  getLatestNetWorth,
+  getReceivedRareItems,
+  getRoomItemsCatalog,
+  rollRareItemsIfEligible,
+  type ReceivedRareItem,
+} from "@/db/queries";
 
 export type ComputedStats = {
   levelByStat: Record<StatKey, number>;
@@ -34,6 +45,10 @@ export type ComputedStats = {
   hideMoney: boolean;
   /** Hình dáng nhân vật đã chọn (mốc 8, §5.6) — một trong 12 CHARACTER_LOOKS, mặc định male-a. */
   characterLook: string;
+  /** Mùa/ngày lễ HÔM NAY (mốc 8b, §5.3) — RoomScene đổi tông màu + trang trí theo giá trị này. */
+  season: SeasonKey;
+  /** Vật phẩm hiếm đã nhận, theo thứ tự thời gian (mốc 8b, §5.3) — hiện trong phòng, cộng dồn. */
+  receivedRareItems: ReceivedRareItem[];
 };
 
 /**
@@ -52,6 +67,11 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
     getHideMoney(),
     getCharacterLook(),
   ]);
+  // Vật phẩm hiếm — kiểm/ghi TRƯỚC khi đọc lại, để món vừa trúng (nếu có) hiện ngay trong lần
+  // tải trang này, không phải đợi lần sau (§5.3, mốc 8b).
+  await rollRareItemsIfEligible();
+  const receivedRareItems = await getReceivedRareItems();
+
   const result = foldTimeline(raw, now());
   const chapter = chapterForNetWorth(latestNetWorth?.totalVnd ?? 0);
   return {
@@ -67,5 +87,7 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
       : null,
     hideMoney,
     characterLook: characterLook ?? DEFAULT_CHARACTER_LOOK,
+    season: seasonOf(dayKeyOf(now())),
+    receivedRareItems,
   };
 }

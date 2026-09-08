@@ -6,12 +6,15 @@ import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
 import { RoomShell } from "./RoomShell";
 import { RoomItems, type UnlockedRoomItem } from "./RoomItems";
+import { RareItems, type ReceivedRareItemView } from "./RareItems";
+import { SeasonalDecor } from "./SeasonalDecor";
 import { Character, type CharacterPose } from "./Character";
 import { Fireflies } from "./Fireflies";
 import { DEFAULT_CHARACTER_LOOK, characterModelForStage } from "./models";
 import { ROOM_LIGHT_COLOR } from "./lighting";
 import { cameraFramingForFootprint, footprintForChapter } from "./shells/footprint";
 import type { StatKey } from "@/core/types";
+import type { SeasonKey } from "@/core/engine/seasons";
 
 export type TimeOfDay = "day" | "evening";
 
@@ -30,11 +33,27 @@ type Props = {
   unlockedItems?: readonly UnlockedRoomItem[];
   /** Đồng hồ đang chạy → tối gần như đen, đè lên cả timeOfDay (SPEC.md §5.1, "chế độ tập trung"). */
   focusMode?: boolean;
+  /** Mùa/ngày lễ hôm nay (SPEC.md §5.3, mốc 8b) — mặc định "default" (tông màu như trước đây). */
+  season?: SeasonKey;
+  /** Vật phẩm hiếm đã nhận (SPEC.md §5.3, mốc 8b). */
+  receivedRareItems?: readonly ReceivedRareItemView[];
 };
 
 const SCENE_TONE: Record<TimeOfDay, { background: string; ambient: number; directional: number; hemi: number }> = {
   day: { background: "#f7f1e3", ambient: 0.8, directional: 1.15, hemi: 0.35 },
   evening: { background: "#2c2440", ambient: 0.32, directional: 0.35, hemi: 0.1 },
+};
+
+/**
+ * Mùa/ngày lễ CHỈ đổi tông màu của trạng thái BAN NGÀY (§5.3) — buổi tối và chế độ tập trung
+ * giữ nguyên tông đã tinh chỉnh riêng, không pha thêm màu mùa vào đó. Thiếu key = "default" =
+ * dùng nguyên `SCENE_TONE.day` như trước khi có mùa (không đổi hành vi cũ).
+ */
+const SEASON_DAY_TONE: Partial<Record<SeasonKey, { background: string; ambient: number; directional: number; hemi: number }>> = {
+  summer: { background: "#fbf0d2", ambient: 0.88, directional: 1.3, hemi: 0.4 },
+  rainy: { background: "#e6eaec", ambient: 0.62, directional: 0.82, hemi: 0.26 },
+  christmas: { background: "#eef4f6", ambient: 0.72, directional: 0.95, hemi: 0.32 },
+  tet: { background: "#fbebd6", ambient: 0.85, directional: 1.22, hemi: 0.38 },
 };
 
 // Tối hơn hẳn "evening" — nhân vật vẫn lờ mờ thấy được (không phải 0 tuyệt đối), chỉ đủ tối để
@@ -54,12 +73,14 @@ function SceneAtmosphere({
   lightColor,
   timeOfDay,
   focusMode,
+  season,
   fogNear,
   fogFar,
 }: {
   lightColor: string;
   timeOfDay: TimeOfDay;
   focusMode: boolean;
+  season: SeasonKey;
   fogNear: number;
   fogFar: number;
 }) {
@@ -69,7 +90,11 @@ function SceneAtmosphere({
   const dirRef = useRef<THREE.DirectionalLight>(null);
   const hemiRef = useRef<THREE.HemisphereLight>(null);
 
-  const tone = focusMode ? FOCUS_TONE : SCENE_TONE[timeOfDay];
+  const tone = focusMode
+    ? FOCUS_TONE
+    : timeOfDay === "day"
+      ? (SEASON_DAY_TONE[season] ?? SCENE_TONE.day)
+      : SCENE_TONE.evening;
   const targetBg = useMemo(() => new THREE.Color(tone.background), [tone.background]);
 
   useFrame((_state, delta) => {
@@ -143,6 +168,8 @@ export function RoomScene({
   timeOfDay = "day",
   unlockedItems = [],
   focusMode = false,
+  season = "default",
+  receivedRareItems = [],
 }: Props) {
   useTouchScrollFix();
   const lightColor = pose === "idle" ? ROOM_LIGHT_COLOR.neutral : ROOM_LIGHT_COLOR[pose as StatKey];
@@ -165,6 +192,7 @@ export function RoomScene({
         lightColor={lightColor}
         timeOfDay={timeOfDay}
         focusMode={focusMode}
+        season={season}
         fogNear={framing.fogNear}
         fogFar={framing.fogFar}
       />
@@ -172,6 +200,8 @@ export function RoomScene({
       <Suspense fallback={null}>
         <RoomShell chapter={chapter} />
         <RoomItems items={unlockedItems} />
+        <RareItems items={receivedRareItems} footprint={footprint} />
+        <SeasonalDecor season={season} footprint={footprint} />
         <Character
           url={characterModelForStage(characterStage, characterLook)}
           pose={pose}

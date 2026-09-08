@@ -474,7 +474,34 @@ Nỗi lo "tránh rigging" của bản gốc vẫn được giữ đúng tinh th�
 
 **Mùa thật:** phòng đổi theo mùa và ngày lễ thật (Tết, mùa mưa, nắng hè, Giáng sinh). Không tốn cơ chế gì, nhưng đây là thứ chống lại cảm giác chững ở tháng 4–6.
 
+**[CHỐT — 2026-09-08, dựng ở mốc 8b]** Lịch cụ thể, ưu tiên từ cao xuống thấp khi hai khung trùng
+tháng (không xảy ra thật trong bảng dưới, nhưng ưu tiên vẫn cần rõ):
+
+| Trạng thái | Khung | Vật thể thêm vào phòng |
+|---|---|---|
+| Tết | Mùng 1 → hết mùng 7 (bảng ngày mùng 1 tra cứu sẵn 2026–2035, `core/balance.ts#TET_FIRST_DAY` — lịch âm không tính bằng công thức, nối dài bảng khi gần hết) | Hoa vàng/đỏ (dùng lại `flowerYellow`/`flowerRed` từ Nature Kit, mốc 5) — không có asset Tết thật (lồng đèn/hoa mai/hoa đào) trong pack CC0 nào tìm được |
+| Giáng sinh | 20/12 → 26/12 | Cây thông trang trí (Kenney Holiday Kit, MỚI tải ở mốc 8b) |
+| Nắng hè | Tháng 6-8 | Không có, chỉ đổi tông màu ánh sáng (ấm/sáng hơn) |
+| Mùa mưa | Tháng 9-11 | Không có, chỉ đổi tông màu ánh sáng (xám/dịu hơn) |
+| Mặc định | Các tháng còn lại | Tông màu hiện có từ trước, không đổi |
+
+Ánh sáng CHỈ đổi ở trạng thái BAN NGÀY — buổi tối và chế độ tập trung giữ nguyên tông riêng đã
+tinh chỉnh, mùa không pha thêm màu vào đó.
+
 **Vật phẩm hiếm:** thỉnh thoảng có thứ lạ xuất hiện không do cấp nào mở khoá — một con mèo đến ở, một bức tranh, một chậu cây. Ngẫu nhiên, xác suất thấp, kích hoạt bởi khoảnh khắc đáng nhớ (ngày thứ 100, một tuần đặc biệt đều, đêm giao thừa). **Tôi không mua được, không cày được. Chỉ đến.**
+
+**[CHỐT — 2026-09-08, dựng ở mốc 8b]** Thu hẹp còn ĐÚNG BA con vật (`cat`/`dog`/`panda`, Kenney
+Cube Pets, MỚI tải) thay vì "mèo/tranh/chậu cây" — bỏ "một bức tranh" vì cần dựng thêm hệ thống
+treo lên tường (mỗi vỏ nhà một kiểu tường riêng, tốn công cho một mục đích duy nhất). Ba "khoảnh
+khắc đáng nhớ" giữ đúng ba ví dụ trong câu trên: ngày thứ 100 kể từ lúc bắt đầu dùng app · đêm
+giao thừa (đêm liền trước mùng 1 Tết, MỌI năm đã qua trong lịch sử app, không chỉ năm đầu) ·
+mọi tuần TRỌN VẸN đã hoàn toàn là quá khứ (tái dùng đúng định nghĩa "tuần trọn vẹn" ở §4.6 dùng
+cho thưởng +200 XP — cả 7 ngày đều "đạt" — nhưng KHÔNG đòi thêm điều kiện đã viết đúc kết tuần).
+Xác suất mỗi khoảnh khắc **[TẠM] 25%** (`RARE_ITEM_CHANCE`, `core/balance.ts`) — SPEC chỉ nói
+"thấp", không có số cụ thể. "Ngẫu nhiên" ở đây là một hàm băm ổn định (không phải `Math.random()`
+thật) theo (mã khoảnh khắc, ngày bắt đầu dùng app) — trúng hay trượt luôn ra lại đúng kết quả cũ
+nếu tính lại, chỉ KẾT QUẢ TRÚNG mới ghi xuống `rare_items` (đúng §7: "không lưu thì mỗi lần tải
+trang lại ra món khác"). Xem `core/engine/rareItems.ts`.
 
 ### 5.4 Thư viện hành trình
 
@@ -508,6 +535,21 @@ Nếu chủ dự án muốn khác (vd. có thêm đường "gộp") thì đổi 
 - Hoạt ảnh **chỉ ở khoảnh khắc chuyển tiếp**: nút nảy nhẹ khi bấm, pháo giấy nhỏ khi xong phiên, thẻ trượt vào khi mở phần buổi tối.
 - **Viết lời trong app như người nói chuyện, đừng như phần mềm.** *"Xong rồi, nghỉ chút đi"* chứ không phải *"Phiên đã hoàn tất"*.
 - Buổi tối giao diện tự dịu xuống: nền tối hơn, chữ to hơn, ít thành phần hơn.
+
+**Chế độ tối — [CHỐT — 2026-09-08, dựng ở mốc 8b]:** tự động theo **GIỜ THẬT** (giờ Việt Nam,
+19h tối → 6h sáng, `NIGHT_MODE_START_HOUR`/`NIGHT_MODE_END_HOUR` ở `core/balance.ts`), KHÔNG
+theo cài đặt sáng/tối của hệ điều hành — chọn có chủ ý giữa ba phương án đưa ra. Client hỏi lại
+server mỗi phút (`app/actions/liveClock.ts`, đi qua `core/clock.ts#now()` nên công cụ tua thời
+gian dev vẫn kiểm được).
+
+**Phím tắt — mốc 8b, đề xuất một bộ ngắn, chưa hỏi từng phím một (chủ dự án chọn "tôi đề xuất,
+bạn duyệt"):**
+- `Space` — bắt đầu phiên (chỉ lúc tĩnh, đã chọn nhãn). KHÔNG có phím tắt cho Abandon lúc đang
+  chạy — cố ý, đây là hành động phá dở một phiên, không nên dễ bấm nhầm.
+- Phím số `1`–`9` — chọn nhãn theo đúng thứ tự hiện trên màn hình (chỉ lúc tĩnh).
+- `Esc` — đóng popup đang mở (Backfill, sửa tài sản).
+- Mọi phím tắt tự tắt khi đang gõ vào một ô nhập bất kỳ trên trang (không cướp phím Space/số của
+  nhật ký, ô tài sản...).
 
 ### 5.8 Thống kê dài hạn — màn riêng `/stats`
 
@@ -602,6 +644,18 @@ một năm ô rỗng phía trước — nhìn như một năm bỏ bê chứ kh�
 - **Nhắc nghi thức 22h.**
 
 *Điều tôi đã biết:* thông báo trình duyệt chỉ chạy khi tab còn mở. Muốn nhắc kể cả khi tôi đã tắt trình duyệt thì cần Service Worker + Web Push + cron — làm được nhưng đắt hơn đáng kể. **Dựng bản đơn giản trước; tôi sẽ bảo bạn nâng cấp nếu thấy hay quên.** **[CHỐT]**
+
+**Đã dựng bản đơn giản ở mốc 8b, 2026-09-08** — đúng bản giản lược đã [CHỐT]: client hỏi lại
+server mỗi phút "có tới giờ nhắc chưa" (`app/actions/liveClock.ts`, đi qua `now()` để công cụ tua
+thời gian dev kiểm được) — tới giờ (`settings.reminder_hour`, mốc 8a) VÀ hôm nay CHƯA đóng ngày
+thì bắn `Notification` trình duyệt, đúng MỘT LẦN mỗi ngày (nhớ qua `localStorage`, khoá theo
+ngày). KHÔNG tự xin quyền Notification ở đây — dùng lại đúng quyền đã xin lúc bấm Start phiên
+pomodoro đầu tiên (`useSessionTimer.ts`, có từ mốc 1); nếu chưa từng bấm Start lần nào thì im
+lặng bỏ qua, không tự ý xin thêm ở một chỗ không phải cử chỉ trực tiếp của tôi. Câu chữ thông báo
+(*"Evening's here" / "Habits, mood, a few lines in the journal — whenever you're ready."*) là
+Claude tự viết theo giọng đã có (`components/theme/NightModeSync.tsx`) — mức độ trung tính hơn
+hẳn câu trách móc ở §4.12 nên không dừng lại hỏi trước, nhưng có thể đổi nếu chủ dự án không
+thích.
 
 ---
 

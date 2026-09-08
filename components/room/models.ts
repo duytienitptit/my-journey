@@ -66,6 +66,22 @@ export const ROOM_ITEM_MODEL_URLS: Readonly<Record<string, string>> = {
 };
 
 /**
+ * Vật phẩm hiếm (mốc 8b, SPEC.md §5.3) — xem public/CREDITS.md. Khoá TRÙNG `RARE_ITEM_KEYS`
+ * trong `core/balance.ts` — đổi một bên thì phải đổi bên kia.
+ */
+export const RARE_ITEM_MODEL_URLS: Readonly<Record<string, string>> = {
+  cat: "/models/rare-items/animal-cat.glb",
+  dog: "/models/rare-items/animal-dog.glb",
+  panda: "/models/rare-items/animal-panda.glb",
+};
+
+/** Trang trí theo mùa (mốc 8b, SPEC.md §5.3) — chỉ Giáng sinh có model riêng; Tết dùng lại hoa
+ *  sẵn có ở GARDEN_MODEL_URLS (xem SeasonalDecor.tsx), hai mùa còn lại không có vật thể nào. */
+export const SEASONAL_MODEL_URLS = {
+  christmasTree: "/models/seasonal/tree-decorated.glb",
+} as const;
+
+/**
  * 12 hình dáng nhân vật CÓ SẴN (Cài đặt, mốc 8, SPEC.md §5.3/§5.6) — cùng pack CC0 đã dùng từ
  * mốc 1 (Kenney Mini Characters), chọn NGUYÊN một bộ gần giống mình nhất chứ không tách rời
  * tóc/da/trang phục để trộn (pack không hỗ trợ — xem public/models/CREDITS.md). Lưu lựa chọn ở

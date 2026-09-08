@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEscToClose } from "@/components/useEscToClose";
 import type { TimerLabel } from "./TimerOverlay";
 
 type Props = {
@@ -17,6 +18,7 @@ export function BackfillButton({ labels, onBackfill }: Props) {
   const [open, setOpen] = useState(false);
   const [labelId, setLabelId] = useState<number>(labels[0]?.id ?? 0);
   const [count, setCount] = useState(1);
+  useEscToClose(open, () => setOpen(false));
 
   if (!open) {
     return (

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Nunito } from "next/font/google";
 import { TimeTravelWidget } from "@/components/dev/TimeTravelWidget";
+import { NightModeSync } from "@/components/theme/NightModeSync";
 import "./globals.css";
 
 // Chữ tròn dễ chịu — SPEC.md §5.7. Nunito thay cho font mặc định của create-next-app.
@@ -20,6 +21,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     <html lang="en" className={`${nunito.variable} h-full antialiased`}>
       <body className="min-h-full">
         {children}
+        {/* Chế độ tối tự động theo giờ thật + nhắc nghi thức tối (SPEC.md §5.7/§6, mốc 8b) —
+            sống ở MỌI trang, không chỉ màn chính, vì cả hai đều phụ thuộc giờ thật chứ không
+            phụ thuộc đang xem trang nào. */}
+        <NightModeSync />
         {/* Công cụ tua thời gian (§8.3) — chỉ dev, route phía sau cũng tự 404 ở production. */}
         {process.env.NODE_ENV !== "production" && <TimeTravelWidget />}
       </body>

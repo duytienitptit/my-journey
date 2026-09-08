@@ -9,7 +9,9 @@ import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
+import { currentRareItemTriggers, pickRareItemKey, rareItemHits } from "@/core/engine/rareItems";
 import type { RoomItemCatalogEntry } from "@/core/engine/room";
+import { foldTimeline } from "@/core/engine/timeline";
 import type { EngineRawData } from "@/core/engine/types";
 import { isSessionComplete, type RunningSession } from "@/core/session";
 import type { DayKey, StatKey } from "@/core/types";
@@ -567,6 +569,52 @@ export async function getEngineRawData(): Promise<EngineRawData> {
 export async function getRoomItemsCatalog(): Promise<RoomItemCatalogEntry[]> {
   const rows = await db.select().from(schema.roomItems);
   return rows.map((r) => ({ id: r.id, stat: r.stat, modelKey: r.modelKey, unlockLevel: r.unlockLevel }));
+}
+
+// ─── Vật phẩm hiếm — SPEC.md §5.3, mốc 8b ─────────────────────────────────
+// Đây là MỘT trong ba chỗ ghi DB không thuần (§8.1, §7: "PHẢI lưu; không lưu thì mỗi lần tải
+// trang lại ra món khác") — cùng nhóm với chapter_events (submitNetWorthEntry ở trên) và tự
+// đóng phiên quá hạn. `core/engine/rareItems.ts` giữ phần THUẦN (trúng/trượt, chọn món); ở đây
+// chỉ đọc dữ liệu thô, gọi hàm thuần, rồi ghi kết quả — không tính lại "trúng hay trượt" bằng
+// tay trong file này.
+
+export type ReceivedRareItem = { itemKey: string; receivedAtMs: number; trigger: string };
+
+export async function getReceivedRareItems(): Promise<ReceivedRareItem[]> {
+  const rows = await db.select().from(schema.rareItems).orderBy(asc(schema.rareItems.receivedAt));
+  return rows.map((r) => ({ itemKey: r.itemKey, receivedAtMs: r.receivedAt.getTime(), trigger: r.trigger }));
+}
+
+/**
+ * Kiểm mọi "khoảnh khắc đáng nhớ" đã xảy ra, roll (thuần, xem rareItems.ts) những cái CHƯA có
+ * dòng nào trong `rare_items`, ghi lại nếu trúng. An toàn gọi lại nhiều lần — mỗi `triggerId`
+ * chỉ tạo ra tối đa một dòng (kiểm tồn tại trước khi chèn; không có ràng buộc UNIQUE ở tầng DB
+ * cho cột `trigger` vì app một-người-dùng-một-kết-nối, rủi ro đụng độ gần như không có).
+ */
+export async function rollRareItemsIfEligible(): Promise<void> {
+  const raw = await getEngineRawData();
+  const result = foldTimeline(raw, now());
+  const todayKey = dayKeyOf(now());
+
+  const candidates = currentRareItemTriggers({
+    profileStartedDayKey: raw.profileStartedDayKey,
+    today: todayKey,
+    dailySeries: result.dailySeries,
+  });
+  if (candidates.length === 0) return;
+
+  const existingRows = await db.select({ trigger: schema.rareItems.trigger }).from(schema.rareItems);
+  const alreadyRolled = new Set(existingRows.map((r) => r.trigger));
+  // Muối đổi theo từng lượt seed lại DB (profileStartedDayKey đổi khi reseed) — các lượt cài
+  // đặt khác nhau không luôn trúng/trượt giống hệt nhau ở cùng một trigger.
+  const salt = raw.profileStartedDayKey;
+
+  for (const { triggerId } of candidates) {
+    if (alreadyRolled.has(triggerId)) continue;
+    if (!rareItemHits(triggerId, salt)) continue;
+    const itemKey = pickRareItemKey(triggerId, salt);
+    await db.insert(schema.rareItems).values({ itemKey, trigger: triggerId, receivedAt: new Date(now()) });
+  }
 }
 
 // ─── Tài sản + chương — SPEC.md §4.9, dùng từ mốc 5 ───────────────────────

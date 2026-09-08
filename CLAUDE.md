@@ -14,8 +14,9 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
-- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần), 8a (Cài đặt — CHƯA làm 8b đánh bóng)**,
-  kế hoạch đã duyệt ngày 2026-09-02 — xem `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`.
+- Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần), 8a, 8b — TOÀN BỘ 8 mốc gốc coi như xong**,
+  kế hoạch đã duyệt ngày 2026-09-02 — xem `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Còn
+  nợ đúng một việc lớn: đổi phong cách 3D (xem "Còn nợ" bên dưới), không thuộc 8 mốc gốc.
 - **Mốc 7 — CHỈ thư viện hành trình + kho lưu trữ, KHÔNG làm phần cron [SỬA PHẠM VI — 2026-09-05]**.
   Chủ dự án chủ động bỏ qua "Vercel Cron xuất JSON hằng tuần" — app chưa deploy ở đâu cả (vẫn
   local + GitHub-only), cron của Vercel không chạy/test được ở local dev, và sau khi tôi hỏi thẳng
@@ -127,14 +128,69 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   `[CHƯA HỎI]` ngay trong SPEC.md §5.6.
 
   297 test, `tsc`/`eslint`/`npm run build` sạch.
-- **Còn nợ, đã hỏi và chủ dự án đồng ý hoãn tới sau mốc 8 — ĐỪNG QUÊN:** đổi phong cách 3D "giống
-  game hơn thay vì hình khối" — chủ dự án chủ động yêu cầu giữa lúc dựng mốc 8, xác nhận phạm vi
-  là **TOÀN BỘ phòng/đồ đạc** (không phải một món riêng lẻ), và chọn qua AskUserQuestion **"xong
-  mốc 8 (Cài đặt) trước, rồi quay lại"**. Đây là việc CÒN NỢ, không phải bị huỷ.
-- **Tiếp theo:** mốc 8b (đánh bóng — mùa thật/ngày lễ, vật phẩm hiếm, nhắc 22h THẬT SỰ CHẠY —
-  hiện chỉ có Ô CÀI ĐẶT giờ nhắc, chưa có cơ chế bắn thông báo, hoạt ảnh, phím tắt, dark mode) —
-  RỒI mới quay lại đổi phong cách 3D đã hoãn ở trên. Hoặc phần cron/backup của mốc 7 gốc nếu chủ
-  dự án đổi ý.
+- **Mốc 8b — đánh bóng, 2026-09-08 (cùng ngày với 8a).** Chủ dự án chỉ nói "làm mốc 8b đi" — trước
+  khi code, hỏi MỘT round 4 câu AskUserQuestion vì cả bốn hạng mục (mùa/ngày lễ, vật phẩm hiếm,
+  chế độ tối, phím tắt) đều có nhiều cách đọc hợp lý mà SPEC.md không nói rõ. Chủ dự án chọn hết
+  phương án SÂU/ĐẦY ĐỦ hơn ở ba trong bốn câu (không chọn "Recommended" nhẹ nhàng): **mùa + ngày
+  lễ cụ thể** (không chỉ 4 mùa dương lịch đơn giản) · **tải thêm asset động vật thật** (không
+  dùng đồ thay thế có sẵn) · **chế độ tối tự động theo GIỜ THẬT** (không theo OS) · phím tắt thì
+  chọn đúng phương án nhẹ "tôi đề xuất, bạn duyệt".
+
+  **Mùa + ngày lễ** (`core/engine/seasons.ts`, MỚI, 15 test): Tết (mùng 1→7, bảng ngày mùng 1 tra
+  **qua WebSearch** — không đoán/nhớ lại — cho 2026-2035, `TET_FIRST_DAY` trong `balance.ts`) ·
+  Giáng sinh (20-26/12) · nắng hè (6-8) · mùa mưa (9-11) · còn lại giữ tông cũ. Tải thêm **Kenney
+  Holiday Kit** (cây thông trang trí cho Giáng sinh) — Tết KHÔNG có asset CC0 nào tìm được (đã
+  tìm, không có văn hoá Việt/Á trong pack phương Tây) nên dùng lại hoa vàng/đỏ Nature Kit sẵn có
+  từ mốc 5, đúng tinh thần "gần đúng nhất" đã dùng cho đồ gym ở mốc 3.
+
+  **Vật phẩm hiếm** (`core/engine/rareItems.ts`, MỚI, 12 test): tải thêm **Kenney Cube Pets**,
+  chọn 3 con (cat/dog/panda) — thu hẹp từ "mèo/tranh/chậu cây" gốc, bỏ "tranh" vì cần dựng thêm
+  hệ treo tường riêng cho một mục đích. Ba trigger đúng 3 ví dụ SPEC: ngày thứ 100 · đêm giao thừa
+  (MỌI năm đã qua, không chỉ năm đầu) · tuần trọn vẹn (tái dùng ĐÚNG định nghĩa ở `timeline.ts`
+  cho +200 XP, không thêm điều kiện đúc kết tuần). Xác suất [TẠM] 25%. **"Ngẫu nhiên" KHÔNG dùng
+  `Math.random()`** — hàm băm ổn định (FNV-1a + fmix32 Murmur3) theo (trigger, ngày bắt đầu dùng
+  app), để trúng/trượt luôn tính lại ra đúng kết quả cũ mà không cần bảng "đã thử" riêng, chỉ
+  KẾT QUẢ TRÚNG mới ghi DB (đúng §7). **Bug thật bắt được khi VIẾT TEST** (không phải lúc soi
+  code): thử djb2 trần trước, phát hiện qua bài test "tỉ lệ trúng xấp xỉ 25% trên 2000 trigger" ra
+  **0/2000** — hai chuỗi chỉ khác ký tự cuối (`tet_eve_2026` vs `tet_eve_2027`) cho hash gần như
+  giống hệt nhau. Đổi sang FNV-1a+fmix32 thì đúng ngay 25.1%. **Bài học: khi viết một hàm "trông
+  ngẫu nhiên", test PHẢI kiểm THỐNG KÊ trên nhiều input GẦN GIỐNG NHAU thật, không chỉ kiểm tính
+  ổn định (cùng input → cùng output) — một hash yếu vẫn ổn định, chỉ là ổn định SAI.**
+
+  **Chế độ tối** — bỏ hẳn `@media (prefers-color-scheme: dark)` cũ (chưa từng nối UI), thay bằng
+  `data-theme` do `components/theme/NightModeSync.tsx` gán theo giờ Việt Nam thật (19h→6h,
+  `core/day.ts#isNightHour`, đi qua `now()` nên tua thời gian dev vẫn kiểm được) — client hỏi lại
+  server mỗi phút. **Nhắc nghi thức 22h cũng dựng CHUNG cơ chế polling này** (`app/actions/
+  liveClock.ts` trả cả hai giá trị một lượt gọi) — hoàn thành luôn phần "nhắc 22h thật sự chạy"
+  còn thiếu từ mốc 2/§6, dùng lại đúng quyền Notification đã xin lúc bấm Start phiên đầu (không
+  xin thêm lần hai), tự giới hạn một lần/ngày qua `localStorage`.
+
+  **Phím tắt**: Space (bắt đầu phiên, chỉ lúc tĩnh) · phím số 1-9 (chọn nhãn) · Esc (đóng popup
+  Backfill/sửa tài sản, hook dùng chung `useEscToClose`) — tự tắt khi đang gõ vào ô nhập bất kỳ.
+  CỐ Ý không có phím tắt cho Abandon (dễ bấm nhầm mất phiên).
+
+  **Bẫy dựng cảnh 3D bắt gặp lúc soi bằng mắt (không lộ qua test):** (1) model Cube Pets dựng ở
+  tỉ lệ RIÊNG hẳn của pack đó — con mèo nguyên bản cao gần gấp đôi nhân vật, phải `scale=0.28`;
+  (2) hoa Nature Kit có `translation` nội bộ âm — đặt ở `y=0` (không phải `FLOOR_TOP_Y=0.05` như
+  mọi đồ đạc khác trong phòng) làm hoa chìm gần hết vào sàn, gần như vô hình; cây Giáng sinh vẫn
+  thấy được vì đủ cao nên không lộ ra bằng bên cạnh nó cho tới khi so sánh. (3) Vị trí đặt vật
+  phẩm hiếm/trang trí mùa CHỈ soi kỹ ở Chương 1 (phòng nhỏ nhất, rủi ro chồng lấn cao nhất) —
+  chưa kiểm hết 12 chương, có thể cần chỉnh lại nếu chồng lấn ở chương khác.
+
+  **[CHƯA HỎI thêm — cùng loại với flag import ở mốc 8a]** Câu chữ thông báo nhắc tối
+  ("Evening's here...") là Claude tự viết theo giọng đã có, chưa hỏi riêng — mức trung tính hơn
+  hẳn câu trách móc nên không dừng lại, nhưng có thể đổi nếu chủ dự án không thích.
+
+  329 test (tổng, +32 so với mốc 8a), `tsc`/`eslint`/`npm run build` sạch. Dọn dữ liệu QA (1
+  session bỏ dở + 1 vật phẩm hiếm sinh ra lúc tua đồng hồ test) bằng xoá đúng id, xem
+  [[feedback-shared-dev-db-caution]] — không đụng gì khác trong DB thật.
+- **Còn nợ, đã hỏi và chủ dự án đồng ý hoãn — ĐỪNG QUÊN:** đổi phong cách 3D "giống game hơn thay
+  vì hình khối" — chủ dự án chủ động yêu cầu giữa lúc dựng mốc 8, xác nhận phạm vi là **TOÀN BỘ
+  phòng/đồ đạc** (không phải một món riêng lẻ), và chọn qua AskUserQuestion **"xong mốc 8 (Cài
+  đặt) trước, rồi quay lại"** — mốc 8 (cả 8a lẫn 8b) nay đã xong, đây là việc CÒN NỢ tiếp theo.
+- **Tiếp theo:** quay lại đổi phong cách 3D đã hoãn ở trên. Hoặc phần cron/backup của mốc 7 gốc
+  nếu chủ dự án đổi ý. Còn hai flag `[CHƯA HỎI]` cần chủ dự án xác nhận (nghĩa "nhập dữ liệu" ở
+  mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại ở lượt báo cáo tới nếu chưa được hỏi.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi

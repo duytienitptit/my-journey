@@ -61,6 +61,32 @@ file này (đừng di chuyển hai file tách rời nhau).
 xem ghi chú trong `components/room/Character.tsx`. Chỉ 8/12 giai đoạn còn lại (2 → Trưởng thành)
 chưa có model — thêm dần khi tới cấp đó, đúng tinh thần "đồ chỉ đến khi đủ điểm" ở §5.3.
 
+## Vật phẩm hiếm — `rare-items/` (mốc 8b, SPEC.md §5.3 "Vật phẩm hiếm")
+
+**Kenney — Cube Pets** (2.0, phát hành 2026)
+Nguồn: https://kenney.nl/assets/cube-pets
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+3 con vật cho vật phẩm hiếm — `animal-cat`, `animal-dog`, `animal-panda` (trong 24 con có sẵn).
+SPEC.md gốc ví dụ "một con mèo, một bức tranh, một chậu cây" — thu hẹp còn "vài loại thú cưng
+đến ở" vì đúng sát ví dụ mạnh nhất (con mèo) mà không phải dựng thêm hệ thống treo tranh lên
+tường (mỗi vỏ nhà một kiểu tường khác nhau, §5.3). Kèm `rare-items/Textures/colormap.png`
+(texture atlas dùng chung, đừng tách rời khỏi các file `.glb`).
+
+## Mùa & ngày lễ — `seasonal/` (mốc 8b, SPEC.md §5.3 "Mùa thật")
+
+**Kenney — Holiday Kit** (2.0, phát hành 2024)
+Nguồn: https://kenney.nl/assets/holiday-kit
+License: CC0 1.0 — http://creativecommons.org/publicdomain/zero/1.0/
+
+1 model cho Giáng sinh — `tree-decorated` (cây thông trang trí sẵn). Kèm
+`seasonal/Textures/colormap.png` (texture atlas riêng, đừng tách rời khỏi `tree-decorated.glb`).
+
+**Tết** KHÔNG tải asset mới — pack CC0 nói chung (nguồn phương Tây) không có vật trang trí Tết
+thật (lồng đèn/hoa mai/hoa đào/lì xì) — đã tìm, không có. Dùng LẠI `flowerYellow`/`flowerRed`
+sẵn có từ Nature Kit (mốc 5, xem ngay dưới) cắm trong nhà, gợi hoa mai/hoa đào — đúng tinh thần
+"gần đúng nhất" đã dùng cho đồ tập gym ở mốc 3.
+
 ## Sân vườn — `garden/` (mốc 5, chương 10-12)
 
 **Kenney — Nature Kit** (1.0, phát hành 2020)

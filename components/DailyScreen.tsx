@@ -101,6 +101,8 @@ export function DailyScreen({
           chapter={stats.chapter}
           unlockedItems={stats.unlockedItems}
           focusMode={timer.running !== null}
+          season={stats.season}
+          receivedRareItems={stats.receivedRareItems}
         />
       </div>
 
