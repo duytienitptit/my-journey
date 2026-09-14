@@ -212,7 +212,15 @@ export function RoomScene({
   const shadowExtent = Math.max(totalWidthOf(footprint), footprint.interiorDepth) * 0.9;
 
   return (
-    <Canvas shadows camera={{ position: framing.position, fov: 40 }}>
+    <Canvas
+      shadows
+      // Chặn trần DPR ở 1.5 (mặc định r3f là [1,2], tức FULL độ phân giải màn Retina — 4× số
+      // pixel phải tô so với 1×) — mốc "trang chậm khi tương tác" (2026-09-14): cảnh này đã có
+      // đổ bóng + ContactShadows, cộng dồn với DPR=2 trên MacBook Retina là gánh nặng thật, ảnh
+      // hưởng tới cả main thread (mọi khung hình app đều chờ GPU) chứ không chỉ mỗi hình ảnh.
+      dpr={[1, 1.5]}
+      camera={{ position: framing.position, fov: 40 }}
+    >
       <SceneAtmosphere
         lightColor={lightColor}
         timeOfDay={timeOfDay}
@@ -238,8 +246,17 @@ export function RoomScene({
 
       {/* Bóng đổ mềm sát chân đồ đạc (mốc "nâng cấp phong cách 3D") — bù cho việc `shadow-camera`
           của đèn hướng (trên) không phải lúc nào cũng bắt trọn góc khuất SÁT MẶT SÀN ở khoảng
-          cách gần; đây là lớp "tiếp xúc" rẻ, không cần bật postprocessing riêng, giúp đồ đạc
-          trông THẬT SỰ đứng trên sàn thay vì lơ lửng — hiệu ứng rõ nhất với hình khối đơn giản. */}
+          cách gần, giúp đồ đạc trông THẬT SỰ đứng trên sàn thay vì lơ lửng.
+
+          [SỬA — 2026-09-14, mốc "trang chậm khi tương tác"] Chú thích CŨ ở đây gọi đây là lớp
+          "rẻ" — SAI, đã kiểm code nguồn `@react-three/drei`: mặc định `frames=Infinity`, tức
+          render lại TOÀN BỘ scene vào một render-target riêng (bằng MeshDepthMaterial) rồi
+          blur hai lượt, MỖI KHUNG HÌNH, MÃI MÃI — cộng thêm 3 lượt render nặng mỗi frame lên
+          trên cả render chính lẫn shadow-map của đèn hướng. Đây gần chắc chắn là thủ phạm chính
+          của "chậm khi tương tác" chứ không chỉ là cảm giác. `frames={1}` là ĐỦ cho cảnh này:
+          bóng tiếp xúc chỉ phụ thuộc HÌNH DẠNG/VỊ TRÍ đồ vật (dùng depth material, không đọc ánh
+          sáng cảnh), mà nhân vật/đồ đạc không đổi vị trí trong một phiên — chỉ render lại đúng
+          một lần lúc mount là đủ, không cần cập nhật liên tục. */}
       <ContactShadows
         position={[totalWidthOf(footprint) / 2, 0.052, -footprint.interiorDepth / 2]}
         scale={Math.max(totalWidthOf(footprint), footprint.interiorDepth) * 1.4}
@@ -247,6 +264,7 @@ export function RoomScene({
         blur={2.2}
         far={2.5}
         resolution={512}
+        frames={1}
       />
 
       {/* Chế độ tập trung: hạt sáng đom đóm, SPEC.md §5.1 [THÊM/SỬA — 2026-09-05] — neo vào
