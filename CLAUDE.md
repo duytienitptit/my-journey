@@ -270,14 +270,24 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   hoá ra `time_connect=12.45s` (gói bắt tay TCP của máy bị rớt) — xem từng pha trước khi đổ lỗi
   server. `vercel` CLI không cài global — bản npx cache vẫn dùng được, `shasum .env.local` trước/
   sau mỗi lệnh: không đổi.
-  **Còn lại (không sửa được bằng code, chưa hỏi chủ dự án):** lần mở ĐẦU TIÊN sau ≥5–7 phút không
-  ai dùng mất thêm ~1,5–2s — đo tách được ~0,8s là function Vercel khởi động lạnh, ~0,5–0,7s là
-  Neon Free tự tắt compute sau 5 phút (gói Free không tắt được tính năng này; gói Launch trả theo
-  dùng thì tắt được). **Đừng tự dựng "ping giữ ấm":** giữ compute 0,25 CU chạy suốt tháng ≈ 182
-  CU-giờ, vượt hạn mức 100 CU-giờ/tháng của gói Free → Neon treo DB tới tháng sau; Vercel Cron
-  gói Hobby cũng chỉ chạy được một lần/ngày. Bundle SSR của `/` có kéo ~1MB three.js (RoomScene
-  được server-render) — `next/dynamic(..., { ssr: false })` có thể bớt một phần khởi động lạnh,
-  chưa làm vì phần lớn thời gian là hạ tầng, và đo lại mỗi lần tốn 7 phút chờ.
+  **Còn lại — CHẤP NHẬN, chủ dự án [CHỐT — 2026-09-14] giữ Neon gói Free, không trả phí (SPEC.md
+  §8.5):** lần mở ĐẦU TIÊN sau ≥5–7 phút không ai dùng mất thêm ~1,5–2s — đo tách được ~0,8s là
+  function Vercel khởi động lạnh, ~0,5–0,7s là Neon Free tự tắt compute sau 5 phút (gói Free không
+  tắt được). **Đừng đề xuất lại gói trả phí, đừng tự dựng "ping giữ ấm":** giữ compute 0,25 CU chạy
+  suốt tháng ≈ 182 CU-giờ, vượt hạn mức 100 CU-giờ/tháng của gói Free → Neon treo DB tới tháng sau;
+  Vercel Cron gói Hobby cũng chỉ chạy được một lần/ngày. Fluid compute ĐÃ bật sẵn (`vercel api
+  /v9/projects/<id>` → `resourceConfig.fluid: true`) — không còn công tắc miễn phí nào phía Vercel.
+  Dashboard vẫn ghi vùng mặc định `iad1` nhưng `vercel.json` đè lên mỗi lần deploy — đừng xoá file đó.
+  **Đã THỬ và BỎ — `next/dynamic(RoomScene, { ssr: false })`:** bundle SSR của `/` kéo ~1MB three.js
+  vô ích (canvas không vẽ được trên server). Đo `next start` mới tinh mỗi vòng, 7 vòng, trỏ bản sao
+  DB demo: request đầu 146ms → 116ms (trung vị), request ấm không đổi ~9ms. Nhưng chunk three.js
+  (~990KB) khi đó KHÔNG được preload trong HTML — chỉ tải sau khi hydrate, nên lần mở đầu sau mỗi
+  deploy có đụng code phòng, phòng hiện muộn thêm một lượt tải ~1MB. Lợi ~30ms (Vercel ước vài chục
+  tới ~150ms trên ~1,5–2s) không đáng đổi lấy thác nước phía trình duyệt → đã hoàn tác, không commit.
+  Bẫy lúc đo: `next start` đổi tên tiến trình con thành `next-server (v16.3.4)`, `pkill -f "next
+  start"` bắt trượt → server vòng trước còn giữ cổng, 6/7 vòng đầu tiên đo nhầm server ấm
+  (`EADDRINUSE` trong log). Tắt theo CỔNG (`lsof -ti tcp:PORT -sTCP:LISTEN | xargs kill`) và bắt
+  buộc thấy "Ready" của CHÍNH vòng đó trước khi đo.
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của

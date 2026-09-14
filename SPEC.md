@@ -768,6 +768,12 @@ Vercel mới tạo mặc định chạy function ở `iad1` (Washington, Mỹ) t
 tải màn chính chạy vài chục truy vấn. `vercel.json` giờ ghim `"regions": ["sin1"]` (gói Hobby chỉ
 được một vùng). Đổi vùng DB hay vùng function về sau thì PHẢI đổi cả hai cùng nhau.
 
+**[CHỐT — 2026-09-14] Giữ Neon gói Free, không trả phí.** Chấp nhận hệ quả đã đo: lần mở ĐẦU
+TIÊN sau khoảng 5–7 phút không ai dùng chậm thêm ~1,5–2 giây (~0,8s function Vercel khởi động
+lạnh + ~0,5–0,7s Neon Free tự tắt compute sau 5 phút, gói Free không tắt được). Không dựng "ping
+giữ ấm" để né chuyện này: giữ compute chạy suốt tháng vượt hạn mức 100 CU-giờ/tháng của gói Free,
+Neon sẽ treo DB tới tháng sau.
+
 ---
 
 ## 9. Thứ tự tôi muốn bạn dựng
