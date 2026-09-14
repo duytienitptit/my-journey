@@ -228,6 +228,21 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   cũng vào được". Hai file skill của Neon (`.claude/skills/neon*`, `.agents/skills/neon*`,
   `skills-lock.json`) tự cài theo lúc thêm integration — đang ĐỂ NGUYÊN chưa track/gitignore, chủ
   dự án tự quyết sau.
+
+  **[SỬA — 2026-09-14, cùng ngày] "Chậm khi tương tác" — hai nguyên nhân thật, không phải cảm
+  giác:** (1) `db/client.ts` nối `DATABASE_URL` qua PgBouncer transaction-mode của Neon
+  (`-pooler`) mà KHÔNG tắt prepared statement — PgBouncer kiểu này không hỗ trợ tốt PREPARE cấp
+  SQL, cộng dồn độ trễ ở MỌI Server Action chạm DB. Thêm `prepare:false` (đúng khuyến nghị chính
+  thức postgres.js + Neon pooled) + `max:5`/`idle_timeout`/`connect_timeout` hợp lý cho
+  serverless. (2) `<ContactShadows>` (drei) thêm ở mục "nâng cấp phong cách 3D" phía trên mặc
+  định `frames=Infinity` — đọc thẳng source `node_modules/@react-three/drei` mới phát hiện: nó
+  render lại TOÀN BỘ scene + blur 2 lượt MỖI KHUNG HÌNH, MÃI MÃI. Chú thích cũ trong code khi
+  thêm nó gọi nhầm đây là lớp "rẻ" — SAI, đã sửa lại chú thích luôn. Bóng tiếp xúc chỉ phụ thuộc
+  vị trí đồ vật (không đọc ánh sáng cảnh), đồ đạc/nhân vật không đổi chỗ trong một phiên →
+  `frames={1}` là đủ. Thêm `dpr={[1,1.5]}` cho `<Canvas>` (mặc định r3f là `[1,2]`, tức full độ
+  phân giải Retina — 4× số pixel phải tô, MacBook chủ dự án chắc chắn dính). **Bài học: một
+  component drei/thư viện "trông nhẹ" (chỉ vài dòng JSX) có thể giấu chi phí runtime rất nặng —
+  đọc source thật khi nghi ngờ hiệu năng, đừng đoán từ tên/API bề ngoài.**
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
