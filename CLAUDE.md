@@ -243,6 +243,41 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   phân giải Retina — 4× số pixel phải tô, MacBook chủ dự án chắc chắn dính). **Bài học: một
   component drei/thư viện "trông nhẹ" (chỉ vài dòng JSX) có thể giấu chi phí runtime rất nặng —
   đọc source thật khi nghi ngờ hiệu năng, đừng đoán từ tên/API bề ngoài.**
+
+  **[SỬA LẦN 2 — 2026-09-14, cùng ngày] Vẫn chậm sau lần sửa trên — nguyên nhân CHÍNH lần trước
+  chưa chạm tới: function chạy ở Mỹ.** Chủ dự án bảo tự mở production ra đo. Header
+  `x-vercel-id: hkg1::iad1::…` (dạng `edge::function::id`) lộ ngay: dự án Vercel mới mặc định chạy
+  function ở `iad1` (Washington) trong khi Neon ở `ap-southeast-1` — mỗi truy vấn đi-về qua Thái
+  Bình Dương, mà màn chính chạy ~28 truy vấn. Sửa bằng `vercel.json` `"regions": ["sin1"]` (Hobby
+  chỉ được 1 vùng; ghi thêm ở SPEC.md §8.5). Số đo từ máy chủ dự án, trung vị 5 lần, TRƯỚC → SAU:
+  `/` 2442→~400ms · `/week` 1309→~425 · `/settings` 1364→~330 · Server Action đọc 2 truy vấn
+  979→~380 · `getComputedStatsAction` 2063→~430. Trên kết nối tái sử dụng (như trình duyệt), file
+  tĩnh KHÔNG qua function ~90–140ms còn Server Action ~140–170ms → phần server giờ chỉ còn vài
+  chục ms, còn lại là mạng tới edge. Trong trình duyệt: HTML màn chính xong 4388→225ms, bấm
+  "Yesterday" 2822ms→một lượt ~230ms, điều hướng sang trang phụ ~180–260ms.
+  Kèm hai việc nhỏ trong cùng lượt: (a) `getComputedStatsAction` từng đọc toàn bộ bản ghi thô +
+  fold HAI lần (lần hai giấu trong `rollRareItemsIfEligible`) — giờ một lần; kiểm tương đương bằng
+  cách chạy bản cũ (`git show HEAD:`) và bản mới trên HAI bản sao `createdb -T myjourney_demo`, tua
+  đồng hồ tới lúc có vật phẩm hiếm trúng — JSON giống hệt từng byte, rồi `dropdb` hai bản sao đó.
+  (b) `next.config.ts` cho `/models/*`, `/sounds/*` giữ cache một ngày — trước đó mỗi lần mở app
+  trình duyệt hỏi lại ~12 file .glb (4 file nối đuôi); giờ 12/12 lấy từ cache 1–3ms. **Hệ quả cần
+  nhớ: thay nội dung một model thì đặt TÊN FILE MỚI, đừng ghi đè file cũ** (trình duyệt có thể giữ
+  bản cũ tới một ngày). **Bài học: "production chậm" thì đọc `x-vercel-id` + đo TTFB bằng curl
+  TRƯỚC khi đoán trong code — lần sửa đầu tìm được hai nguyên nhân thật nhưng nhỏ, bỏ sót cái
+  lớn nhất nằm ở hạ tầng.** Hai bẫy đo: Browser pane ẩn bóp `requestAnimationFrame` còn ~0,5 khung/
+  giây (bấm chip → 2 khung hình "mất 1,8s" trong khi handler React chỉ 1–3ms; model "bắt đầu tải
+  sau 9s") — đừng coi số khung hình/thời gian vẽ trong pane ẩn là lỗi app; và một mẫu curl 12,8s
+  hoá ra `time_connect=12.45s` (gói bắt tay TCP của máy bị rớt) — xem từng pha trước khi đổ lỗi
+  server. `vercel` CLI không cài global — bản npx cache vẫn dùng được, `shasum .env.local` trước/
+  sau mỗi lệnh: không đổi.
+  **Còn lại (không sửa được bằng code, chưa hỏi chủ dự án):** lần mở ĐẦU TIÊN sau ≥5–7 phút không
+  ai dùng mất thêm ~1,5–2s — đo tách được ~0,8s là function Vercel khởi động lạnh, ~0,5–0,7s là
+  Neon Free tự tắt compute sau 5 phút (gói Free không tắt được tính năng này; gói Launch trả theo
+  dùng thì tắt được). **Đừng tự dựng "ping giữ ấm":** giữ compute 0,25 CU chạy suốt tháng ≈ 182
+  CU-giờ, vượt hạn mức 100 CU-giờ/tháng của gói Free → Neon treo DB tới tháng sau; Vercel Cron
+  gói Hobby cũng chỉ chạy được một lần/ngày. Bundle SSR của `/` có kéo ~1MB three.js (RoomScene
+  được server-render) — `next/dynamic(..., { ssr: false })` có thể bớt một phần khởi động lạnh,
+  chưa làm vì phần lớn thời gian là hạ tầng, và đo lại mỗi lần tốn 7 phút chờ.
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
