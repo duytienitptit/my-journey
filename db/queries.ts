@@ -11,8 +11,7 @@ import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
 import { currentRareItemTriggers, pickRareItemKey, rareItemHits } from "@/core/engine/rareItems";
 import type { RoomItemCatalogEntry } from "@/core/engine/room";
-import { foldTimeline } from "@/core/engine/timeline";
-import type { EngineRawData } from "@/core/engine/types";
+import type { EngineRawData, TimelineResult } from "@/core/engine/types";
 import { isSessionComplete, type RunningSession } from "@/core/session";
 import type { DayKey, StatKey } from "@/core/types";
 import { db } from "./client";
@@ -590,31 +589,42 @@ export async function getReceivedRareItems(): Promise<ReceivedRareItem[]> {
  * dòng nào trong `rare_items`, ghi lại nếu trúng. An toàn gọi lại nhiều lần — mỗi `triggerId`
  * chỉ tạo ra tối đa một dòng (kiểm tồn tại trước khi chèn; không có ràng buộc UNIQUE ở tầng DB
  * cho cột `trigger` vì app một-người-dùng-một-kết-nối, rủi ro đụng độ gần như không có).
+ *
+ * Nhận bản ghi thô + `dailySeries` + danh sách đã nhận mà caller (`getComputedStatsAction`) VỪA
+ * đọc/fold xong, trả về danh sách SAU khi roll. Bản cũ tự gọi lại `getEngineRawData()` + fold lại
+ * lần hai rồi caller còn đọc `rare_items` thêm một lượt — gấp đôi truy vấn ở đúng hàm chạy sau
+ * MỖI lần chấm thói quen/lưu nhật ký (đo trên production 2026-09-14, xem SPEC.md §8.5).
  */
-export async function rollRareItemsIfEligible(): Promise<void> {
-  const raw = await getEngineRawData();
-  const result = foldTimeline(raw, now());
-  const todayKey = dayKeyOf(now());
-
+export async function rollRareItemsIfEligible(input: {
+  profileStartedDayKey: DayKey;
+  dailySeries: TimelineResult["dailySeries"];
+  alreadyReceived: readonly ReceivedRareItem[];
+  nowMs: number;
+}): Promise<ReceivedRareItem[]> {
   const candidates = currentRareItemTriggers({
-    profileStartedDayKey: raw.profileStartedDayKey,
-    today: todayKey,
-    dailySeries: result.dailySeries,
+    profileStartedDayKey: input.profileStartedDayKey,
+    today: dayKeyOf(input.nowMs),
+    dailySeries: input.dailySeries,
   });
-  if (candidates.length === 0) return;
 
-  const existingRows = await db.select({ trigger: schema.rareItems.trigger }).from(schema.rareItems);
-  const alreadyRolled = new Set(existingRows.map((r) => r.trigger));
+  const alreadyRolled = new Set(input.alreadyReceived.map((r) => r.trigger));
   // Muối đổi theo từng lượt seed lại DB (profileStartedDayKey đổi khi reseed) — các lượt cài
   // đặt khác nhau không luôn trúng/trượt giống hệt nhau ở cùng một trigger.
-  const salt = raw.profileStartedDayKey;
+  const salt = input.profileStartedDayKey;
 
+  const newlyReceived: ReceivedRareItem[] = [];
   for (const { triggerId } of candidates) {
     if (alreadyRolled.has(triggerId)) continue;
     if (!rareItemHits(triggerId, salt)) continue;
     const itemKey = pickRareItemKey(triggerId, salt);
-    await db.insert(schema.rareItems).values({ itemKey, trigger: triggerId, receivedAt: new Date(now()) });
+    const receivedAt = new Date(now());
+    await db.insert(schema.rareItems).values({ itemKey, trigger: triggerId, receivedAt });
+    newlyReceived.push({ itemKey, receivedAtMs: receivedAt.getTime(), trigger: triggerId });
   }
+  if (newlyReceived.length === 0) return [...input.alreadyReceived];
+  // Giữ đúng thứ tự `received_at` tăng dần như getReceivedRareItems — RareItems.tsx xếp chỗ đặt
+  // theo CHỈ SỐ trong mảng, đổi thứ tự là thú cưng đổi chỗ trong phòng.
+  return [...input.alreadyReceived, ...newlyReceived].sort((a, b) => a.receivedAtMs - b.receivedAtMs);
 }
 
 // ─── Tài sản + chương — SPEC.md §4.9, dùng từ mốc 5 ───────────────────────

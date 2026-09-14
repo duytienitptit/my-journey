@@ -60,19 +60,26 @@ export type ComputedStats = {
  * trục độc lập với XP, xem ghi chú kiến trúc trong core/engine/chapters.ts.
  */
 export async function getComputedStatsAction(): Promise<ComputedStats> {
-  const [raw, catalog, latestNetWorth, hideMoney, characterLook] = await Promise.all([
+  const [raw, catalog, latestNetWorth, hideMoney, characterLook, alreadyReceivedRareItems] = await Promise.all([
     getEngineRawData(),
     getRoomItemsCatalog(),
     getLatestNetWorth(),
     getHideMoney(),
     getCharacterLook(),
+    getReceivedRareItems(),
   ]);
-  // Vật phẩm hiếm — kiểm/ghi TRƯỚC khi đọc lại, để món vừa trúng (nếu có) hiện ngay trong lần
+  const nowMs = now();
+  // Fold ĐÚNG MỘT lần — kết quả dùng chung cho cả XP/cấp lẫn việc roll vật phẩm hiếm bên dưới.
+  const result = foldTimeline(raw, nowMs);
+  // Vật phẩm hiếm — món vừa trúng (nếu có) nằm ngay trong danh sách trả về, hiện luôn trong lần
   // tải trang này, không phải đợi lần sau (§5.3, mốc 8b).
-  await rollRareItemsIfEligible();
-  const receivedRareItems = await getReceivedRareItems();
+  const receivedRareItems = await rollRareItemsIfEligible({
+    profileStartedDayKey: raw.profileStartedDayKey,
+    dailySeries: result.dailySeries,
+    alreadyReceived: alreadyReceivedRareItems,
+    nowMs,
+  });
 
-  const result = foldTimeline(raw, now());
   const chapter = chapterForNetWorth(latestNetWorth?.totalVnd ?? 0);
   return {
     levelByStat: result.levelByStat,
@@ -87,7 +94,7 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
       : null,
     hideMoney,
     characterLook: characterLook ?? DEFAULT_CHARACTER_LOOK,
-    season: seasonOf(dayKeyOf(now())),
+    season: seasonOf(dayKeyOf(nowMs)),
     receivedRareItems,
   };
 }
