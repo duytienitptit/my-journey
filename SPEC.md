@@ -762,6 +762,12 @@ nhập"). Migration + seed đã chạy trên DB thật. Chưa bật `Deployment 
 Vercel — đúng ý đã [CHỐT] "ai có link cũng vào được, chia sẻ cho dễ"; nếu sau này muốn thêm một
 lớp password Ở CẤP HẠ TẦNG (không phải màn đăng nhập trong app, không phạm luật cứng) thì nói.
 
+**[SỬA — 2026-09-14, cùng ngày] Function chạy ở Singapore (`sin1`), CÙNG vùng với DB.** Dự án
+Vercel mới tạo mặc định chạy function ở `iad1` (Washington, Mỹ) trong khi Neon ở
+`ap-southeast-1` (Singapore) — mỗi truy vấn DB đi-về qua Thái Bình Dương (~220ms), mà một lần
+tải màn chính chạy vài chục truy vấn. `vercel.json` giờ ghim `"regions": ["sin1"]` (gói Hobby chỉ
+được một vùng). Đổi vùng DB hay vùng function về sau thì PHẢI đổi cả hai cùng nhau.
+
 ---
 
 ## 9. Thứ tự tôi muốn bạn dựng
