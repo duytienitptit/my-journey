@@ -755,6 +755,13 @@ Toàn bộ luật ở mục 4 phải viết được thành hàm thuần `(dữ 
 
 Stack: **Next.js + TypeScript, Postgres, react-three-fiber, deploy Vercel** — nói một câu nếu muốn khác, vì đổi sau mốc 2 sẽ đắt.
 
+**[ĐÃ DEPLOY THẬT — 2026-09-14]** Live tại `https://my-journey-eosin.vercel.app` — Vercel (dự án
+`duytiens-projects/my-journey`, nối thẳng GitHub, tự deploy mỗi lần push nhánh `main`) + Neon
+Postgres (gói Free, region Singapore, KHÔNG bật auth tích hợp của Neon — đúng "đừng dựng đăng
+nhập"). Migration + seed đã chạy trên DB thật. Chưa bật `Deployment Protection`/mật khẩu cấp
+Vercel — đúng ý đã [CHỐT] "ai có link cũng vào được, chia sẻ cho dễ"; nếu sau này muốn thêm một
+lớp password Ở CẤP HẠ TẦNG (không phải màn đăng nhập trong app, không phạm luật cứng) thì nói.
+
 ---
 
 ## 9. Thứ tự tôi muốn bạn dựng

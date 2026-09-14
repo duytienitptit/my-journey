@@ -22,6 +22,9 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   local + GitHub-only), cron của Vercel không chạy/test được ở local dev, và sau khi tôi hỏi thẳng
   thì chủ dự án nói thẳng "chưa cần làm mốc này" rồi quyết định chỉ giữ hai màn còn lại. **Đừng tự
   ý dựng phần cron/backup tự động sau này** — đây là quyết định phạm vi, không phải việc quên.
+  **[CẬP NHẬT — 2026-09-14]** Lý do "chưa deploy nên cron không test được" nay KHÔNG còn đúng nữa
+  (xem mục deploy bên dưới) — nhưng quyết định phạm vi vẫn giữ nguyên, đây chỉ là cập nhật bối
+  cảnh, không phải mở lại quyết định. Vẫn đừng tự ý dựng, chờ chủ dự án chủ động nhắc lại.
   - `app/library/page.tsx` (Thư viện hành trình, §5.4): `core/engine/journeyLibrary.ts`
     (`buildChapterCards`, hàm thuần) — đọc lại `chapter_events` LẦN ĐẦU kể từ khi ghi ở mốc 5.
     Chương 1 không có dòng trong `chapter_events` (cố ý, xem chapters.ts) → tự tổng hợp một "mốc
@@ -205,10 +208,31 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   "mỗi pack CC0 có tỉ lệ gốc riêng, không đoán được, phải soi bằng mắt" đã gặp lặp lại nhiều lần
   ở mốc 8b (Cube Pets, Nature Kit). **Đây CHƯA phải quyết định cuối** — đang chờ chủ dự án tự mở
   app xem rồi chốt có mở rộng ra 11 chương còn lại không, hay đổi hướng khác.
+- **ĐÃ DEPLOY THẬT — 2026-09-14.** Chủ dự án chỉ nói "giúp tôi deploy". Live tại
+  **https://my-journey-eosin.vercel.app** — Vercel (`duytiens-projects/my-journey`, nối GitHub,
+  tự deploy mỗi lần push `main`) + Neon Postgres (marketplace integration qua `vercel` CLI, gói
+  Free, region `sin1`, `auth=false` — không bật xác thực tích hợp của Neon, đúng luật "đừng dựng
+  đăng nhập"). Migration (`db/migrate.ts`) + seed (`db/seed.ts`) đã chạy trên DB Neon thật bằng
+  cách ghi đè `DATABASE_URL` qua biến môi trường shell (dotenv không ghi đè biến đã có sẵn trong
+  `process.env`) — KHÔNG đụng `.env.local` lúc chạy hai lệnh đó.
+
+  **Sự cố suýt xảy ra:** `vercel link`/`vercel integration add neon` tự động GHI ĐÈ TOÀN BỘ
+  `.env.local` cục bộ sang trỏ thẳng vào Neon (mất `DATABASE_URL` local trỏ Postgres Homebrew) —
+  phát hiện ngay, khôi phục lại đúng giá trị cũ (`postgresql://admin@localhost:5432/myjourney`)
+  trước khi làm gì thêm. **Bài học: `vercel` CLI có quyền ghi vào `.env.local` như một tác dụng
+  phụ của gần như MỌI lệnh liên quan tới env/integration — luôn `cat .env.local` xem lại ngay sau
+  mỗi lệnh `vercel`, đừng giả định nó chỉ đọc.** Dev cục bộ hoàn toàn không đổi — vẫn Postgres
+  Homebrew, tách biệt hẳn với Neon production, đúng kiến trúc đã định từ §8.5.
+
+  Chưa bật Vercel Deployment Protection (mật khẩu cấp hạ tầng) — đúng ý đã [CHỐT] "ai có link
+  cũng vào được". Hai file skill của Neon (`.claude/skills/neon*`, `.agents/skills/neon*`,
+  `skills-lock.json`) tự cài theo lúc thêm integration — đang ĐỂ NGUYÊN chưa track/gitignore, chủ
+  dự án tự quyết sau.
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
-  mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý.
+  mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý — nay KỸ THUẬT khả thi hơn (đã deploy thật) nhưng vẫn
+  là quyết định phạm vi của chủ dự án, không tự ý dựng.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
