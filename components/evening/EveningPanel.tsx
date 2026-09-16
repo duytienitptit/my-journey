@@ -7,6 +7,7 @@ import { countWords } from "@/core/journalCompose";
 import type { DayKey } from "@/core/types";
 import { HabitScoreRow } from "./HabitScoreRow";
 import { JournalCard } from "./JournalCard";
+import { LabelProgressRow } from "./LabelProgressRow";
 import { MoodPicker } from "./MoodPicker";
 import { NightSparkle } from "./NightSparkle";
 import { useEveningRitual } from "./useEveningRitual";
@@ -18,18 +19,28 @@ type Props = {
    *  DailyScreen.tsx để hiểu vì sao `data.summaryLine` (tự fetch riêng) không đủ. */
   liveTodaySummaryLine: string;
   onXpMightHaveChanged?: () => void;
+  /** Truyền THẲNG `timer.backfill` từ DailyScreen — xem useEveningRitual.ts#quickAddSession. */
+  onBackfillOneSession: (labelId: number) => void;
 };
 
 /**
  * Phần dưới màn chính — SPEC.md §5.1 "Phần dưới — cuối ngày". Cuộn tới là gặp, không tách
  * màn hình riêng (§5.1: "Đừng tách theo giờ, đừng tự chuyển chế độ").
  */
-export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine, onXpMightHaveChanged }: Props) {
-  const { selectedDay, setSelectedDay, data, saveHabitScore, saveMood, saveJournal, close } = useEveningRitual({
-    todayKey,
-    initialTodayData,
-    onXpMightHaveChanged,
-  });
+export function EveningPanel({
+  todayKey,
+  initialTodayData,
+  liveTodaySummaryLine,
+  onXpMightHaveChanged,
+  onBackfillOneSession,
+}: Props) {
+  const { selectedDay, setSelectedDay, data, saveHabitScore, saveMood, saveJournal, quickAddSession, close } =
+    useEveningRitual({
+      todayKey,
+      initialTodayData,
+      onXpMightHaveChanged,
+      onBackfillOneSession,
+    });
   const [justClosed, setJustClosed] = useState(false);
   const summaryLine = selectedDay === "today" ? liveTodaySummaryLine : (data?.summaryLine ?? "");
   // Chặn cứng "Close day" tới khi đủ JOURNAL_MIN_WORDS — [CHỐT — 2026-09-03], cố ý đi ngược
@@ -79,11 +90,42 @@ export function EveningPanel({ todayKey, initialTodayData, liveTodaySummaryLine,
         <>
           <p className="text-sm text-foreground/70">{summaryLine}</p>
 
+          {/* "Check-in" — [MỚI, 2026-09-16] gộp cả nhãn có ngưỡng phiên (English/Deep work/New
+              knowledge) lẫn thói quen chấm điểm (Sport/Sleep) và trạng thái nhật ký vào MỘT
+              danh sách, theo đúng thứ tự đã cấu hình "6 việc" (§4.5) ở Cài đặt — trước đây khối
+              này (tên cũ "Habits") chỉ có hai thói quen, không có chỗ nào hiện số phiên đã làm
+              cho ba nhãn kia. */}
           <div className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground/60">Habits</h3>
-            {data.habits.map((h) => (
-              <HabitScoreRow key={h.id} habit={h} onChange={(score) => saveHabitScore(h.id, score)} />
-            ))}
+            <h3 className="text-sm font-semibold text-foreground/60">Check-in</h3>
+            {data.checkIn.map((item) => {
+              if (item.kind === "label") {
+                return (
+                  <LabelProgressRow
+                    key={`label-${item.labelId}`}
+                    item={item}
+                    showAddButton={selectedDay === "today"}
+                    onAdd={() => quickAddSession(item.labelId)}
+                  />
+                );
+              }
+              if (item.kind === "journal_status") {
+                return (
+                  <div key="journal-status" className="flex items-center justify-between gap-3">
+                    <span className="text-sm font-medium text-foreground/80">
+                      {item.emoji} {item.name}
+                    </span>
+                    <span className="text-sm text-foreground/60">{item.done ? "Written ✓" : "Not yet"}</span>
+                  </div>
+                );
+              }
+              return (
+                <HabitScoreRow
+                  key={`habit-${item.habitId}`}
+                  habit={item}
+                  onChange={(score) => saveHabitScore(item.habitId, score)}
+                />
+              );
+            })}
           </div>
 
           <div className="flex flex-col gap-3 rounded-3xl bg-surface p-5 shadow-sm">

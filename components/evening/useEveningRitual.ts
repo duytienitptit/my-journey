@@ -28,9 +28,14 @@ type Props = {
   /** Gọi sau habit/journal/close — ba việc có thể đổi XP (§4.4). Tâm trạng KHÔNG đổi XP nên
    *  saveMood không gọi. Xem components/stats/useComputedStats.ts. */
   onXpMightHaveChanged?: () => void;
+  /** Ghi bù NHANH đúng 1 phiên cho một nhãn — nút "+" trong khối check-in (SPEC.md §5.1, [MỚI —
+   *  2026-09-16]). Thật ra là `timer.backfill(labelId, 1)` truyền từ DailyScreen xuống, KHÔNG
+   *  phải một đường ghi phiên riêng — dùng lại đúng cơ chế ghi bù đã có (chỉ tính cho HÔM NAY,
+   *  §4.3) để dải chấm phiên ở đầu trang cũng thấy chấm mới ngay, không lệch với khối này. */
+  onBackfillOneSession: (labelId: number) => void;
 };
 
-export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChanged }: Props) {
+export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChanged, onBackfillOneSession }: Props) {
   const yesterdayKey = addDays(todayKey, -1);
   const [selectedDay, setSelectedDay] = useState<SelectedDay>("today");
   const [dataByDay, setDataByDay] = useState<Record<SelectedDay, EveningData | null>>({
@@ -64,8 +69,34 @@ export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChan
   }
 
   function saveHabitScore(habitId: number, score: number) {
-    patch((d) => ({ ...d, habits: d.habits.map((h) => (h.id === habitId ? { ...h, score } : h)) }));
+    patch((d) => ({
+      ...d,
+      checkIn: d.checkIn.map((item) =>
+        item.kind === "habit_score" && item.habitId === habitId
+          ? { ...item, score, done: item.threshold !== null && score >= item.threshold }
+          : item,
+      ),
+    }));
     void saveHabitScoreAction(habitId, dayKey, score).then(() => onXpMightHaveChanged?.());
+  }
+
+  /** Bấm "+" trên một dòng nhãn trong khối check-in — cộng lạc quan NGAY 1 phiên vào đúng dòng
+   *  đó rồi gọi `onBackfillOneSession` (= `timer.backfill(labelId, 1)` thật) để ghi xuống DB và
+   *  cập nhật dải chấm/chuỗi ở đầu trang. Chỉ áp dụng cho "Hôm nay" — ghi bù phiên không có khái
+   *  niệm "hôm qua" (§4.3); nút "+" đã ẩn ở tab "Hôm qua" phía UI, chặn thêm ở đây cho chắc vì
+   *  `onBackfillOneSession` LUÔN ghi vào ngày hôm nay THẬT bất kể đang xem tab nào.
+   */
+  function quickAddSession(labelId: number) {
+    if (selectedDay !== "today") return;
+    patch((d) => ({
+      ...d,
+      checkIn: d.checkIn.map((item) =>
+        item.kind === "label" && item.labelId === labelId
+          ? { ...item, count: item.count + 1, done: item.count + 1 >= item.threshold }
+          : item,
+      ),
+    }));
+    onBackfillOneSession(labelId);
   }
 
   function saveMood(mood: number) {
@@ -87,5 +118,5 @@ export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChan
     });
   }
 
-  return { selectedDay, setSelectedDay, dayKey, data, saveHabitScore, saveMood, saveJournal, close };
+  return { selectedDay, setSelectedDay, dayKey, data, saveHabitScore, saveMood, saveJournal, quickAddSession, close };
 }

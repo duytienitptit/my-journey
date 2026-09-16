@@ -399,7 +399,14 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
 
 **Phần dưới — cuối ngày** (ánh sáng phòng chuyển tối, nhân vật về nhà):
 1. **Hôm nay tôi đã ở đâu** — câu chữ, không biểu đồ: *"4 phiên · phần lớn vào Deep work"*
-2. **Thói quen** — Sport và Sleep tôi chấm 1–5; nhật ký hiện trạng thái đã viết/chưa
+2. **Check-in** — **[SỬA — 2026-09-16]** đổi tên từ "Thói quen", gộp thêm tiến độ của ba nhãn
+   trong "6 việc" (4.5) vào cùng một khối, theo đúng thứ tự đã cấu hình ở Cài đặt: nhãn có ngưỡng
+   phiên (English, Deep work, New knowledge…) hiện `đã làm/ngưỡng` (đọc động, không hard-code ba
+   tên này — §12.4) kèm nút **"+"** ghi bù nhanh đúng 1 phiên cho nhãn đó (chỉ hiện lúc xem "Hôm
+   nay" — ghi bù phiên không có "hôm qua", §4.3); Sport và Sleep vẫn chấm 1–5 như cũ; nhật ký hiện
+   trạng thái đã viết/chưa. Mỗi dòng đạt ngưỡng thì thêm dấu ✓. *Lý do đổi: trước đó không có chỗ
+   nào cho thấy đã làm bao nhiêu phiên English/Deep work trong ngày — chủ dự án tự báo sau khi
+   dùng thử.*
 3. **Tâm trạng** — một tâm trạng cho cả ngày, một cú bấm. **5 mức: 😢 🙁 😐 🙂 😁 = 1–5** (màn tuần cần số để vẽ đường cong). **[CHỐT — 2026-09-03, đổi từ bộ 😞 😕 😐 🙂 😄 chốt ngày 2026-09-02 — bộ cũ mức 4 (🙂) nhìn quá trung tính, dễ lẫn mức 3]**
 4. **Nhật ký** — ba phần, gộp chung xuống một chuỗi lúc lưu (không tách bảng/cột DB):
    - **Ba câu hỏi quan trọng, CỐ ĐỊNH mỗi ngày** (không xoay vòng, khác câu gợi ý bên dưới) —
