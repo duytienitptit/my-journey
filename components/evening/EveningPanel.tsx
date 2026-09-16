@@ -21,6 +21,8 @@ type Props = {
   onXpMightHaveChanged?: () => void;
   /** Truyền THẲNG `timer.backfill` từ DailyScreen — xem useEveningRitual.ts#quickAddSession. */
   onBackfillOneSession: (labelId: number) => void;
+  /** Truyền THẲNG `timer.undoBackfill` từ DailyScreen — xem useEveningRitual.ts#undoOneSession. */
+  onUndoBackfillSession: (labelId: number) => void;
 };
 
 /**
@@ -33,14 +35,25 @@ export function EveningPanel({
   liveTodaySummaryLine,
   onXpMightHaveChanged,
   onBackfillOneSession,
+  onUndoBackfillSession,
 }: Props) {
-  const { selectedDay, setSelectedDay, data, saveHabitScore, saveMood, saveJournal, quickAddSession, close } =
-    useEveningRitual({
-      todayKey,
-      initialTodayData,
-      onXpMightHaveChanged,
-      onBackfillOneSession,
-    });
+  const {
+    selectedDay,
+    setSelectedDay,
+    data,
+    saveHabitScore,
+    saveMood,
+    saveJournal,
+    quickAddSession,
+    undoOneSession,
+    close,
+  } = useEveningRitual({
+    todayKey,
+    initialTodayData,
+    onXpMightHaveChanged,
+    onBackfillOneSession,
+    onUndoBackfillSession,
+  });
   const [justClosed, setJustClosed] = useState(false);
   const summaryLine = selectedDay === "today" ? liveTodaySummaryLine : (data?.summaryLine ?? "");
   // Chặn cứng "Close day" tới khi đủ JOURNAL_MIN_WORDS — [CHỐT — 2026-09-03], cố ý đi ngược
@@ -103,8 +116,9 @@ export function EveningPanel({
                   <LabelProgressRow
                     key={`label-${item.labelId}`}
                     item={item}
-                    showAddButton={selectedDay === "today"}
+                    showButtons={selectedDay === "today"}
                     onAdd={() => quickAddSession(item.labelId)}
+                    onRemove={() => undoOneSession(item.labelId)}
                   />
                 );
               }

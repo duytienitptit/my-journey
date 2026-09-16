@@ -14,6 +14,7 @@ import {
   getSettings,
   listSessionsForDay,
   startSession,
+  undoLastManualSession,
   type SessionForDay,
 } from "@/db/queries";
 
@@ -67,5 +68,14 @@ export async function backfillSessionsAction(labelId: number, count: number) {
   const settings = await getSettings();
   const minutes = settings?.sessionMinutes ?? SESSION_MINUTES_DEFAULT;
   await backfillSessions(labelId, count, minutes);
+  return buildSnapshot(dayKeyOf(now()));
+}
+
+/** Undo nút "−" ở khối check-in (§5.1, [MỚI — 2026-09-16]) — bỏ đúng 1 phiên ghi bù lỡ bấm thừa
+ *  cho một nhãn. Luôn nhắm vào hôm nay thật (xem db/queries.ts#undoLastManualSession), không
+ *  bao giờ đụng phiên thật từ đồng hồ. XP tính lại từ bản ghi thô (§8.1) nên xoá phiên tự động
+ *  kéo XP/ngày-đạt lùi lại đúng, không cần hàm nào "trừ ngược" riêng. */
+export async function undoLastManualSessionAction(labelId: number) {
+  await undoLastManualSession(labelId);
   return buildSnapshot(dayKeyOf(now()));
 }

@@ -135,10 +135,10 @@ export function DailyScreen({
           EveningPanel tự fetch dữ liệu ngày qua getEveningDataAction(), nhưng phiên vừa start/
           backfill qua đồng hồ ở TRÊN không tự phản ánh vào lần fetch đó; nếu không truyền xuống,
           dòng này sẽ đứng yên (đã bắt gặp lỗi này lúc soi bằng mắt) — không đụng gì tới habit/
-          mood/journal, vì những cái đó chỉ có EveningPanel ghi, không ai khác. `onBackfillOneSession`
-          truyền THẲNG `timer.backfill` cùng lý do — nút "+" trong khối check-in (mới, §5.1) phải
-          đi qua chính hàm này để dải chấm + chuỗi ở TRÊN cập nhật ngay, không tạo đường ghi
-          phiên thứ hai riêng cho EveningPanel. */}
+          mood/journal, vì những cái đó chỉ có EveningPanel ghi, không ai khác. `onBackfillOneSession`/
+          `onUndoBackfillSession` truyền THẲNG `timer.backfill`/`timer.undoBackfill` cùng lý do —
+          nút "+"/"−" trong khối check-in (mới, §5.1) phải đi qua đúng hai hàm này để dải chấm +
+          chuỗi ở TRÊN cập nhật ngay, không tạo đường ghi/xoá phiên riêng cho EveningPanel. */}
       <div ref={eveningMarkerRef} className="relative pointer-events-auto">
         <EveningPanel
           todayKey={todayKey}
@@ -146,6 +146,7 @@ export function DailyScreen({
           liveTodaySummaryLine={timer.summaryLine}
           onXpMightHaveChanged={refreshStats}
           onBackfillOneSession={(labelId) => timer.backfill(labelId, 1)}
+          onUndoBackfillSession={(labelId) => timer.undoBackfill(labelId)}
         />
       </div>
     </div>

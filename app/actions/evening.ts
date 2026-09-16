@@ -9,6 +9,7 @@ import type { DayKey } from "@/core/types";
 import {
   closeDay,
   countCompletedSessionsByLabelForDay,
+  countManualSessionsByLabelForDay,
   getDayLog,
   listActiveHabits,
   listActivePrompts,
@@ -28,7 +29,10 @@ import {
  *
  * Ba dạng, ứng với ba cách "đạt" ở `core/engine/dayAchieved.ts`:
  * - "label": nhãn có ngưỡng SỐ PHIÊN (English, Deep work, New knowledge...) — có nút "+" ghi bù
- *   nhanh đúng 1 phiên, chỉ khi đang xem "Hôm nay" (ghi bù phiên chỉ tính hôm nay, §4.3).
+ *   nhanh đúng 1 phiên VÀ nút "−" undo đúng 1 phiên ghi bù lỡ bấm thừa ([MỚI — 2026-09-16], chỉ
+ *   xoá phiên `source=manual`, không bao giờ đụng phiên thật), cả hai chỉ khi đang xem "Hôm nay"
+ *   (ghi bù phiên chỉ tính hôm nay, §4.3). `manualCount` là số phiên ghi bù CÒN LẠI hôm nay của
+ *   nhãn đó — quyết định nút "−" có bật hay không (0 thì tắt, tránh tưởng còn mà bấm hụt).
  * - "habit_score": thói quen chấm 1-5 (Sport, Sleep enough) — y hệt trước, chỉ thêm `done`.
  *   `threshold` có thể `null` cho một thói quen KHÔNG nằm trong "6 việc" đã cấu hình (tồn tại
  *   nhưng chưa thêm ở Cài đặt) — vẫn chấm được như trước khi có khối check-in này, chỉ là
@@ -37,7 +41,16 @@ import {
  * - "journal_status": chỉ hiện trạng thái đã viết/chưa — viết thật ở khối Journal bên dưới.
  */
 export type CheckInItem =
-  | { kind: "label"; labelId: number; name: string; emoji: string; count: number; threshold: number; done: boolean }
+  | {
+      kind: "label";
+      labelId: number;
+      name: string;
+      emoji: string;
+      count: number;
+      threshold: number;
+      done: boolean;
+      manualCount: number;
+    }
   | { kind: "habit_score"; habitId: number; name: string; emoji: string; score: number | null; threshold: number | null; done: boolean }
   | { kind: "journal_status"; name: string; emoji: string; done: boolean };
 
@@ -53,15 +66,17 @@ export type EveningData = {
 
 /** Mọi thứ để vẽ nghi thức tối cho một ngày cụ thể (hôm nay hoặc hôm qua — §4.11). */
 export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData> {
-  const [tasks, allHabits, entries, dayLog, prompts, sessions, sessionCountByLabel] = await Promise.all([
-    listDailyTasksWithRef(),
-    listActiveHabits(),
-    listHabitEntriesForDay(dayKey),
-    getDayLog(dayKey),
-    listActivePrompts(),
-    listSessionsForDay(dayKey),
-    countCompletedSessionsByLabelForDay(dayKey),
-  ]);
+  const [tasks, allHabits, entries, dayLog, prompts, sessions, sessionCountByLabel, manualCountByLabel] =
+    await Promise.all([
+      listDailyTasksWithRef(),
+      listActiveHabits(),
+      listHabitEntriesForDay(dayKey),
+      getDayLog(dayKey),
+      listActivePrompts(),
+      listSessionsForDay(dayKey),
+      countCompletedSessionsByLabelForDay(dayKey),
+      countManualSessionsByLabelForDay(dayKey),
+    ]);
 
   const entryByHabit = new Map(entries.map((e) => [e.habitId, e]));
   // "Viết nhật ký" (kind=journal) đọc thẳng day_logs.journal_text — không có dòng habit_entries
@@ -90,6 +105,7 @@ export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData>
         count: sessionCountByLabel.get(t.refId) ?? 0,
         threshold: t.threshold ?? 1, // nhãn trong "6 việc" luôn có ngưỡng thật (DailyTasksSection bắt buộc) — phòng thân dữ liệu bất thường
         done,
+        manualCount: manualCountByLabel.get(t.refId) ?? 0,
       };
     }
     if (t.habitKind === "journal") {

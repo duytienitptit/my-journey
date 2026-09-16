@@ -406,7 +406,9 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
    nay" — ghi bù phiên không có "hôm qua", §4.3); Sport và Sleep vẫn chấm 1–5 như cũ; nhật ký hiện
    trạng thái đã viết/chưa. Mỗi dòng đạt ngưỡng thì thêm dấu ✓. *Lý do đổi: trước đó không có chỗ
    nào cho thấy đã làm bao nhiêu phiên English/Deep work trong ngày — chủ dự án tự báo sau khi
-   dùng thử.*
+   dùng thử.* **[THÊM — 2026-09-16, cùng ngày]** Kèm nút **"−"** cạnh "+" — undo đúng 1 phiên ghi
+   bù lỡ bấm thừa, cũng chỉ hiện lúc xem "Hôm nay". "−" CHỈ xoá phiên ghi bù (không bao giờ đụng
+   phiên thật từ đồng hồ), và tự tắt khi nhãn đó hôm nay không còn phiên ghi bù nào để xoá.
 3. **Tâm trạng** — một tâm trạng cho cả ngày, một cú bấm. **5 mức: 😢 🙁 😐 🙂 😁 = 1–5** (màn tuần cần số để vẽ đường cong). **[CHỐT — 2026-09-03, đổi từ bộ 😞 😕 😐 🙂 😄 chốt ngày 2026-09-02 — bộ cũ mức 4 (🙂) nhìn quá trung tính, dễ lẫn mức 3]**
 4. **Nhật ký** — ba phần, gộp chung xuống một chuỗi lúc lưu (không tách bảng/cột DB):
    - **Ba câu hỏi quan trọng, CỐ ĐỊNH mỗi ngày** (không xoay vòng, khác câu gợi ý bên dưới) —

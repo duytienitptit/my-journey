@@ -308,6 +308,57 @@ export async function countCompletedSessionsByLabelForDay(
   return counts;
 }
 
+/** Trong số phiên hoàn thành ở trên, bao nhiêu là GHI BÙ (source=manual) theo từng nhãn — [MỚI,
+ *  2026-09-16] dùng để biết nút "−" (undo lỡ bấm thừa ở khối check-in) có việc để làm không, mà
+ *  không cần đoán/đụng tới phiên THẬT (source=timer) — xem `undoLastManualSession` bên dưới. */
+export async function countManualSessionsByLabelForDay(dayKey: DayKey): Promise<Map<number, number>> {
+  const rows = await db
+    .select({ labelId: schema.sessions.labelId })
+    .from(schema.sessions)
+    .where(
+      and(
+        eq(schema.sessions.dayKey, dayKey),
+        eq(schema.sessions.status, "completed"),
+        eq(schema.sessions.source, "manual"),
+      ),
+    );
+  const counts = new Map<number, number>();
+  for (const r of rows) counts.set(r.labelId, (counts.get(r.labelId) ?? 0) + 1);
+  return counts;
+}
+
+/**
+ * Undo nút "+" lỡ bấm thừa ở khối check-in (§5.1, [MỚI — 2026-09-16]) — xoá THẬT đúng MỘT phiên
+ * ghi bù MỚI NHẤT (id lớn nhất) của một nhãn, luôn tính theo NGÀY HÔM NAY THẬT (không nhận
+ * `dayKey` từ bên ngoài) — y hệt `backfillSessions` ở trên chỉ ghi được cho hôm nay (§4.3).
+ *
+ * `source: "manual"` trong điều kiện WHERE là hàng rào CỨNG duy nhất giữ hàm này không bao giờ
+ * đụng tới một phiên THẬT (source=timer) — khác `abandonSession` (giữ bản ghi, chỉ đổi trạng
+ * thái) vì một phiên ghi bù sai không đại diện cho việc gì đã thật sự xảy ra, xoá hẳn trung thực
+ * hơn là giữ lại một dòng "abandoned" giả. Trả `false` nếu nhãn đó hôm nay không còn phiên ghi
+ * bù nào — không phải lỗi, chỉ là không có gì để xoá (UI đã tự disable nút trước khi gọi tới).
+ */
+export async function undoLastManualSession(labelId: number): Promise<boolean> {
+  const todayKey = dayKeyOf(now());
+  const rows = await db
+    .select({ id: schema.sessions.id })
+    .from(schema.sessions)
+    .where(
+      and(
+        eq(schema.sessions.labelId, labelId),
+        eq(schema.sessions.dayKey, todayKey),
+        eq(schema.sessions.status, "completed"),
+        eq(schema.sessions.source, "manual"),
+      ),
+    )
+    .orderBy(desc(schema.sessions.id))
+    .limit(1);
+  const row = rows[0];
+  if (!row) return false;
+  await db.delete(schema.sessions).where(eq(schema.sessions.id, row.id));
+  return true;
+}
+
 // ─── Habit entries — SPEC.md §4.2, §7 ─────────────────────────────────────
 
 export async function listHabitEntriesForDay(dayKey: DayKey) {

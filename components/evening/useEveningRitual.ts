@@ -33,9 +33,19 @@ type Props = {
    *  phải một đường ghi phiên riêng — dùng lại đúng cơ chế ghi bù đã có (chỉ tính cho HÔM NAY,
    *  §4.3) để dải chấm phiên ở đầu trang cũng thấy chấm mới ngay, không lệch với khối này. */
   onBackfillOneSession: (labelId: number) => void;
+  /** Undo "+" lỡ bấm thừa — nút "−" trong khối check-in ([MỚI — 2026-09-16, cùng ngày]). Thật ra
+   *  là `timer.undoBackfill(labelId)` truyền từ DailyScreen xuống, cùng lý do với
+   *  `onBackfillOneSession` ở trên. */
+  onUndoBackfillSession: (labelId: number) => void;
 };
 
-export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChanged, onBackfillOneSession }: Props) {
+export function useEveningRitual({
+  todayKey,
+  initialTodayData,
+  onXpMightHaveChanged,
+  onBackfillOneSession,
+  onUndoBackfillSession,
+}: Props) {
   const yesterdayKey = addDays(todayKey, -1);
   const [selectedDay, setSelectedDay] = useState<SelectedDay>("today");
   const [dataByDay, setDataByDay] = useState<Record<SelectedDay, EveningData | null>>({
@@ -92,11 +102,30 @@ export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChan
       ...d,
       checkIn: d.checkIn.map((item) =>
         item.kind === "label" && item.labelId === labelId
-          ? { ...item, count: item.count + 1, done: item.count + 1 >= item.threshold }
+          ? { ...item, count: item.count + 1, manualCount: item.manualCount + 1, done: item.count + 1 >= item.threshold }
           : item,
       ),
     }));
     onBackfillOneSession(labelId);
+  }
+
+  /** Bấm "−" trên một dòng nhãn — undo ĐÚNG 1 phiên ghi bù (source=manual) MỚI NHẤT của nhãn đó,
+   *  hôm nay. `manualCount > 0` là điều kiện DUY NHẤT cho phép trừ lạc quan — nếu đã về 0 thì
+   *  không còn phiên ghi bù nào để xoá (UI đã tự disable nút, xem LabelProgressRow.tsx); giữ
+   *  điều kiện này ở cả hai nơi để state lạc quan không bao giờ lệch khỏi DB thật. Không bao giờ
+   *  đụng phiên THẬT từ đồng hồ — xem db/queries.ts#undoLastManualSession.
+   */
+  function undoOneSession(labelId: number) {
+    if (selectedDay !== "today") return;
+    patch((d) => ({
+      ...d,
+      checkIn: d.checkIn.map((item) =>
+        item.kind === "label" && item.labelId === labelId && item.manualCount > 0
+          ? { ...item, count: item.count - 1, manualCount: item.manualCount - 1, done: item.count - 1 >= item.threshold }
+          : item,
+      ),
+    }));
+    onUndoBackfillSession(labelId);
   }
 
   function saveMood(mood: number) {
@@ -118,5 +147,16 @@ export function useEveningRitual({ todayKey, initialTodayData, onXpMightHaveChan
     });
   }
 
-  return { selectedDay, setSelectedDay, dayKey, data, saveHabitScore, saveMood, saveJournal, quickAddSession, close };
+  return {
+    selectedDay,
+    setSelectedDay,
+    dayKey,
+    data,
+    saveHabitScore,
+    saveMood,
+    saveJournal,
+    quickAddSession,
+    undoOneSession,
+    close,
+  };
 }

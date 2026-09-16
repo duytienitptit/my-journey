@@ -318,6 +318,33 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   lại trang dữ liệu vẫn còn (không phải chỉ optimistic). Không có race điều kiện dù bấm 4 lần
   liên tiếp — Next.js 16 tự xếp hàng Server Action từ cùng một client, không chạy song song. Đã
   khôi phục `.env.local`, xoá DB tạm, không đụng dữ liệu thật.
+
+  **[THÊM — 2026-09-16, cùng ngày] Nút "−" — chủ dự án nhờ thêm "để trường hợp lỡ bấm thừa
+  phiên".** Không hỏi thêm — semantics duy nhất hợp lý khớp đúng câu chữ chủ dự án dùng ("lỡ bấm
+  thừa" = undo đúng thao tác "+" vừa làm), và an toàn nhất (không đụng phiên thật). Kỹ thuật:
+  `db/queries.ts#undoLastManualSession` — xoá THẬT (không phải đổi trạng thái như `abandonSession`,
+  vì một phiên ghi bù sai không đại diện việc gì đã thật sự xảy ra) đúng MỘT dòng, id lớn nhất,
+  ràng buộc CỨNG `source='manual' AND day_key=hôm nay thật` trong WHERE — không nhận `dayKey` từ
+  client, y hệt `backfillSessions` chỉ ghi được cho hôm nay (§4.3). `CheckInItem` (nhãn) thêm
+  `manualCount` — số phiên ghi bù CÒN LẠI của nhãn đó hôm nay, quyết định nút "−" bật/tắt; giữ
+  optimistic-update an toàn (không đoán mò rồi lệch server) vì chỉ cho trừ lạc quan khi
+  `manualCount > 0`, đúng điều kiện phía server cũng đòi. XP tự tính lại đúng từ bản ghi thô sau
+  khi xoá (§8.1), không cần hàm "trừ ngược" nào.
+
+  **Phát hiện thật lúc QA (không phải bịa ra để test):** trước khi tôi kịp code nút "−", DB dev
+  thật (`myjourney`, KHÔNG phải bản sao QA) đã có sẵn **6 phiên English ghi bù**, tất cả trong
+  vòng 1,2 giây (09:08:30–09:08:31) — đúng dấu hiệu bấm "+" liên tục do lỡ tay, chính là lý do
+  chủ dự án yêu cầu tính năng này. Đã PHÁT HIỆN qua kiểm tra thông thường (đối chiếu bản sao QA
+  với DB gốc trước khi test), không đụng vào — 6 dòng đó vẫn còn nguyên sau khi tôi xong việc,
+  để chủ dự án tự dùng nút "−" mới mà sửa nếu muốn (xem [[feedback-shared-dev-db-caution]]).
+
+  QA trên bản sao MỚI (`myjourney_checkin_qa2`, tạo từ `myjourney` — vô tình chứa nguyên 6 dòng
+  English thật ở trên, dùng luôn làm dữ liệu test thay vì phải seed giả): bấm "−" 6 lần liên tiếp
+  trên English (6→3→0), xác nhận dấu ✓ biến mất đúng lúc qua ngưỡng (4→3), nút tự vô hiệu hoá khi
+  chạm 0, DB copy còn đúng số dòng mong đợi mỗi bước, nút "−" ở Deep work/New knowledge (0 phiên
+  ghi bù) vô hiệu hoá ngay từ đầu, tải lại trang giữ đúng trạng thái cuối, tab "Hôm qua" ẩn cả
+  hai nút. Đối chiếu `myjourney` thật SAU khi xong: vẫn đủ 6 dòng English — bản sao không ảnh
+  hưởng gốc.
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của

@@ -8,6 +8,7 @@ import {
   backfillSessionsAction,
   completeSessionAction,
   startSessionAction,
+  undoLastManualSessionAction,
 } from "@/app/actions/sessions";
 import type { SessionForDay } from "@/db/queries";
 
@@ -139,6 +140,21 @@ export function useSessionTimer({
     [onXpMightHaveChanged],
   );
 
+  /** Undo — bỏ đúng 1 phiên ghi bù lỡ bấm thừa (nút "−" ở khối check-in, §5.1, [MỚI —
+   *  2026-09-16]). Không có tham số count vì luôn chỉ bỏ MỘT phiên mỗi lần bấm, đối xứng với
+   *  `backfill(labelId, 1)`. Server tự giới hạn chỉ xoá phiên ghi bù (source=manual) của hôm
+   *  nay — xem app/actions/sessions.ts. */
+  const undoBackfill = useCallback(
+    (labelId: number) => {
+      void undoLastManualSessionAction(labelId).then((snapshot) => {
+        setTodaySessions(snapshot.todaySessions);
+        setSummaryLine(snapshot.summaryLine);
+        onXpMightHaveChanged?.();
+      });
+    },
+    [onXpMightHaveChanged],
+  );
+
   return {
     selectedLabelId,
     setSelectedLabelId,
@@ -151,6 +167,7 @@ export function useSessionTimer({
     start,
     abandon,
     backfill,
+    undoBackfill,
   };
 }
 
