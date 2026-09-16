@@ -153,8 +153,11 @@ async function main() {
 
   await db.insert(schema.prompts).values(JOURNAL_PROMPTS);
 
-  // Đồ đạc mở khoá theo cấp — SPEC.md §4.8, 12 món đầu (4 mỗi chỉ số). Vị trí đặt trong phòng
-  // ở components/room/roomItemPlacements.ts, model_key phải khớp components/room/models.ts.
+  // Đồ đạc mở khoá theo cấp — SPEC.md §4.8, 12 món đầu (4 mỗi chỉ số).
+  // [GỠ 3D — 2026-09-16] `model_key` giờ KHÔNG trỏ tới model nào nữa (phòng 3D + `public/models/`
+  // đã gỡ) — bảng này vẫn seed và `core/engine/room.ts` vẫn tính đúng món nào đã mở, nhưng chưa
+  // có nơi HIỂN THỊ. Giữ nguyên để không mất dữ liệu/luật; xem SPEC.md §5.3 ("mất đầu ra hình
+  // ảnh, chưa quyết thay bằng gì").
   await db.insert(schema.roomItems).values([
     { stat: "mind", name: "A few books", modelKey: "books", unlockLevel: 1 },
     { stat: "mind", name: "Reading lamp", modelKey: "lampSquareFloor", unlockLevel: 2 },

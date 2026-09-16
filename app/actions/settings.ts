@@ -2,11 +2,6 @@
 
 /** Cài đặt — SPEC.md §5.6, mốc 8. Nhãn, thói quen, 6 việc, độ dài phiên, câu gợi ý, nhân vật, xuất/nhập. */
 
-import {
-  CHARACTER_LOOKS,
-  DEFAULT_CHARACTER_LOOK,
-  isValidCharacterLook,
-} from "@/components/room/models";
 import type { StatKey } from "@/core/types";
 import {
   addDailyTask,
@@ -16,7 +11,6 @@ import {
   createLabel,
   createPrompt,
   deactivatePrompt,
-  getCharacterLook,
   getHideMoney,
   getSettings,
   importAllData,
@@ -25,7 +19,6 @@ import {
   listAllPrompts,
   listDailyTasksWithRef,
   removeDailyTask,
-  setCharacterLook,
   updateDailyTaskThreshold,
   updateHabit,
   updateLabel,
@@ -44,19 +37,16 @@ export type SettingsData = {
   dailySessionGoal: number;
   reminderHour: number | null;
   hideMoney: boolean;
-  characterLook: string;
-  characterLooks: readonly string[];
 };
 
 export async function getSettingsDataAction(): Promise<SettingsData> {
-  const [labels, habits, dailyTasks, prompts, settings, hideMoney, characterLook] = await Promise.all([
+  const [labels, habits, dailyTasks, prompts, settings, hideMoney] = await Promise.all([
     listActiveLabels(),
     listActiveHabits(),
     listDailyTasksWithRef(),
     listAllPrompts(),
     getSettings(),
     getHideMoney(),
-    getCharacterLook(),
   ]);
   return {
     labels: labels.map((l) => ({ id: l.id, name: l.name, emoji: l.emoji, color: l.color, stat: l.stat })),
@@ -67,8 +57,6 @@ export async function getSettingsDataAction(): Promise<SettingsData> {
     dailySessionGoal: settings?.dailySessionGoal ?? 4,
     reminderHour: settings?.reminderHour ?? null,
     hideMoney,
-    characterLook: characterLook ?? DEFAULT_CHARACTER_LOOK,
-    characterLooks: CHARACTER_LOOKS,
   };
 }
 
@@ -144,15 +132,6 @@ export async function updateSessionSettingsAction(
   if (sessionMinutes < 1 || dailySessionGoal < 1) throw new Error("Số phút/mục tiêu phải lớn hơn 0.");
   if (reminderHour !== null && (reminderHour < 0 || reminderHour > 23)) throw new Error("Giờ nhắc phải từ 0-23.");
   await updateSettingsRow({ sessionMinutes, dailySessionGoal, reminderHour });
-}
-
-// ─── Nhân vật ────────────────────────────────────────────────────────────
-// Ẩn/hiện tài sản đã có `setHideMoneyAction` riêng ở app/actions/assets.ts (mốc 5, dùng chung
-// với NetWorthControl trên màn chính) — Cài đặt gọi lại đúng action đó, không tạo bản thứ hai.
-
-export async function setCharacterLookAction(characterKey: string) {
-  if (!isValidCharacterLook(characterKey)) throw new Error("Hình dáng không hợp lệ.");
-  await setCharacterLook(characterKey);
 }
 
 // ─── Nhập dữ liệu ───────────────────────────────────────────────────────

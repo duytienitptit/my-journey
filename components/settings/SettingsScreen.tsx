@@ -3,7 +3,6 @@
 import { useState } from "react";
 import Link from "next/link";
 import { getSettingsDataAction, type SettingsData } from "@/app/actions/settings";
-import { CharacterSection } from "./CharacterSection";
 import { DailyTasksSection } from "./DailyTasksSection";
 import { DataSection } from "./DataSection";
 import { HabitsSection } from "./HabitsSection";
@@ -31,7 +30,6 @@ export function SettingsScreen({ initialData }: { initialData: SettingsData }) {
       </Link>
       <h1 className="text-2xl font-bold text-foreground">Settings</h1>
 
-      <CharacterSection characterLook={data.characterLook} characterLooks={data.characterLooks} onChanged={refresh} />
       <LabelsSection labels={data.labels} onChanged={refresh} />
       <HabitsSection habits={data.habits} onChanged={refresh} />
       <DailyTasksSection dailyTasks={data.dailyTasks} labels={data.labels} habits={data.habits} onChanged={refresh} />

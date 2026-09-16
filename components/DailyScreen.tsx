@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useState } from "react";
 import { EveningPanel } from "@/components/evening/EveningPanel";
-import { RoomScene, type TimeOfDay } from "@/components/room/RoomScene";
-import type { CharacterPose } from "@/components/room/Character";
+import { HomeDashboard } from "@/components/home/HomeDashboard";
 import { LevelUpToast } from "@/components/stats/LevelUpToast";
 import { StreakBrokenToast } from "@/components/stats/StreakBrokenToast";
 import { StreakMilestoneToast } from "@/components/stats/StreakMilestoneToast";
@@ -12,7 +11,7 @@ import type { ComputedStats } from "@/app/actions/stats";
 import { TimerOverlay, type TimerLabel } from "@/components/timer/TimerOverlay";
 import { useSessionTimer } from "@/components/timer/useSessionTimer";
 import type { ActiveSession } from "@/components/timer/useSessionTimer";
-import type { EveningData } from "@/app/actions/evening";
+import { getEveningDataAction, type EveningData } from "@/app/actions/evening";
 import type { SessionForDay } from "@/db/queries";
 import type { DayKey } from "@/core/types";
 
@@ -48,30 +47,25 @@ export function DailyScreen({
     streakBrokenNotice,
   } = useComputedStats(initialStats);
 
+  // Sáu việc hôm nay cho dashboard màn chính — `initialEveningData` chỉ đúng tại thời điểm tải
+  // trang; bấm Start hay ghi bù xong là lệch ngay. Fetch lại cùng nhịp với refreshStats, vì MỌI
+  // hành động đổi XP đều đã đi qua một chỗ duy nhất đó rồi (timer + nghi thức tối).
+  const [eveningToday, setEveningToday] = useState(initialEveningData);
+  const handleXpMightHaveChanged = useCallback(() => {
+    refreshStats();
+    void getEveningDataAction(todayKey).then(setEveningToday);
+  }, [refreshStats, todayKey]);
+
   const timer = useSessionTimer({
     initialActiveSession,
     initialTodaySessions,
     initialSummaryLine,
     defaultLabelId: labels[0]?.id ?? 0,
-    onXpMightHaveChanged: refreshStats,
+    onXpMightHaveChanged: handleXpMightHaveChanged,
   });
 
-  const activeLabel = labels.find((l) => l.id === timer.running?.labelId);
-  const pose: CharacterPose = timer.running ? (activeLabel?.stat ?? "idle") : "idle";
 
-  const eveningMarkerRef = useRef<HTMLDivElement | null>(null);
-  const [timeOfDay, setTimeOfDay] = useState<TimeOfDay>("day");
 
-  useEffect(() => {
-    const el = eveningMarkerRef.current;
-    if (!el) return;
-    const observer = new IntersectionObserver(
-      ([entry]) => setTimeOfDay(entry.isIntersecting ? "evening" : "day"),
-      { threshold: 0.15 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, []);
 
   return (
     // Ba lớp phòng thủ để canvas phòng 3D (fixed, con ĐẦU TIÊN dưới đây) vừa chạm được chuột
@@ -93,16 +87,12 @@ export function DailyScreen({
       {/* Phòng 3D — cố định phủ toàn màn hình phía sau nội dung cuộn (SPEC.md §5.1: "căn phòng
           3D chiếm phần lớn màn hình"). */}
       <div className="fixed inset-0">
-        <RoomScene
-          pose={pose}
-          timeOfDay={timeOfDay}
-          characterStage={stats.characterStage}
-          characterLook={stats.characterLook}
+        <HomeDashboard
+          levelByStat={stats.levelByStat}
+          dayAchievedStreak={stats.dayAchievedStreak}
           chapter={stats.chapter}
-          unlockedItems={stats.unlockedItems}
+          checkIn={eveningToday.checkIn}
           focusMode={timer.running !== null}
-          season={stats.season}
-          receivedRareItems={stats.receivedRareItems}
         />
       </div>
 
@@ -139,12 +129,12 @@ export function DailyScreen({
           `onUndoBackfillSession` truyền THẲNG `timer.backfill`/`timer.undoBackfill` cùng lý do —
           nút "+"/"−" trong khối check-in (mới, §5.1) phải đi qua đúng hai hàm này để dải chấm +
           chuỗi ở TRÊN cập nhật ngay, không tạo đường ghi/xoá phiên riêng cho EveningPanel. */}
-      <div ref={eveningMarkerRef} className="relative pointer-events-auto">
+      <div className="relative pointer-events-auto">
         <EveningPanel
           todayKey={todayKey}
           initialTodayData={initialEveningData}
           liveTodaySummaryLine={timer.summaryLine}
-          onXpMightHaveChanged={refreshStats}
+          onXpMightHaveChanged={handleXpMightHaveChanged}
           onBackfillOneSession={(labelId) => timer.backfill(labelId, 1)}
           onUndoBackfillSession={(labelId) => timer.undoBackfill(labelId)}
         />
