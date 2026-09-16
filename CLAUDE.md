@@ -288,6 +288,36 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   start"` bắt trượt → server vòng trước còn giữ cổng, 6/7 vòng đầu tiên đo nhầm server ấm
   (`EADDRINUSE` trong log). Tắt theo CỔNG (`lsof -ti tcp:PORT -sTCP:LISTEN | xargs kill`) và bắt
   buộc thấy "Ready" của CHÍNH vòng đó trước khi đo.
+- **2026-09-16: khối "Check-in" trong nghi thức tối — chủ dự án báo "chưa có chỗ để tôi thấy đã
+  English/Deep work được bao nhiêu phiên, cần dấu + để tích bù", kèm yêu cầu "check lại plan
+  trước khi build". Trước khi code, hỏi 3 câu AskUserQuestion vì §5.1 ghi rõ dải chấm+chuỗi đầu
+  trang là "thống kê DUY NHẤT hiện ban ngày" (nguyên tắc 4, §2) và khối này chưa tồn tại dưới bất
+  kỳ hình dạng nào — chỉ `listDailyTasksWithRef` dùng trong Cài đặt, không nơi nào hiện tiến độ.**
+  Chủ dự án bác bỏ khung nguyên tắc 4 của tôi ("không phải biểu đồ, chỉ là hiện số phiên") rồi
+  chọn **gộp chung với khối "Habits" cũ thành một khối 6 việc** (English/Deep work/New knowledge
+  + Sport/Sleep + Journal, theo đúng thứ tự `daily_tasks.sort_order`) và **nút "+" cộng ngay 1
+  phiên, không hỏi gì thêm**.
+
+  Kỹ thuật: `app/actions/evening.ts` — `EveningData.checkIn` thay `.habits`, tái dùng
+  `isDailyTaskDone` (core/engine/dayAchieved.ts) để tính `done`, không lặp phép so sánh ngưỡng.
+  Giữ nguyên hành vi cũ cho thói quen CHƯA thêm vào "6 việc" (nối vào cuối danh sách, threshold
+  null, không dấu ✓) — soi kỹ trước khi đổi vì khối "Habits" cũ hiện MỌI thói quen đang hoạt động
+  qua `listActiveHabits()`, không lọc theo `daily_tasks`; chỉ đổi nguồn dữ liệu chính mà bỏ sót
+  nhánh này sẽ làm biến mất chỗ chấm điểm của một thói quen thật (dù seed hiện tại chưa có ca nào
+  như vậy). Nút "+" (`LabelProgressRow.tsx`, mới) gọi THẲNG `timer.backfill(labelId, 1)` truyền
+  từ `DailyScreen.tsx` qua `EveningPanel` xuống `useEveningRitual`#`quickAddSession` — không tạo
+  đường ghi phiên thứ hai — để dải chấm/tóm tắt ở đầu trang cập nhật cùng lúc, đúng bài học đã
+  ghi ở mốc 4/6 về việc hai nguồn dữ liệu tách rời dễ lệch nhau. Ẩn hẳn nút "+" ở tab "Hôm qua"
+  (ghi bù phiên chỉ tính hôm nay, §4.3) — `onBackfillOneSession` luôn ghi vào NGÀY HÔM NAY thật
+  bất kể đang xem tab nào, chặn thêm một lớp trong chính hook cho chắc.
+
+  QA trên **DB TẠM RIÊNG** (`myjourney_checkin_qa`, tạo từ `myjourney` thật qua `createdb -T`,
+  trỏ `.env.local` sang đó, khởi động lại server), theo đúng [[feedback-shared-dev-db-caution]]:
+  bấm "+" 4 lần trên Deep work qua trình duyệt thật, xác nhận "4/4 sessions ✓" hiện đúng, DB có
+  đủ 4 dòng `source=manual`, dòng tóm tắt đầu trang đổi theo, tab "Hôm qua" ẩn nút + đúng ý, tải
+  lại trang dữ liệu vẫn còn (không phải chỉ optimistic). Không có race điều kiện dù bấm 4 lần
+  liên tiếp — Next.js 16 tự xếp hàng Server Action từ cùng một client, không chạy song song. Đã
+  khôi phục `.env.local`, xoá DB tạm, không đụng dữ liệu thật.
 - **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
   đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
   mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
