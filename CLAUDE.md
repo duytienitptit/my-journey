@@ -345,16 +345,199 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   ghi bù) vô hiệu hoá ngay từ đầu, tải lại trang giữ đúng trạng thái cuối, tab "Hôm qua" ẩn cả
   hai nút. Đối chiếu `myjourney` thật SAU khi xong: vẫn đủ 6 dòng English — bản sao không ảnh
   hưởng gốc.
-- **Tiếp theo:** chờ chủ dự án xem thử nghiệm phong cách 3D rồi quyết (mở rộng ra cả 12 chương /
-  đổi hướng / giữ nguyên Kenney). Còn hai flag `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở
-  mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b) — hỏi lại nếu chưa được hỏi. Phần cron/backup của
-  mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý — nay KỸ THUẬT khả thi hơn (đã deploy thật) nhưng vẫn
-  là quyết định phạm vi của chủ dự án, không tự ý dựng.
+- **2026-09-16: phòng "kiểu màn hình nhân vật game" (Free Fire) — ĐANG THỬ, CHƯA XONG (chặn bởi
+  hạn mức công cụ ngoài).** Chủ dự án chê phòng hiện tại "trông đồ hoạ rất cũ", muốn giống trang
+  chủ Free Fire — một căn phòng với nhân vật NGƯỜI THẬT bên trong — và muốn TỰ THIẾT KẾ thay vì
+  dùng tiếp pack có sẵn. Hỏi 4 câu AskUserQuestion trước khi code (bố cục màn hình, cách xử lý 10
+  giai đoạn nhân vật ở §4.8 khi đổi sang người thật, nguồn tạo model, cách làm) vì đây đụng thẳng
+  vào cơ chế cốt lõi "phòng lớn dần theo XP" (§4.8/§5.3) mà spec không nói rõ khi đổi phong cách
+  nhân vật. Chủ dự án chọn: **hai chế độ camera** (cận cảnh mặc định + nút toàn cảnh, Recommended)
+  · **3 mốc thật** bé/thiếu niên/trưởng thành thay 10 giai đoạn ảnh (Recommended) · **AI tự sinh
+  model 3D** (đã nói rõ rủi ro rig người thật kém RPM trước khi chủ dự án chọn) · **dựng bản thử
+  song song để so sánh** (Recommended, đúng cách đã cứu một lần lệch phong cách ở mốc 8b).
+
+  **Bị chặn giữa chừng:** công cụ sinh ảnh AI báo hết hạn mức ("usage limit... Do not retry") ngay
+  ở bước ĐẦU TIÊN (ảnh tham chiếu nhân vật, trước khi tới bước ảnh→3D→rig) — không thử lại theo
+  đúng chỉ dẫn của công cụ. Nhân vật thật SỰ vẫn CHƯA được tạo — mọi việc dưới đây dùng TẠM model
+  Kenney cũ làm chỗ đứng để dựng phần camera/ánh sáng độc lập trước, đúng tinh thần một trong bốn
+  phương án đã đưa ra lúc hỏi ("làm hậu kỳ trước, nhân vật sau") dù chủ dự án không chọn phương án
+  đó — đây KHÔNG phải tự ý đổi hướng, mà là buộc phải làm vậy vì công cụ chặn, sẽ thay model ngay
+  khi hạn mức mở lại.
+
+  **Đã dựng xong (song song `RoomScene.tsx`, KHÔNG đụng file đó — bật/tắt qua nút "🎮 Trial" cạnh
+  "Settings" trong `TimerOverlay.tsx`, nhớ qua `localStorage` riêng máy, xem `LobbySceneTrial.tsx`
+  đầu file để hiểu ranh giới):**
+  - `LobbyCameraRig.tsx` + `lobbyCamera.ts` — camera hai chế độ, tính khung hình cận cảnh từ
+    **kích thước THẬT đo được** của model đang tải (`Character.tsx` thêm `onMeasured`, đo bbox
+    một lần mỗi khi đổi `url`) — KHÔNG hardcode theo Kenney, để lúc thay model người thật không
+    phải sửa số ở đây. Chuyển cảnh bằng easing, tắt hẳn OrbitControls lúc chuyển rồi giao lại
+    đúng một lần (vừa lerp `camera.position` vừa để OrbitControls bật cùng lúc sẽ giật — hai bên
+    tự tính lại vị trí camera mỗi khung hình, ghi đè nhau).
+  - `PostFX.tsx` (gói MỚI `@react-three/postprocessing` + `postprocessing`) — bloom + xoá phông
+    (chỉ cận cảnh) + vignette + tone-mapping ACES Filmic. `ProceduralEnvironment.tsx` — ánh sáng
+    môi trường phản chiếu (IBL) dựng bằng `RoomEnvironment` CÓ SẴN trong three.js (procedural,
+    không tải HDRI mạng ngoài — giữ đúng tinh thần "asset tự chứa", SPEC.md §8.5).
+  - **Bẫy ESLint mới bắt gặp (gói `eslint-plugin-react-hooks@7`, React Compiler) — SẼ GẶP LẠI**
+    ở bất kỳ code three.js/r3f mệnh lệnh nào sau này: `react-hooks/immutability` cấm sửa trực
+    tiếp giá trị lấy ra từ `useThree()` (vd `camera.position.set()`, `scene.environment = ...`)
+    — ĐÚNG bẫy `canvas.style.touchAction` đã ghi trong `RoomScene.tsx`. Cách sửa: tự dựng
+    `<PerspectiveCamera ref={...}>` (drei) rồi lái qua `.current` như một ref thường, ĐỪNG mutate
+    camera mặc định của Canvas; muốn đổi `scene.environment` thì giao hẳn cho component TRONG
+    một thư viện làm hộ (`<Environment map={texture}>` của drei), đừng tự gán. `react-hooks/
+    set-state-in-effect` cấm gọi `setState` thẳng trong effect — đúng cho việc đồng bộ
+    localStorage (sửa bằng `useSyncExternalStore`, xem `lobbyTrialPreference.ts`, KHÔNG dùng
+    `storage` event của trình duyệt vì event đó chỉ bắn CHÉO TAB, phải tự có danh sách listener
+    riêng cho cùng tab), nhưng KHÔNG có cách né nào hợp lý cho việc dựng resource GPU một-lần
+    (PMREM texture) — đã tắt rule này CÓ GIẢI THÍCH tại đúng dòng đó, cùng loại ngoại lệ với
+    `Math.random()` phải sinh trong effect ở `Fireflies.tsx`.
+  - **Bug thật bắt gặp lúc soi bằng mắt qua trình duyệt (không lộ qua `tsc`/`eslint`/test):** lần
+    dựng đầu, phòng cận cảnh cháy sáng trắng bệch — ánh sáng môi trường IBL (mới) CỘNG DỒN với 3
+    đèn rời sẵn có + một đèn hắt ngược (rim light, mới thêm để tách nhân vật khỏi nền kiểu màn
+    hình chọn nhân vật game) mà vẫn giữ nguyên cường độ cũ. Sửa bằng hạ `environmentIntensity`
+    còn 0,35, hạ ambient/directional/rim light, nới ngưỡng bloom — đúng bài học lặp lại nhiều lần
+    trong file này: hình học/ánh sáng 3D đặt mù theo số không bao giờ đúng ngay lần đầu.
+  - Đã QA qua trình duyệt thật (không phải chỉ đọc code): bật/tắt "Trial", cận cảnh ↔ toàn cảnh
+    chuyển mượt cả hai chiều, kéo chuột xoay được ở CẢ hai chế độ không giật, không lỗi console,
+    `tsc`/`eslint`/329 test/`npm run build` sạch trước VÀ sau khi chỉnh ánh sáng.
+
+  **CHƯA làm (cắt phạm vi có chủ ý cho bản thử nhỏ, xem đầu `LobbySceneTrial.tsx`):** tông màu
+  đổi theo mùa (season) trong phòng thử — luôn dùng một tông trung tính, đồ trang trí mùa vẫn
+  hiện bình thường; animation tư thế (ngồi bàn/tạ/thiền) cho model AI tương lai — CHƯA giải,
+  cần rig có clip riêng hoặc hoạt ảnh procedural, chưa cần tới vì model còn chưa tạo được.
+
+- **2026-09-16 (tiếp): TỰ THIẾT KẾ LẠI căn phòng + phủ toàn màn hình.** Chủ dự án làm rõ hai ý
+  sau khi xem bản thử camera: Free Fire chỉ là tham chiếu **độ mượt của đồ hoạ**, đừng bắt chước
+  bố cục lobby; và **đổi góc nhìn là chưa đủ — phải thiết kế lại chính căn phòng theo dạng game,
+  Claude tự thiết kế**. Giữa lượt làm, yêu cầu thêm: **"đừng bao bọc phòng trong 1 khung cố định,
+  hãy cho nó phủ toàn bộ màn hình"** (bỏ kiểu hộp diorama nổi giữa nền trống).
+
+  **Hướng thiết kế Claude tự chọn** (chủ dự án chưa duyệt câu chữ, chỉ mới xem kết quả): "phòng
+  cozy trong game indie hiện đại" — ấm, mềm, sáng. Ba luật hình khối ghi ở `designed/palette.ts`:
+  mọi khối BO GÓC (cạnh vuông sắc là nguyên nhân số 1 của cảm giác "đồ hoạ cũ") · bề mặt NHÁM
+  không bóng nhựa · luôn có gờ/viền (chân tường, khung cửa, viền thảm) vì mảng phẳng trơn trông rẻ.
+
+  **Dựng mới trong `components/room/designed/`** (chỉ phòng thử dùng, `RoomScene.tsx` không đụng):
+  - `palette.ts` — bảng màu + độ nhám + bán kính bo góc, MỘT chỗ duy nhất (tinh thần `balance.ts`).
+  - `DesignedRoomShell.tsx` — vỏ phòng DỰNG BẰNG CODE: sàn LIỀN có đường ván (bỏ kiểu lát 9 ô
+    model ghép lại — thủ phạm làm sàn trông như bàn cờ), chân tường, **cửa sổ KHOÉT THẬT** (tường
+    sau dựng bằng 4 mảng quanh lỗ cửa) + khung + bệ + trời phía ngoài, thảm bo tròn, và **trần +
+    bốn tường** để phòng KÍN. Lý do dựng bằng code chứ không tìm pack: vỏ phòng phải co giãn theo
+    12 cỡ phòng của `footprint.ts`, pack có sẵn không bao giờ khớp nên mới phải ghép tile. ĐỒ ĐẠC
+    thì ngược lại — vẫn dùng model Quaternius, dựng bằng khối cơ bản sẽ thô hơn hẳn.
+  - `DesignedFurniture.tsx` — model Quaternius + phần tự thiết kế mà pack không có: gối/chăn,
+    chồng sách, cốc, tranh treo, kệ tường, rèm, và **đèn bàn phát sáng thật** (khối emissive +
+    pointLight → bloom biến thành quầng sáng; đây là thứ làm ảnh render "có nguồn sáng").
+  - Ánh sáng thiết kế lại: **nắng chiếu từ NGOÀI cửa sổ vào** (không phải đèn lơ lửng phía trước
+    như RoomScene cũ), bóng 2048 + `shadow-radius`, hemisphere lấy màu SÀN GỖ hắt ngược lên.
+  - `lobbyCamera.ts#insideRoomFramingFor` — chế độ "toàn cảnh" giờ là **đứng TRONG phòng**, FOV 60,
+    nhìn chéo theo đường chéo dài nhất về góc có nhân vật + bàn học + cửa sổ. Không còn hộp diorama.
+
+  **SÁU lỗi thật chỉ lộ ra khi soi bằng mắt qua trình duyệt (tsc/eslint/test đều sạch suốt):**
+  (1) **Khung cửa sổ dựng bằng MỘT khối đặc to bằng cả ô cửa → bịt kín lỗ vừa khoét**, cửa sổ hiện
+  ra thành mảng trắng phẳng; phải tách thành 4 thanh viền. (2) Sách/cốc/bóng đèn **lơ lửng cách
+  mặt bàn 24cm** vì đoán cao độ — phải đo bbox thật qua console (mặt bàn = 0,44 chứ không phải
+  0,68 như đoán), số đo nay ghi thẳng trong `DesignedFurniture.tsx`. (3) Sau khi thêm tường phải,
+  **camera cận cảnh lọt RA NGOÀI tường** (nó lệch +X) → màn hình chỉ còn mảng tường trắng; đổi
+  sang lệch −X vào trong phòng. (4) Tranh treo **giữa ô kính cửa sổ** — chỉ lộ ra SAU khi sửa lỗi
+  (1) cho cửa nhìn xuyên được. (5) Thảm tự vẽ quá to + viền kem sáng → trông như tấm bạt trắng phủ
+  sàn, đè lên cả giường. (6) Tường phải mới dựng **chắn mất sân/vườn** của Chương 5 và 10-12 —
+  nay chỉ dựng khi `outdoorWidth === 0`.
+
+  **CHƯA kiểm / chưa làm:** chế độ TỐI + chế độ tập trung với vỏ phòng mới (mới chỉ soi ban ngày) ·
+  đồ đạc mở khoá theo cấp (`RoomItems`) và trang trí mùa vẫn giữ toạ độ tính cho phòng CŨ, chưa rà
+  lại xem có chồng lấn vỏ phòng mới không · mới soi kỹ Chương 1, 11 chương còn lại chưa xem.
+
+- **2026-09-16 (tiếp): BỎ 3D, màn chính thành DASHBOARD + một cái cây.** Sau khi xem bản phòng
+  thiết kế lại, chủ dự án kết luận *"dùng căn phòng với giao diện như này không hề hiệu quả và
+  trực quan"*, rồi *"không nên làm mô hình 3d phức tạp mà chỉ cần 1 dạng như dashboard thôi"*.
+
+  **Chẩn đoán đã nói với chủ dự án (giữ lại vì nó giải thích vì sao đổi):** căn phòng bị giao SAI
+  VIỆC — nó là phần thưởng nhịp CHẬM (vài tuần mới đổi một lần) nhưng chiếm chỗ của thông tin
+  nhịp NHANH ("hôm nay tôi đã làm gì"). Một cái kệ sách mọc trong góc không nói được "bạn vừa lên
+  Mind cấp 3" — phải NHỚ mới đọc được, đó đúng là "không trực quan". Bằng chứng: chính chủ dự án
+  yêu cầu khối check-in sáng cùng ngày vì "chưa có chỗ thấy đã được bao nhiêu phiên".
+
+  **Đã phác 8 phương án bằng mockup SVG trong chat trước khi code** (bản đồ hành trình · pixel art
+  · minh hoạ phẳng · bầu trời sao · bản đồ mở dần · hành tinh nhỏ · thị trấn mọc dần · sổ tay du
+  ký), rồi 3 kiểu dashboard. Chủ dự án chốt **kiểu C: dashboard + MỘT hình lớn lên theo dữ liệu**.
+  Cách làm này hiệu quả hơn hẳn mô tả bằng chữ — dùng lại cho mọi quyết định thẩm mỹ sau này.
+
+  **Đã dựng:** `components/home/TreeOfProgress.tsx` (cây SVG thuần: ba nhánh = ba chỉ số, bán kính
+  tán theo `sqrt(cấp)` để cấp 30 không tràn khung, quả = chuỗi ngày-đạt, lá ngả vàng khi chuỗi ở
+  ngày ân hạn §4.6 — "trách" mà không cần một chữ nào) + `components/home/HomeDashboard.tsx`
+  (nửa trái "hôm nay", nửa phải cây). KHÔNG lặp lại thứ `TimerOverlay` đã hiện (Start, chọn nhãn,
+  chuỗi, dải chấm, tài sản, nav) — dashboard chỉ thay phần NỀN mà canvas 3D từng chiếm.
+
+  **Vì sao vẫn giữ MỘT hình thay vì dashboard thuần:** bỏ hết hình thì XP và cấp thành con số
+  không dẫn tới đâu, cả vòng lặp thưởng (làm việc → XP → lên cấp → CÓ GÌ ĐÓ hiện ra, §4.8) mất
+  đầu ra. Cây gánh đúng vai trò căn phòng từng gánh, với một phần nhỏ công sức.
+
+  **Bốn lỗi bắt được lúc soi bằng mắt:** (1) `stroke-width`/`stroke-linecap` kebab-case trong JSX
+  — React đòi camelCase, Next.js hiện badge "2 Issues" (tsc/eslint KHÔNG bắt được); (2) chữ trong
+  app viết TIẾNG VIỆT — vi phạm luật CLAUDE.md "chữ hiển thị trong app bằng tiếng Anh", đã đổi
+  hết; (3) cụm ba chỉ số bị cụm Start của TimerOverlay che mất ở khung hẹp (thiếu ~90px đệm dưới);
+  (4) `display:contents` không nhận `opacity`/`transition` nên lớp mờ chế độ tập trung vô tác dụng.
+  **Bẫy đáng nhớ:** chế độ tập trung PHẢI làm nền tối — đồng hồ đếm ngược của TimerOverlay dùng
+  chữ TRẮNG (xưa nay nền là phòng 3D tối gần đen), để nền kem sáng thì đồng hồ biến mất.
+
+  **Trạng thái: phòng 3D VẪN LÀ MẶC ĐỊNH.** Dashboard nằm sau công tắc "🌳 Dashboard" cạnh
+  "Settings" (tái dùng công tắc localStorage dựng lúc sáng, xem `lobbyTrialPreference.ts`). Chưa
+  gỡ 3D, chưa sửa các [CHỐT] của §5.1/§5.3/§4.8/§4.9 — chờ chủ dự án dùng thử rồi quyết. Nếu chốt
+  dùng thật thì phải: gỡ `components/room/*` + `designed/*` + `LobbySceneTrial`, gỡ gói
+  `@react-three/*`/`three`/`postprocessing`, và viết lại bốn mục spec trên (nhân vật lớn lên và
+  12 chương nhà hiện KHÔNG còn chỗ thể hiện nào).
+
+- **2026-09-16 (chốt cuối ngày): GỠ HẲN PHÒNG 3D, dashboard thành mặc định.** Chủ dự án:
+  *"gỡ hẳn phòng 3D đi, dùng dashboard làm mặc định"*. Đây là quyết định đảo ngược §12.1 ("phòng
+  và nhân vật là mốc 1, đừng thuyết phục tôi làm ngược lại") — **do CHÍNH chủ dự án đưa ra**, sau
+  khi tôi đã nêu đúng cảnh báo đó ba lần. Đã ghi rõ điều này vào SPEC.md §12.1 để lần sau không ai
+  đọc nhầm thành "Claude tự ý bỏ phòng".
+
+  **Đã xoá:** toàn bộ `components/room/` (24 file: RoomScene, RoomShell, shells/, Character,
+  RoomItems, RareItems, SeasonalDecor, Fireflies, GltfModel, models.ts, lighting, roomItemPlacements,
+  + mọi thứ dựng trong ngày: LobbySceneTrial, LobbyCameraRig, PostFX, ProceduralEnvironment,
+  lobbyCamera, lobbyTrialPreference, designed/) · `public/models/` (5,2MB, 72 file .glb — ĐÃ COMMIT
+  trong git nên khôi phục được bằng `git log -- public/models`) · `components/settings/CharacterSection.tsx`
+  · sáu gói npm (`three`, `@react-three/fiber`, `@react-three/drei`, `@react-three/postprocessing`,
+  `postprocessing`, `@types/three`). `package.json` giờ chỉ còn 5 dependency.
+
+  **GIỮ NGUYÊN (quan trọng — đừng xoá tiếp mà không hỏi):** toàn bộ `core/engine/` kèm 329 test,
+  kể cả ba engine nay KHÔNG CÒN ĐẦU RA HÌNH ẢNH — `room.ts` (đồ đạc theo cấp), `rareItems.ts`
+  (vật phẩm hiếm), `seasons.ts` (mùa/ngày lễ), và `chapters.ts#effectiveCharacterStage` (giai đoạn
+  nhân vật). Chúng vẫn đúng, vẫn có test, chỉ mất nơi hiển thị. **Vật phẩm hiếm dừng roll** (bỏ
+  `rollRareItemsIfEligible` khỏi `getComputedStatsAction`) — an toàn vì hàm băm ổn định theo
+  (trigger, ngày bắt đầu): bật lại lúc nào cũng ra đúng kết quả cũ, không mất gì. DB không migrate
+  một dòng nào, `profile.avatar_config` và bảng `room_items`/`rare_items` còn nguyên.
+
+  **`ComputedStats` gọn hẳn:** bỏ 5 field chỉ phục vụ 3D (`stage`, `characterStage`, `unlockedItems`,
+  `characterLook`, `season`, `receivedRareItems`) cùng 3 truy vấn DB kèm theo → màn chính nhẹ hơn.
+
+  **Hai lỗi bắt được lúc soi bằng mắt, cả hai `tsc`/`eslint`/test đều KHÔNG thấy:**
+  (1) `stroke-width`/`stroke-linecap` viết kebab-case trong JSX — React đòi camelCase, chỉ lộ qua
+  badge "2 Issues" của Next.js dev overlay; (2) **chế độ tối tự động (19h→6h, mốc 8b) làm lộ màu
+  cứng**: dải sáu ô dùng `rgba(59,50,38,0.12)` (tính cho nền sáng) gần như tàng hình trên nền tối,
+  nền đất dưới cây thì chói — nay dùng `fill-foreground/…` theo biến chủ đề. **Bài học: mọi màu
+  mới thêm vào phải thử ở CẢ hai chế độ sáng/tối — app tự đổi theo giờ thật, không chờ ai bấm.**
+
+  `tsc`/`eslint`/329 test/`npm run build` sạch. Đã soi bằng mắt: màn chính (sáng + tối), chế độ
+  tập trung (ép bật tạm rồi hoàn tác, KHÔNG tạo phiên rác trong DB thật), trang Cài đặt.
+
+- **Tiếp theo:** (1) **ba cơ chế mất đầu ra hình ảnh cần quyết thay bằng gì** — đồ đạc theo cấp
+  (§5.3), vật phẩm hiếm (§5.3), mùa/ngày lễ (§5.3) — cộng giai đoạn nhân vật (§4.8) và 12 chương
+  nhà (§4.9, hiện chỉ còn dòng chữ "chapter N"). Engine của cả năm vẫn sống và có test, chỉ thiếu
+  nơi hiển thị; đừng xoá chúng mà không hỏi. (2) dùng dashboard vài hôm rồi xem cây có đủ "đáng
+  nhìn" không — nếu cần thì thêm chi tiết theo mùa/chương vào chính cái cây. Còn hai flag
+  `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b)
+  — hỏi lại nếu chưa được hỏi. Phần cron/backup của mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý —
+  nay KỸ THUẬT khả thi hơn (đã deploy thật) nhưng vẫn là quyết định phạm vi của chủ dự án, không
+  tự ý dựng.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
   react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
   deploy · asset 3D/âm thanh dùng pack Kenney CC0 có sẵn (`public/CREDITS.md`) · ba chỉ số
-  **Mind · Health · Spirit**.
+  **Mind · Health · Spirit**. **[THÊM — 2026-09-16]** `@react-three/postprocessing` + `postprocessing`
+  (bloom/DoF/vignette/tone-mapping) — CHỈ dùng trong phòng thử `LobbySceneTrial.tsx`, xem mục
+  "phòng kiểu màn hình nhân vật game" bên trên; `RoomScene.tsx` sản phẩm thật chưa dùng gói này.
 - Bốn vòng hỏi đáp đã xong (Q1–Q34 · R1–R10 · S1–S5 · T1) — sổ quyết định ở **`SPEC.md` §11.1–11.4**.
   **Không còn câu hỏi mở nào** ở mục 4.
 - Đã xong trong mốc 1: `core/balance.ts` · `core/clock.ts` · `core/day.ts` · `core/session.ts` ·

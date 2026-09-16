@@ -52,6 +52,10 @@ Khi bạn gặp một lựa chọn mà file này không nói rõ, quay lại đ�
 2. **Có thể trách móc tôi.** **[CHỐT — 2026-09-02]** Đúng năm điều, không phải bảy — tôi đã xác nhận. *Nhưng phạm vi trách móc còn phải chốt:* 4.3, 4.6, 4.9 và 4.12 hiện đang **cấm hẳn** chữ tiêu cực. Xem **R3** ở mục 11.2.
 3. **Dữ liệu chảy vào, không bị bơm vào.** Ưu tiên tuyệt đối cho thứ app tự ghi được
 4. **Thống kê không đập vào mặt.** Ban ngày không có biểu đồ. Số liệu sống ở màn hình riêng.
+   **[NỚI — 2026-09-16]** Màn chính dashboard có hiện SỐ (còn mấy việc, x/6 hôm nay, cấp ba chỉ
+   số, chương) — chủ dự án chủ động yêu cầu, hai lần: khối check-in (16/09 sáng) rồi cả màn
+   dashboard (16/09 tối). Ranh giới còn lại: **vẫn không có BIỂU ĐỒ nào ban ngày**, và mọi thống
+   kê theo thời gian (xu hướng, heatmap, kỷ lục) vẫn chỉ sống ở `/stats`, `/week`.
 5. **Game phục vụ cuộc sống, không ngược lại.** Phải có nguồn điểm dành riêng cho nghỉ ngơi, để chính cái game không đẩy tôi tới kiệt sức.
 
 ---
@@ -264,7 +268,10 @@ Thưởng khi chạm mốc, mỗi mốc **thưởng đúng một lần trong đ�
 
 **Mỗi lần lên cấp = một món đồ mới trong phòng, hoặc một món cũ được nâng cấp** (kệ sách nhỏ → kệ lớn → cả bức tường sách). **[CHỐT]**
 
-**Giai đoạn nhân vật** — theo **tổng XP cả ba chỉ số cộng lại**:
+**Giai đoạn nhân vật** — theo **tổng XP cả ba chỉ số cộng lại**. **[SỬA — 2026-09-16]** Nhân vật
+đã gỡ cùng phòng 3D, nên bảng dưới đây hiện **KHÔNG CÒN ĐẦU RA HÌNH ẢNH NÀO** — `effectiveCharacterStage`
+vẫn nằm trong engine kèm test, nhưng không ai gọi. Cần quyết thay bằng gì (cây đổi dáng theo giai
+đoạn? một dòng chữ?) trước khi coi mục này còn sống:
 
 | GĐ | XP | GĐ | XP |
 |---|---|---|---|
@@ -370,7 +377,14 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
 
 **Gộp "Làm việc" và "Nghi thức tối" làm một.** Đừng tách theo giờ, đừng tự chuyển chế độ — với tôi cả hai đều là việc làm mỗi ngày, tôi mở lúc nào tuỳ tôi. **[CHỐT]**
 
-**Bố cục:** căn phòng 3D chiếm phần lớn màn hình, đồng hồ pomodoro nổi ở trên. Phần ghi nhận cuối ngày nằm bên dưới, tôi cuộn xuống là tới.
+**Bố cục:** ~~căn phòng 3D chiếm phần lớn màn hình~~ **[SỬA — 2026-09-16]** nền màn chính là
+**dashboard**: một bên là "hôm nay" (còn mấy việc, tên việc còn thiếu, dải sáu ô, ba chỉ số kèm
+cấp, chương hiện tại), một bên là **cây tiến độ** vẽ bằng SVG — ba nhánh là ba chỉ số, tán to dần
+theo cấp, quả là chuỗi ngày-đạt, lá ngả vàng khi chuỗi vào ngày ân hạn (§4.6). Đồng hồ pomodoro
+vẫn nổi ở trên như cũ, phần ghi nhận cuối ngày vẫn nằm bên dưới cuộn xuống là tới.
+
+Chế độ tập trung: dashboard **mờ hẳn đi và nền chuyển tối** — bắt buộc phải tối, vì đồng hồ đếm
+ngược dùng chữ trắng (xưa nay nền là phòng 3D tối gần đen); để nền sáng thì đồng hồ tàng hình.
 
 **Phần trên — lúc tôi làm việc:**
 - Tôi bấm chọn nhãn → Start → màn hình chuyển sang trạng thái tĩnh: số phút đếm ngược, tên nhãn. Nhân vật ngồi vào bàn / cầm tạ / ngồi thiền tuỳ nhãn.
@@ -458,7 +472,33 @@ Phần **điểm** thì khác, và đây là chỗ đổi:
   hình (màn chính, mốc 5, và ở đây) — chủ dự án muốn màn tuần đóng luôn vai trò một lời nhắc nhẹ
   để cập nhật tài chính mỗi tuần, không chỉ xem lại số cũ.
 
-### 5.3 Căn phòng / ngôi nhà
+### 5.3 Căn phòng / ngôi nhà — ĐÃ GỠ
+
+> **[SỬA LỚN — 2026-09-16] Căn phòng 3D đã bị GỠ HẲN khỏi dự án.** Sau bốn vòng chê liên tiếp
+> ("quá xấu" → "đồ hoạ rất cũ" → "không hiệu quả và trực quan" → *"không nên làm mô hình 3d phức
+> tạp mà chỉ cần 1 dạng như dashboard thôi"* → *"gỡ hẳn phòng 3D đi, dùng dashboard làm mặc
+> định"*), màn chính nay là **dashboard + một cái cây vẽ bằng SVG lớn lên theo dữ liệu**
+> (`components/home/`). Toàn bộ `components/room/`, `public/models/` và ba gói
+> `three`/`@react-three/*`/`postprocessing` đã gỡ khỏi dự án. Mọi mô tả về phòng/nhân vật/đồ đạc
+> bên dưới GIỮ LẠI để còn lịch sử quyết định, nhưng **không còn hiệu lực** — cần dựng lại thì lấy
+> từ git history.
+
+**Thay bằng cây tiến độ** (`components/home/TreeOfProgress.tsx`): ba nhánh = ba chỉ số, bán kính
+tán theo `sqrt(cấp)` để cấp 30 vẫn vừa khung, quả = chuỗi ngày-đạt (tối đa 7), lá ngả vàng khi
+chuỗi ở ngày ân hạn. Vẽ bằng SVG thuần — không asset, không WebGL, không camera/ánh sáng, tức là
+không còn chỗ nào để hỏng thẩm mỹ như căn phòng.
+
+**Ba cơ chế dưới đây MẤT ĐẦU RA HÌNH ẢNH, chưa quyết thay bằng gì** — engine + test của chúng
+GIỮ NGUYÊN, chỉ không còn nơi hiển thị: đồ đạc mở khoá theo cấp (`core/engine/room.ts`), vật phẩm
+hiếm (`core/engine/rareItems.ts` — hàm băm ổn định nên dừng roll bây giờ rồi bật lại sau vẫn ra
+đúng kết quả cũ), mùa/ngày lễ (`core/engine/seasons.ts`). Nhân vật 12 hình dáng (§5.6) đã gỡ cả
+mục chọn trong Cài đặt vì không còn nhân vật nào để áp lên; dữ liệu `profile.avatar_config` trong
+DB giữ nguyên, không migrate.
+
+---
+
+<details>
+<summary><b>Mô tả căn phòng cũ — giữ lại làm lịch sử, KHÔNG còn hiệu lực</b></summary>
 
 **Vỏ ngoài** — quy mô nơi ở — do **tài sản** quyết định (4.9).
 **Bên trong** — đồ đạc — do **ba chỉ số** quyết định:
@@ -481,6 +521,37 @@ nâng chất lượng render (đổ bóng/ánh sáng — ĐÃ LÀM, áp dụng m
 đồ hoạ khác chi tiết hơn (Quaternius, CC0 — ĐANG THỬ, chỉ Chương 1) · tự tạo model bằng AI (KHÔNG
 chọn — rủi ro lệch phong cách khi tạo rời rạc hàng chục món). Xem `RoomShellV2Trial.tsx` +
 `public/CREDITS.md` — chưa quyết mở rộng ra 11 chương còn lại, đang chờ tôi xem rồi chốt.
+
+**[ĐANG THỬ — 2026-09-16]** Tôi chê tiếp: phòng vẫn "trông đồ hoạ rất cũ", muốn cảm giác kiểu
+**trang chủ nhân vật của game mobile (Free Fire...)** — camera cận cảnh nhân vật, hậu kỳ (bloom/
+xoá phông/vignette), và **nhân vật người thật** thay hoạt hình chibi, tự thiết kế thay vì dùng
+tiếp pack có sẵn. Bốn quyết định qua AskUserQuestion: **camera hai chế độ** (cận cảnh mặc định +
+nút toàn cảnh — phòng vẫn phải xem được hết để thấy đồ đạc mở khoá, đúng nguyên tắc cốt lõi mục
+này) · **3 mốc hình ảnh thật** (bé/thiếu niên/trưởng thành) thay 10 giai đoạn ảnh riêng của §4.8
+(10 mốc XP vẫn tính nguyên, chỉ hình đại diện rút còn 3) · **model dựng bằng AI** (không dùng pack
+có sẵn nữa, khác hẳn hướng cũ) · dựng bản thử song song để so sánh. **Nhân vật người thật CHƯA
+tạo được** — công cụ sinh ảnh hết hạn mức giữa chừng, phần camera/hậu kỳ dựng xong TẠM trên model
+Kenney cũ để chờ. Xem `LobbySceneTrial.tsx` + CLAUDE.md — chưa quyết mở rộng, đang chờ tôi xem.
+
+**[ĐANG THỬ — 2026-09-16, vòng hai]** Tôi làm rõ thêm: Free Fire chỉ là tham chiếu ĐỘ MƯỢT của đồ
+hoạ, và đổi góc nhìn thì chưa đủ — **thiết kế lại chính căn phòng theo dạng game, Claude tự thiết
+kế**; đồng thời **phòng phải phủ TOÀN BỘ màn hình**, không bao trong một khung cố định như hộp
+diorama nổi giữa nền trống. Vỏ phòng nay DỰNG BẰNG CODE (`components/room/designed/`): sàn liền có
+đường ván, chân tường, cửa sổ khoét thật có khung/bệ/trời bên ngoài, thảm bo tròn, trần + bốn tường
+kín, mọi khối bo góc; nắng chiếu từ ngoài cửa sổ vào; camera "toàn cảnh" đứng BÊN TRONG phòng
+(FOV 60). Đồ đạc vẫn dùng model Quaternius, cộng thêm gối/chăn/sách/tranh/rèm/đèn bàn phát sáng tự
+dựng. Tường phải chỉ dựng ở chương KHÔNG có sân/ban công (§4.9) để không bịt mất vườn.
+
+**[ĐANG THỬ — 2026-09-16, vòng ba: BỎ HẲN 3D]** Xem xong bản trên, tôi kết luận căn phòng "không
+hiệu quả và trực quan", và chốt **không làm mô hình 3D phức tạp nữa, màn chính chỉ cần dạng
+dashboard**. Bản dựng: nửa trái là "hôm nay" (còn mấy việc, tên việc còn thiếu, dải sáu ô, ba chỉ
+số kèm cấp, chương), nửa phải là MỘT cái cây vẽ bằng SVG lớn lên theo dữ liệu — ba nhánh là ba chỉ
+số, quả là chuỗi ngày-đạt, lá ngả vàng khi chuỗi vào ngày ân hạn. Giữ một hình thay vì dashboard
+thuần vì bỏ hết hình thì XP/cấp mất đầu ra, cả vòng lặp thưởng §4.8 không còn gì để nhìn thấy.
+Xem `components/home/`. **Phòng 3D vẫn là mặc định, dashboard bật bằng công tắc "🌳 Dashboard"** —
+chưa gỡ gì, chưa sửa [CHỐT] nào ở §5.1/§5.3/§4.8/§4.9, đang chờ tôi dùng thử rồi quyết. Nếu chốt
+thì phải trả lời: nhân vật lớn lên (§4.8) và 12 chương nhà (§4.9) thể hiện bằng gì, vì cả hai
+hiện không còn chỗ nào trên màn chính.
 
 **Nhân vật — đổi ngày 2026-09-02, khi lập kế hoạch dựng mốc 1:** dùng **model 3D low-poly có sẵn** (asset pack CC0, cùng nguồn với đồ đạc và nhà), không phải ảnh render xếp lớp như bản gốc viết. **[CHỐT]**
 
@@ -519,6 +590,8 @@ thật) theo (mã khoảnh khắc, ngày bắt đầu dùng app) — trúng hay 
 nếu tính lại, chỉ KẾT QUẢ TRÚNG mới ghi xuống `rare_items` (đúng §7: "không lưu thì mỗi lần tải
 trang lại ra món khác"). Xem `core/engine/rareItems.ts`.
 
+</details>
+
 ### 5.4 Thư viện hành trình
 
 Các chương tôi đã đi qua, mỗi chương một khung: nhân vật ở hình hài cuối chương, ngôi nhà, tổng số phiên, **ngày tôi chạm chương**, mốc tài sản cao nhất, và những dòng tôi đã viết. Đi qua hành lang đó là tôi thấy mình của những năm trước.
@@ -528,6 +601,9 @@ Các chương tôi đã đi qua, mỗi chương một khung: nhân vật ở hì
 Đọc lại nhật ký. Lọc theo ngày. **Hôm nay năm ngoái.** Xuất toàn bộ dữ liệu.
 
 ### 5.6 Cài đặt
+
+**[SỬA — 2026-09-16]** Mục **Nhân vật** (chọn 1 trong 12 hình dáng) đã GỠ cùng phòng 3D — không
+còn nhân vật nào để áp hình dáng lên. `profile.avatar_config` trong DB giữ nguyên, không migrate.
 
 Nhân vật · **Nhãn** (tên + chỉ số + emoji + màu) · **Thói quen** · **6 việc trong ngày + ngưỡng mỗi việc** · Độ dài phiên · Mục tiêu phiên/ngày · Giờ nhắc · Bộ câu hỏi gợi ý · Ẩn/hiện số tài sản · Xuất/nhập dữ liệu.
 
@@ -762,7 +838,7 @@ Toàn bộ luật ở mục 4 phải viết được thành hàm thuần `(dữ 
 | **Nhân vật** | **Model 3D low-poly có sẵn** (cùng pack CC0 với đồ đạc), một model riêng mỗi giai đoạn — **không** phải ảnh render xếp lớp. Đổi ngày 2026-09-02, xem 5.3. |
 | **Backup** | DB có backup sẵn + tự xuất một file JSON mỗi tuần. |
 
-Stack: **Next.js + TypeScript, Postgres, react-three-fiber, deploy Vercel** — nói một câu nếu muốn khác, vì đổi sau mốc 2 sẽ đắt.
+Stack: **Next.js + TypeScript, Postgres, ~~react-three-fiber~~ (GỠ 2026-09-16), deploy Vercel** — nói một câu nếu muốn khác, vì đổi sau mốc 2 sẽ đắt.
 
 **[ĐÃ DEPLOY THẬT — 2026-09-14]** Live tại `https://my-journey-eosin.vercel.app` — Vercel (dự án
 `duytiens-projects/my-journey`, nối thẳng GitHub, tự deploy mỗi lần push nhánh `main`) + Neon
@@ -910,6 +986,14 @@ Neon sẽ treo DB tới tháng sau.
 **1. Tôi cho dựng engine trước, giao diện sau — và giao diện không bao giờ tới.**
 Lộ trình cũ đặt "phòng 3D + nhân vật" ở mốc 4. Ba mốc đầu tạo ra một engine tính điểm rất chắc chắn cùng một bảng điều khiển kỹ thuật đầy nút và số — không hề giống sản phẩm trong đầu tôi. Đến lúc tôi nhìn thấy thì đã quá muộn để đổi hướng rẻ.
 → **Lộ trình mới đảo ngược: phòng và nhân vật là mốc 1. Đừng thuyết phục tôi làm ngược lại.**
+
+> **[CHÍNH TÔI ĐẢO NGƯỢC — 2026-09-16]** Sau 8 ngày vật lộn làm phòng 3D cho đẹp mà vẫn chê, tôi
+> tự quyết gỡ hẳn phòng, dùng dashboard + cây làm mặc định. Luật "đừng thuyết phục tôi bỏ phòng
+> 3D" **vẫn còn hiệu lực với Claude** — Claude đã nêu đúng cảnh báo này ba lần trước khi làm, và
+> đây là quyết định của TÔI, không phải Claude thuyết phục. Bài học gốc của mục 12.1 vẫn giữ
+> nguyên và giờ càng quan trọng hơn: **đừng để app trôi thành bảng điều khiển kỹ thuật đầy nút và
+> số** — đó mới là thứ đã giết bản trước, không phải việc nó phẳng hay 3D. Dashboard phải luôn có
+> một hình lớn lên cùng tôi, và mọi biểu đồ vẫn phải ở màn riêng.
 
 **2. Chỗ nào tôi viết không rõ, code tự bịa ra luật.**
 Spec cũ của tôi mô tả cảm giác rất kỹ nhưng không nói *"thế nào là hôm nay đã học English"*. Code tự chọn: "có bất kỳ phiên nào > 0 phút". Cả hệ thống "6 việc mỗi ngày" — thứ quan trọng nhất của vòng lặp — chưa từng có trong spec, nó sinh ra trong lúc code mà tôi không biết.
