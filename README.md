@@ -24,6 +24,10 @@ npm run build    # webpack; font được đóng gói local, không tải Google
 npm start
 ```
 
+Push `main` sẽ kích hoạt Vercel deploy. `npm run build` không tự chạy migration;
+schema production cần được migrate riêng bằng kết nối Postgres trực tiếp trước
+khi dựa vào các ràng buộc mới trong database. Không chạy `db:seed` trên production.
+
 ## Kiểm thử
 
 ```bash

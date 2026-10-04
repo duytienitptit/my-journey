@@ -1,4 +1,4 @@
-/** Chạy migration — dev: `npm run db:migrate`. Production: gọi trong bước build/deploy. */
+/** Chạy migration — production cần gọi riêng bằng kết nối trực tiếp; `next build` không tự migrate. */
 import { config } from "dotenv";
 config({ path: ".env.local" });
 

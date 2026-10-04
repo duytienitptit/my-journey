@@ -7,6 +7,7 @@
  */
 
 import { CORRELATION_WINDOW_DAYS } from "@/core/balance";
+import { BEDTIME_NAME, BEDTIME_SLUG } from "@/core/bedtime";
 import { now } from "@/core/clock";
 import { addDays, dayKeyOf, enumerateDayKeys, mondayOf, weekOf } from "@/core/day";
 import { buildDayMetrics, weeklyCorrelationInsight } from "@/core/engine/correlations";
@@ -75,7 +76,10 @@ export async function getWeeklyReviewDataAction(): Promise<WeeklyReviewData> {
     raw.habitEntries,
     raw.dayLogs,
   );
-  const habitViewById = new Map(habitRows.map((h) => [h.id, { name: h.name, emoji: h.emoji }]));
+  const habitViewById = new Map(habitRows.map((h) => [h.id, {
+    name: h.slug === BEDTIME_SLUG ? BEDTIME_NAME : h.name,
+    emoji: h.emoji,
+  }]));
 
   const dayMetrics = buildDayMetrics(correlationDays, raw.habits, raw.habitEntries, raw.dayLogs, raw.completedSessions);
   const insight = weeklyCorrelationInsight(dayMetrics);
