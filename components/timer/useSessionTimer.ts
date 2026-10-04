@@ -4,171 +4,135 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { now } from "@/core/clock";
 import { isSessionComplete, secondsRemaining } from "@/core/session";
 import {
-  abandonSessionAction,
-  backfillSessionsAction,
-  completeSessionAction,
-  startSessionAction,
-  undoLastManualSessionAction,
+  abandonSessionAction, backfillSessionsAction, completeSessionAction, getSessionStateAction,
+  startSessionAction, undoLastManualSessionAction, type SessionsSnapshot,
 } from "@/app/actions/sessions";
 import type { SessionForDay } from "@/db/queries";
 
-/**
- * Đồng hồ pomodoro — từ mốc 2, phiên sống thật trong Postgres (bảng `sessions`), không phải
- * localStorage nữa. Trang tải lên với dữ liệu SERVER đã đọc sẵn (`initial*`); hook này chỉ lo
- * phần SỐNG: đếm ngược (tính lại từ `endsAt` mỗi tick — §5.1, không setInterval đếm lùi) và
- * gọi Server Action khi tôi bấm gì đó.
- */
-
 export type ActiveSession = { id: number; labelId: number; startedAt: number; endsAt: number };
-
 type Props = {
   initialActiveSession: ActiveSession | null;
   initialTodaySessions: SessionForDay[];
   initialSummaryLine: string;
   defaultLabelId: number;
-  /** Gọi sau khi phiên HOÀN THÀNH hoặc GHI BÙ — hai việc duy nhất ở đây có thể đổi XP (§4.4).
-   *  Bỏ phiên (abandon) ăn 0 điểm nên không gọi. Xem components/stats/useComputedStats.ts. */
   onXpMightHaveChanged?: () => void;
 };
 
-const TICK_MS = 1000;
-
-export function useSessionTimer({
-  initialActiveSession,
-  initialTodaySessions,
-  initialSummaryLine,
-  defaultLabelId,
-  onXpMightHaveChanged,
-}: Props) {
-  const [selectedLabelId, setSelectedLabelId] = useState<number>(defaultLabelId);
-  const [running, setRunning] = useState<ActiveSession | null>(initialActiveSession);
-  const [nowMs, setNowMs] = useState<number>(() => now());
-  const [todaySessions, setTodaySessions] = useState<SessionForDay[]>(initialTodaySessions);
+export function useSessionTimer({ initialActiveSession, initialTodaySessions, initialSummaryLine, defaultLabelId, onXpMightHaveChanged }: Props) {
+  const [selectedLabelId, setSelectedLabelId] = useState(defaultLabelId);
+  const [running, setRunning] = useState(initialActiveSession);
+  const [nowMs, setNowMs] = useState(() => now());
+  const [todaySessions, setTodaySessions] = useState(initialTodaySessions);
   const [summaryLine, setSummaryLine] = useState(initialSummaryLine);
   const [justCompletedLabelId, setJustCompletedLabelId] = useState<number | null>(null);
   const [pending, setPending] = useState(false);
-  const hasRequestedNotificationPermission = useRef(false);
+  const [error, setError] = useState<string | null>(null);
+  const busy = useRef(false);
+  const completionAttempt = useRef<number | null>(null);
+  const applySnapshot = useCallback((snapshot: SessionsSnapshot) => {
+    setTodaySessions(snapshot.todaySessions);
+    setSummaryLine(snapshot.summaryLine);
+  }, []);
 
-  // Đồng hồ hiển thị: tick mỗi giây CHỈ để ép re-render — số giây còn lại luôn tính lại từ
-  // endsAt (đã lưu) và now() thật (SPEC.md §5.1).
+  const perform = useCallback(async function performOperation(operation: () => Promise<void>): Promise<boolean> {
+    if (busy.current) return false;
+    busy.current = true;
+    setPending(true);
+    setError(null);
+    try { await operation(); return true; }
+    catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save. Check your connection and try again.");
+      return false;
+    } finally { busy.current = false; setPending(false); }
+  }, []);
+
   useEffect(() => {
     if (!running) return;
-    const id = window.setInterval(() => setNowMs(now()), TICK_MS);
-    return () => window.clearInterval(id);
+    const timer = window.setInterval(() => setNowMs(now()), 1000);
+    return () => window.clearInterval(timer);
   }, [running]);
 
-  // Phát hiện hoàn thành trong lúc tab đang mở — đây mới là lúc chuông + pháo giấy nổ ra.
-  // Chốt lại phía server (finalizeSession) rồi mới cập nhật dải chấm — DB là nguồn thật.
   useEffect(() => {
-    if (!running) return;
-    if (!isSessionComplete(running, nowMs)) return;
-
+    if (!running || !isSessionComplete(running, nowMs) || busy.current || completionAttempt.current === running.id) return;
     const finished = running;
-    // Đổi state khi thời gian THẬT vượt endsAt — chỉ phát hiện được trong effect, luôn kèm side
-    // effect thật (chuông, Notification) nên tách state khỏi effect này không có ý nghĩa.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setRunning(null);
-    setJustCompletedLabelId(finished.labelId);
-
-    void new Audio("/sounds/session-complete.ogg").play().catch(() => {
-      // Trình duyệt chặn autoplay khi chưa có tương tác — im lặng bỏ qua, không phải lỗi.
-    });
-    if (typeof Notification !== "undefined" && Notification.permission === "granted") {
-      new Notification("Nice — take a break", {
-        body: "One session done. A short break sounds good.",
-        silent: true, // đã có chuông riêng, tránh kêu hai lần
-      });
-    }
-
-    void completeSessionAction(finished.id, finished.endsAt).then((snapshot) => {
-      setTodaySessions(snapshot.todaySessions);
-      setSummaryLine(snapshot.summaryLine);
+    completionAttempt.current = finished.id;
+    void perform(async () => {
+      const snapshot = await completeSessionAction(finished.id);
+      applySnapshot(snapshot);
+      setRunning(null);
+      setJustCompletedLabelId(finished.labelId);
       onXpMightHaveChanged?.();
+      void new Audio("/sounds/session-complete.ogg").play().catch(() => {});
+      if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+        new Notification("Nice — take a break", { body: "One session done. A short break sounds good.", silent: true });
+      }
     });
-  }, [running, nowMs, onXpMightHaveChanged]);
+  }, [running, nowMs, perform, applySnapshot, onXpMightHaveChanged]);
 
-  // Tự ẩn thông báo "Nice — take a break" sau 4 giây — TÁCH RIÊNG khỏi effect ở trên (gộp
-  // chung sẽ tự huỷ setTimeout của chính nó ngay khi running đổi thành null).
   useEffect(() => {
-    if (!justCompletedLabelId) return;
-    const timeout = window.setTimeout(() => setJustCompletedLabelId(null), 4000);
-    return () => window.clearTimeout(timeout);
+    if (justCompletedLabelId === null) return;
+    const timer = window.setTimeout(() => setJustCompletedLabelId(null), 4000);
+    return () => window.clearTimeout(timer);
   }, [justCompletedLabelId]);
 
-  const start = useCallback(() => {
-    if (running || pending) return;
-    if (
-      !hasRequestedNotificationPermission.current &&
-      typeof Notification !== "undefined" &&
-      Notification.permission === "default"
-    ) {
-      hasRequestedNotificationPermission.current = true;
-      void Notification.requestPermission();
-    }
-    setPending(true);
-    startSessionAction(selectedLabelId)
-      .then((session) => {
-        setRunning(session);
-        setNowMs(session.startedAt);
-      })
-      .catch((err: unknown) => {
-        console.error(err);
-      })
-      .finally(() => setPending(false));
-  }, [running, pending, selectedLabelId]);
+  // A failed response may follow a committed write. Refresh instead of replaying an add/undo.
+  const refreshState = useCallback(async () => {
+    const fresh = await getSessionStateAction();
+    setRunning(fresh.activeSession);
+    setNowMs(now());
+    completionAttempt.current = null;
+    applySnapshot(fresh);
+    onXpMightHaveChanged?.();
+  }, [applySnapshot, onXpMightHaveChanged]);
 
-  /** Không có tạm dừng — chỉ có bỏ phiên. 0 điểm, không tín dụng một phần (§4.3). */
+  // Reconcile another tab's start/abandon/finish when returning to this tab.
+  useEffect(() => {
+    async function refresh() {
+      if (document.visibilityState !== "visible" || busy.current) return;
+      try {
+        const fresh = await getSessionStateAction();
+        if (busy.current) return;
+        setRunning(fresh.activeSession);
+        setNowMs(now());
+        applySnapshot(fresh);
+        onXpMightHaveChanged?.();
+      } catch { setError("Could not refresh this tab. Check your connection."); }
+    }
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }, [applySnapshot, onXpMightHaveChanged]);
+
+  const start = useCallback(() => {
+    if (running || selectedLabelId <= 0) return;
+    if (typeof Notification !== "undefined" && Notification.permission === "default") void Notification.requestPermission();
+    void perform(async () => {
+      const session = await startSessionAction(selectedLabelId);
+      setRunning(session);
+      setNowMs(session.startedAt);
+      completionAttempt.current = null;
+    });
+  }, [running, selectedLabelId, perform]);
   const abandon = useCallback(() => {
     if (!running) return;
-    const sessionId = running.id;
-    setRunning(null);
-    void abandonSessionAction(sessionId).then((snapshot) => {
-      setTodaySessions(snapshot.todaySessions);
-      setSummaryLine(snapshot.summaryLine);
+    void perform(async () => {
+      applySnapshot(await abandonSessionAction(running.id));
+      setRunning(null);
     });
-  }, [running]);
+  }, [running, perform, applySnapshot]);
+  const backfill = useCallback((labelId: number, count: number) => perform(async () => {
+    applySnapshot(await backfillSessionsAction(labelId, count));
+    onXpMightHaveChanged?.();
+  }), [perform, applySnapshot, onXpMightHaveChanged]);
+  const undoBackfill = useCallback((labelId: number) => perform(async () => {
+    applySnapshot(await undoLastManualSessionAction(labelId));
+    onXpMightHaveChanged?.();
+  }), [perform, applySnapshot, onXpMightHaveChanged]);
 
-  /** Ghi bù — chỉ cho hôm nay, không giới hạn số phiên (§4.3). */
-  const backfill = useCallback(
-    (labelId: number, count: number) => {
-      void backfillSessionsAction(labelId, count).then((snapshot) => {
-        setTodaySessions(snapshot.todaySessions);
-        setSummaryLine(snapshot.summaryLine);
-        onXpMightHaveChanged?.();
-      });
-    },
-    [onXpMightHaveChanged],
-  );
-
-  /** Undo — bỏ đúng 1 phiên ghi bù lỡ bấm thừa (nút "−" ở khối check-in, §5.1, [MỚI —
-   *  2026-09-16]). Không có tham số count vì luôn chỉ bỏ MỘT phiên mỗi lần bấm, đối xứng với
-   *  `backfill(labelId, 1)`. Server tự giới hạn chỉ xoá phiên ghi bù (source=manual) của hôm
-   *  nay — xem app/actions/sessions.ts. */
-  const undoBackfill = useCallback(
-    (labelId: number) => {
-      void undoLastManualSessionAction(labelId).then((snapshot) => {
-        setTodaySessions(snapshot.todaySessions);
-        setSummaryLine(snapshot.summaryLine);
-        onXpMightHaveChanged?.();
-      });
-    },
-    [onXpMightHaveChanged],
-  );
-
-  return {
-    selectedLabelId,
-    setSelectedLabelId,
-    running,
-    nowMs,
-    todaySessions,
-    summaryLine,
-    justCompletedLabelId,
-    pending,
-    start,
-    abandon,
-    backfill,
-    undoBackfill,
-  };
+  return { selectedLabelId, setSelectedLabelId, running, nowMs, todaySessions, summaryLine, justCompletedLabelId, pending, error,
+    retry: () => { void perform(refreshState); }, start, abandon, backfill, undoBackfill };
 }
-
 export { secondsRemaining };

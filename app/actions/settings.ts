@@ -2,6 +2,8 @@
 
 /** Cài đặt — SPEC.md §5.6, mốc 8. Nhãn, thói quen, 6 việc, độ dài phiên, câu gợi ý, nhân vật, xuất/nhập. */
 
+import { BEDTIME_NAME, BEDTIME_SLUG } from "@/core/bedtime";
+import { validateBackup } from "@/lib/backup";
 import type { StatKey } from "@/core/types";
 import {
   addDailyTask,
@@ -25,12 +27,11 @@ import {
   updatePromptText,
   updateSettingsRow,
   type DailyTaskWithRef,
-  type ExportedData,
 } from "@/db/queries";
 
 export type SettingsData = {
   labels: { id: number; name: string; emoji: string; color: string; stat: StatKey }[];
-  habits: { id: number; name: string; emoji: string; stat: StatKey; kind: "score_1_5" | "boolean" | "journal" }[];
+  habits: { slug: string; id: number; name: string; emoji: string; stat: StatKey; kind: "score_1_5" | "boolean" | "journal" }[];
   dailyTasks: DailyTaskWithRef[];
   prompts: { id: number; text: string; category: string | null }[];
   sessionMinutes: number;
@@ -50,7 +51,7 @@ export async function getSettingsDataAction(): Promise<SettingsData> {
   ]);
   return {
     labels: labels.map((l) => ({ id: l.id, name: l.name, emoji: l.emoji, color: l.color, stat: l.stat })),
-    habits: habits.map((h) => ({ id: h.id, name: h.name, emoji: h.emoji, stat: h.stat, kind: h.kind })),
+    habits: habits.map((h) => ({ slug: h.slug, id: h.id, name: h.slug === BEDTIME_SLUG ? BEDTIME_NAME : h.name, emoji: h.emoji, stat: h.stat, kind: h.kind })),
     dailyTasks,
     prompts: prompts.map((p) => ({ id: p.id, text: p.text, category: p.category })),
     sessionMinutes: settings?.sessionMinutes ?? 25,
@@ -129,8 +130,8 @@ export async function updateSessionSettingsAction(
   dailySessionGoal: number,
   reminderHour: number | null,
 ) {
-  if (sessionMinutes < 1 || dailySessionGoal < 1) throw new Error("Số phút/mục tiêu phải lớn hơn 0.");
-  if (reminderHour !== null && (reminderHour < 0 || reminderHour > 23)) throw new Error("Giờ nhắc phải từ 0-23.");
+  if (!Number.isSafeInteger(sessionMinutes) || !Number.isSafeInteger(dailySessionGoal) || sessionMinutes < 1 || dailySessionGoal < 1) throw new Error("Số phút/mục tiêu phải lớn hơn 0.");
+  if (reminderHour !== null && (!Number.isInteger(reminderHour) || reminderHour < 0 || reminderHour > 23)) throw new Error("Giờ nhắc phải từ 0-23.");
   await updateSettingsRow({ sessionMinutes, dailySessionGoal, reminderHour });
 }
 
@@ -142,9 +143,8 @@ export async function updateSessionSettingsAction(
 export type ImportResult = { ok: true } | { ok: false; error: string };
 
 /**
- * THAY THẾ toàn bộ dữ liệu — không gộp (§8.5, khôi phục từ bản sao lưu). Kiểm tra hình dạng JSON
- * ở mức tối thiểu (đủ các khối chính) trước khi chạm DB; lỗi thật (sai schema, thiếu cột) để
- * transaction trong `importAllData` tự cuộn lại, không có gì bị ghi dở dang.
+ * THAY THẾ toàn bộ dữ liệu — không gộp (§8.5, khôi phục từ bản sao lưu). Kiểm tra đủ bảng, trường, khóa và tham chiếu
+ * trước khi chạm DB; import và reset sequence trong cùng transaction.
  */
 export async function importDataAction(jsonText: string): Promise<ImportResult> {
   let data: unknown;
@@ -153,11 +153,8 @@ export async function importDataAction(jsonText: string): Promise<ImportResult> 
   } catch {
     return { ok: false, error: "Không đọc được file — không phải JSON hợp lệ." };
   }
-  if (typeof data !== "object" || data === null || !("profile" in data) || !("labels" in data)) {
-    return { ok: false, error: "File không đúng khuôn dạng đã xuất từ chính app này." };
-  }
   try {
-    await importAllData(data as ExportedData);
+    await importAllData(validateBackup(data));
     return { ok: true };
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : "Nhập dữ liệu thất bại." };

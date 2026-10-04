@@ -64,11 +64,8 @@ export async function getLongTermStatsAction(): Promise<LongTermStatsData> {
     listActiveLabels(),
   ]);
 
-  // §5.8 [CHỐT]: một phiên hoàn thành = session_minutes + break_minutes. Viết theo công thức chứ
-  // không phải hằng số 0,5 giờ — chủ dự án chỉnh được độ dài phiên (§4.3), con số giờ phải bám
-  // theo cài đặt thật thay vì âm thầm sai đi. Vẫn dùng dù thẻ "Focus time" đã gỡ: khối 1 (tổng
-  // cộng dồn), khối 5 (tuần nhiều giờ nhất) và khối 6 (giờ theo nhãn) đều tính giờ qua nó.
-  const minutesPerSession = settings.sessionMinutes + settings.breakMinutes;
+  // Historical duration comes from each session; the fixed break remains part of total hours.
+  const breakMinutes = settings?.breakMinutes ?? 5;
 
   const folded = foldTimeline(raw, nowMs);
   // Khung cắt tại ngày bắt đầu — lưới mở đầu bằng TUẦN ĐẦU của chủ dự án, không phải 12 tháng ô
@@ -76,7 +73,7 @@ export async function getLongTermStatsAction(): Promise<LongTermStatsData> {
   const windowDays = windowDaysOf(todayKey, STATS_WINDOW_MONTHS, raw.profileStartedDayKey);
   const months = windowMonthsOf(todayKey, STATS_WINDOW_MONTHS, raw.profileStartedDayKey);
 
-  const lifetime = lifetimeTotals(raw.completedSessions, folded.dailySeries, minutesPerSession);
+  const lifetime = lifetimeTotals(raw.completedSessions, folded.dailySeries, breakMinutes);
   const heatmap = heatmapCells(raw.completedSessions, windowDays);
 
   const weekStarts = weekStartsOf(windowDays);
@@ -86,8 +83,8 @@ export async function getLongTermStatsAction(): Promise<LongTermStatsData> {
     lifetime: { ...lifetime, startedDayKey: raw.profileStartedDayKey },
     heatmap,
     monthlyTrend: monthlyStatTrend(folded.dailySeries, months),
-    records: personalRecords(raw.completedSessions, folded.longestDayAchievedStreak, minutesPerSession),
-    labelHoursByWeek: hoursByLabelPerWeek(raw.completedSessions, weekStarts, minutesPerSession).map((w) => ({
+    records: personalRecords(raw.completedSessions, folded.longestDayAchievedStreak, breakMinutes),
+    labelHoursByWeek: hoursByLabelPerWeek(raw.completedSessions, weekStarts, breakMinutes).map((w) => ({
       weekStart: w.weekStart,
       labels: labels
         .map((l) => ({

@@ -1,23 +1,82 @@
 @import "tailwindcss";
 
 /*
- * Ngôn ngữ thiết kế — SPEC.md §5.7: nền màu ấm (kem/be), không trắng tinh không đen tuyền;
- * bo góc lớn, bóng mềm, chữ tròn dễ chịu; có chế độ tối cho buổi đêm.
+ * Ngôn ngữ thiết kế — SPEC.md §5.7: không trắng tinh không đen tuyền; bo góc lớn, bóng mềm, chữ
+ * tròn dễ chịu; có chế độ tối cho buổi đêm.
+ *
+ * [SỬA — 2026-09-17] Cả web là MỘT KHU RỪNG (chủ dự án chọn qua bản phác): nền kem ấm cũ ngả sang
+ * kem-rêu, chữ nâu gỗ sang xanh rêu đậm, và mọi trang đứng trước một khu rừng nhiều lớp
+ * (`components/forest/ForestBackdrop.tsx`). Ba cây ở màn chính (`ForestGrove.tsx`) cũng tô bằng
+ * các biến dưới đây — mọi màu của cảnh nằm Ở ĐÂY, không rải hex trong component, để chế độ tối
+ * tự đổi cả khu rừng chỉ bằng `data-theme` mà không cần render lại gì.
  */
 
 :root {
-  --background: #f7f1e3;
-  --foreground: #35291d;
-  --surface: #fffbf2;
-  --surface-muted: #eee0c4;
-  --border: #e2d2ab;
-  --shadow-color: 30 25% 45%;
+  --background: #eef1df;
+  --foreground: #27301f;
+  --surface: #fbf9ef;
+  --surface-muted: #e8ecd7;
+  --border: #dde4c9;
+  --shadow-color: 90 20% 30%;
 
-  /* Ba chỉ số — SPEC.md §8.5: Mind · Health · Spirit. Dùng cho ánh sáng phòng theo nhãn (§5.1),
-     dải chấm phiên, và mọi chỗ cần phân biệt trực quan ba chỉ số. */
-  --stat-mind: #4f6f93;
-  --stat-health: #c9713f;
-  --stat-spirit: #5c8570;
+  /* Ba chỉ số — SPEC.md §8.5: Mind · Health · Spirit. Trùng màu tán của ba cây (Mind = thông lam,
+     Health = phong cam, Spirit = liễu xanh) để chấm màu ở bất kỳ đâu trong app đọc ra đúng cây. */
+  --stat-mind: #5683ab;
+  --stat-health: #d27e3e;
+  --stat-spirit: #5a9876;
+
+  /* Khu rừng phía sau mọi trang — xa mờ, gần đậm (phối cảnh không khí). */
+  --forest-sky-top: #f6f0dc;
+  --forest-sky-bottom: #e6ecd5;
+  --forest-sun: #fffbe9;
+  --forest-layer-1: #d9e3c8;
+  --forest-layer-2: #c2d3b0;
+  --forest-layer-3: #a6c095;
+  --forest-mist: #eef2df;
+  --forest-meadow-top: #c9d9a6;
+  --forest-meadow-bottom: #a8c28a;
+  --forest-fern: #6e9464;
+  --forest-fern-dark: #5a7d52;
+  --forest-grass: #7fa06f;
+  --forest-star: #f3f0d8;
+  --forest-moon: #f1ebca;
+  --forest-moon-crater: #e2dbb6;
+
+  /* Ba cây — mỗi tông ba sắc: tối (bóng), gốc, sáng (phía nắng chiếu). */
+  --tree-shadow: #1b2414;
+  --tree-trunk: #7a5b40;
+  --tree-trunk-dark: #5a4230;
+  --tree-soil: #8a6848;
+  --tree-soil-dark: #6a4d33;
+  --tree-soil-light: #a98763;
+  --tree-mind-dark: #3e6488;
+  --tree-mind: #5683ab;
+  --tree-mind-light: #8ab0d2;
+  --tree-health-dark: #ad5e29;
+  --tree-health: #d27e3e;
+  --tree-health-light: #efad68;
+  --tree-spirit-dark: #3d7658;
+  --tree-spirit: #5a9876;
+  --tree-spirit-light: #91c6a6;
+  /* Chuỗi ngày-đạt đang ở ngày ân hạn (§4.6) — cả khu vườn ngả vàng. */
+  --tree-danger-dark: #9a7b3d;
+  --tree-danger: #c2a162;
+  --tree-danger-light: #e0c68d;
+  /* Một chỉ số sắp bị trừ điểm (§4.1) — riêng cây đó héo nâu, lá rụng xuống gốc. */
+  --tree-wilt-dark: #8a6a45;
+  --tree-wilt: #b39067;
+  --tree-wilt-light: #d2b58c;
+  --tree-fallen-leaf: #b58a5a;
+  --flower-petal: #fbf6ec;
+  --flower-petal-wilted: #d8c89f;
+  --flower-center: #f0bd4f;
+  --flower-stem: #6f9464;
+
+  /* Chế độ tập trung — rừng tối hẳn + đom đóm. Giống nhau ngày hay đêm: đồng hồ đếm ngược chữ
+     trắng cần nền tối trong mọi trường hợp. */
+  --focus-veil: #07100c;
+  --firefly-core: #f6fcd0;
+  --firefly-glow: rgb(233 247 160 / 0.45);
 
   --radius-lg: 1.75rem;
   --radius-md: 1.125rem;
@@ -32,16 +91,61 @@
  * OS tối vào giữa trưa (nhiều người bật dark mode cả ngày) không nên ép app cũng tối theo.
  */
 :root[data-theme="dark"] {
-  --background: #211a10;
-  --foreground: #f1e6d2;
-  --surface: #2c2417;
-  --surface-muted: #3a3020;
-  --border: #4d4128;
-  --shadow-color: 20 40% 3%;
+  --background: #111c18;
+  --foreground: #e8ecd8;
+  --surface: #18231f;
+  --surface-muted: #23312b;
+  --border: #2b3a33;
+  --shadow-color: 150 30% 3%;
 
-  --stat-mind: #7ea0c9;
-  --stat-health: #e0955f;
-  --stat-spirit: #82ab92;
+  --stat-mind: #86acd0;
+  --stat-health: #e39a5f;
+  --stat-spirit: #7fbb98;
+
+  /* Rừng đêm — cùng hình khối ban ngày, chỉ đổi màu; trăng + sao hiện ra (`.forest-night-only`). */
+  --forest-sky-top: #0c1618;
+  --forest-sky-bottom: #1a2b28;
+  /* CỐ Ý tối như trời đêm, không phải trắng: đổi biến màu là tức thì, còn tia nắng mờ dần 1,2s
+     (`.forest-day-only`) — để trắng thì đúng 19h tia nắng lóe sáng trắng trước khi tắt (bắt gặp
+     lúc soi chế độ đêm). */
+  --forest-sun: #1a2b28;
+  --forest-layer-1: #243832;
+  --forest-layer-2: #1d2f2a;
+  --forest-layer-3: #172722;
+  --forest-mist: #1f302b;
+  --forest-meadow-top: #1f3229;
+  --forest-meadow-bottom: #152520;
+  --forest-fern: #0f1c17;
+  --forest-fern-dark: #0b1511;
+  --forest-grass: #2f4a3b;
+
+  --tree-shadow: #000000;
+  --tree-trunk: #433427;
+  --tree-trunk-dark: #2e241b;
+  /* Đất ban đêm sáng hơn "đúng thực tế" một chút — ụ đất của mốc Seed/Sprout nằm trên đồng cỏ đêm
+     gần đen, để tối quá thì cả khu vườn lúc mới bắt đầu trông như trống trơn (bắt gặp lúc soi). */
+  --tree-soil: #5a4632;
+  --tree-soil-dark: #3a2c20;
+  --tree-soil-light: #725a43;
+  --tree-mind-dark: #2d4c69;
+  --tree-mind: #43709a;
+  --tree-mind-light: #6d9cc5;
+  --tree-health-dark: #83461f;
+  --tree-health: #a9652f;
+  --tree-health-light: #d08c4d;
+  --tree-spirit-dark: #2c5943;
+  --tree-spirit: #3f7b5d;
+  --tree-spirit-light: #69a887;
+  --tree-danger-dark: #6f5a2e;
+  --tree-danger: #917842;
+  --tree-danger-light: #b39a60;
+  --tree-wilt-dark: #5e4a33;
+  --tree-wilt: #7d6446;
+  --tree-wilt-light: #9c8260;
+  --tree-fallen-leaf: #7d6446;
+  --flower-petal: #e9e4d2;
+  --flower-petal-wilted: #9d9270;
+  --flower-stem: #3f5f4b;
 }
 
 @theme inline {
@@ -64,6 +168,39 @@
 body {
   background: var(--background);
   color: var(--foreground);
+}
+
+@layer base {
+  /*
+   * Focus mặc định cho input/textarea/select — bắt gặp lúc soi popup "Add net worth": nhiều
+   * field rải rác trong app (tài sản, Cài đặt) chưa từng khai `focus:ring-*` riêng, nên lúc bấm
+   * vào chỉ còn viền mặc định của trình duyệt (cam/xanh gắt tuỳ máy) — lệch hẳn tông ấm "bo góc
+   * lớn, bóng mềm" của app (§5.7). Đặt ở LỚP `base` (Tailwind v4 xếp `utilities` mạnh hơn `base`)
+   * nên input nào tự khai `focus:ring-*` riêng (JournalCard, WeekReviewCard) vẫn thắng bình
+   * thường — đây chỉ là giá trị nền cho input CHƯA từng nghĩ tới chuyện này.
+   */
+  input,
+  textarea,
+  select {
+    outline: none;
+  }
+  input:focus,
+  textarea:focus,
+  select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--foreground) 20%, transparent);
+  }
+
+  /* Ẩn nút tăng/giảm mặc định của input number — hai mũi tên vuông sát cạnh, lệch hẳn ngôn ngữ
+     bo tròn của app; giờ nhập số vẫn được bằng bàn phím/con lăn chuột như cũ. */
+  input[type="number"]::-webkit-inner-spin-button,
+  input[type="number"]::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  input[type="number"] {
+    -moz-appearance: textfield;
+  }
 }
 
 /* Pháo giấy nhỏ khi xong phiên — SPEC.md §5.7: hoạt ảnh chỉ ở khoảnh khắc chuyển tiếp. */
@@ -101,4 +238,375 @@ body {
 }
 .animate-night-drift {
   animation: night-drift 1.8s ease-out forwards;
+}
+
+/*
+ * Khu rừng (2026-09-17) — mặt trời/tia nắng chỉ ban ngày, trăng/sao chỉ ban đêm. Cùng MỘT khối
+ * SVG cho cả hai, chỉ bật/tắt bằng `data-theme` (NightModeSync đổi mỗi phút theo giờ thật) — nên
+ * lúc 19h khu rừng tự mờ dần sang đêm mà không cần render lại component nào.
+ */
+.forest-day-only,
+.forest-night-only {
+  transition: opacity 1.2s ease;
+}
+.forest-night-only {
+  opacity: 0;
+}
+:root[data-theme="dark"] .forest-day-only {
+  opacity: 0;
+}
+:root[data-theme="dark"] .forest-night-only {
+  opacity: 1;
+}
+
+/*
+ * Sương mù dịu phía sau khối chữ "hôm nay" ở màn chính — khối chữ nằm đè lên các lớp rừng, thiếu
+ * lớp này thì dải sáu ô + tên ba chỉ số chìm vào tán cây phía sau (bắt gặp lúc soi bản phác).
+ * `isolation` để ::before (z-index âm) nằm SAU chữ nhưng vẫn TRƯỚC khu rừng.
+ */
+.forest-haze {
+  position: relative;
+  isolation: isolate;
+}
+.forest-haze::before {
+  content: "";
+  position: absolute;
+  inset: -22% -30%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--forest-sky-top) 90%, transparent) 0%,
+    color-mix(in srgb, var(--forest-sky-top) 70%, transparent) 55%,
+    transparent 100%
+  );
+}
+
+/*
+ * Đom đóm lúc tập trung — SPEC.md §5.1 [THÊM — 2026-09-05], sống lại sau khi gỡ phòng 3D. Trôi
+ * RẤT chậm, mờ-tỏ dịu; "tĩnh và dịu" chứ không phải hiệu ứng (nguyên tắc 1, §2). Mỗi con tự có
+ * quãng trôi/nhịp riêng qua biến CSS (`--dx`, `--dy`, `--t`, `--delay`) — xem Fireflies.tsx.
+ */
+@keyframes firefly-drift {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0.15;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(var(--dx), var(--dy));
+    opacity: 0.2;
+  }
+}
+/* Không `will-change`: đom đóm luôn được mount (chỉ tạm dừng lúc không tập trung), gắn cố định
+   46 lớp compositor suốt cả ngày cho một hiệu ứng chỉ chạy lúc tập trung là phí — trình duyệt tự
+   đẩy lên compositor khi hoạt ảnh transform/opacity thật sự chạy. */
+.animate-firefly {
+  animation: firefly-drift var(--t) ease-in-out var(--delay) infinite alternate;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-firefly {
+    animation: none;
+    opacity: 0.7;
+  }
+}
+
+/* Approved forest diorama design, October 2026. The app UI shares one continuous canvas. */
+:root {
+  --background: #f8f4e8;
+  --foreground: #293323;
+  --surface: #f8f4e9;
+  --surface-muted: #e9ead9;
+  --border: #d8d9c4;
+  --stat-mind: #548ab9;
+  --stat-health: #cf8045;
+  --stat-spirit: #718951;
+  --ui-haze: #faf6e9;
+  --ui-line: rgb(78 82 55 / .19);
+  --primary: #465334;
+  --primary-ink: #fcf9ed;
+}
+:root[data-theme="dark"] {
+  --background: #102024;
+  --foreground: #eeeedd;
+  --surface: #1b302e;
+  --surface-muted: #293d35;
+  --border: #506152;
+  --stat-mind: #80b3dd;
+  --stat-health: #e9a266;
+  --stat-spirit: #acc591;
+  --ui-haze: #102024;
+  --ui-line: rgb(209 228 195 / .21);
+  --primary: #c2d1a5;
+  --primary-ink: #1a302a;
+}
+button, a, input, textarea { -webkit-tap-highlight-color: transparent; }
+button:not(:disabled), a { cursor: pointer; }
+button:disabled { cursor: not-allowed; }
+:focus-visible { outline: 2px solid var(--stat-spirit); outline-offset: 5px; }
+.forest-backdrop { position: fixed; inset: 0; pointer-events: none; overflow: hidden; background: var(--background); }
+.forest-backdrop > div { position: absolute; inset: 0; }
+.forest-background-day, .forest-background-night { background-size: cover; background-position: center; transition: opacity 1.2s ease; }
+.forest-background-day { background-image: url('/forest/day.webp'); }
+.forest-background-night { background-image: url('/forest/night.webp'); opacity: 0; }
+:root[data-theme="dark"] .forest-background-day { opacity: 0; }
+:root[data-theme="dark"] .forest-background-night { opacity: 1; }
+.forest-reading-haze { background: linear-gradient(90deg, color-mix(in srgb,var(--ui-haze) 35%, transparent), transparent 65%); }
+.journey-app { height: 100svh; overflow: hidden; }
+.today-header { height: 80px; padding: 0 clamp(24px,3.5vw,64px); display: flex; align-items: center; justify-content: space-between; gap: 20px; border-bottom: 1px solid var(--ui-line); background: color-mix(in srgb,var(--ui-haze) 30%,transparent); }
+.journey-brand { display: flex; align-items: center; gap: 12px; font-size: 25px; font-weight: 800; letter-spacing: -.7px; white-space: nowrap; }
+.journey-brand svg { color: var(--stat-spirit); fill: color-mix(in srgb, var(--stat-spirit) 18%, transparent); }
+.today-header nav { display: flex; align-items: center; gap: clamp(4px,1.4vw,24px); }
+.today-header nav a { padding: 9px 17px; font-size: 15px; font-weight: 650; border-radius: 30px; white-space: nowrap; transition: background .2s; }
+.today-header nav a:hover { background: color-mix(in srgb,var(--foreground) 7%, transparent); }
+.today-header nav a[aria-current] { background: var(--primary); color: var(--primary-ink); }
+.settings-link { padding: 11px; opacity: .76; }
+.today-pager { display: flex; width: 100%; height: calc(100svh - 150px); overflow-x: auto; overflow-y: hidden; scroll-snap-type: x mandatory; overscroll-behavior-x: contain; scrollbar-width: none; }
+.today-pager::-webkit-scrollbar { display: none; }
+.today-pager.is-dragging { scroll-snap-type: none; cursor: grabbing; user-select: none; }
+.today-panel { flex: 0 0 100%; width: 100%; height: 100%; overflow-x: hidden; overflow-y: auto; scroll-snap-align: start; scroll-snap-stop: always; scrollbar-width: thin; scrollbar-color: var(--border) transparent; }
+.home-dashboard { max-width: 1720px; margin: auto; padding: 14px clamp(28px,3.7vw,68px) 0; display: grid; grid-template-columns: 43% 57%; height: 100%; min-height: 550px; }
+.today-content { align-self: center; position: relative; z-index: 2; padding: 8px 0 20px; }
+.chapter-eyebrow { text-transform: uppercase; letter-spacing: 4px; font-size: 11px; font-weight: 800; margin-bottom: 14px; display: flex; align-items: center; gap: 25px; }
+.streak { text-transform: none; letter-spacing: 0; color: var(--stat-spirit); font-weight: 600; }
+.streak.is-in-danger { color: var(--stat-health); }
+.today-content h1 { font-size: clamp(34px,3.5vw,59px); font-weight: 800; line-height: 1.07; letter-spacing: -1.8px; margin-bottom: 21px; }
+.session-total { font-size: clamp(20px,1.65vw,28px); line-height: 1.2; font-weight: 750; }
+.session-total strong { font-weight: 850; }
+.session-breakdown { font-size: 14px; opacity: .77; margin-top: 7px; line-height: 1.5; }
+.daily-overview { margin-top: 24px; }
+.daily-overview > p { font-size: 13px; opacity: .65; }
+.daily-goals { list-style: none; padding: 0; margin: 12px 0 0; display: grid; grid-template-rows: repeat(3, auto); grid-auto-flow: column; grid-template-columns: 1fr 1fr; gap: 13px 23px; }
+.daily-goals li { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: 14px; }
+.goal-check { width: 25px; height: 25px; border: 1.5px solid var(--task-color); border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; }
+.goal-check.is-done { background: var(--task-color); color: var(--background); }
+.goal-name { flex: 1; line-height: 1.3; }
+.goal-count { font-size: 11px; opacity: .6; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.focus-controls { margin-top: 29px; position: relative; }
+.focus-controls h2 { font-size: clamp(18px,1.65vw,24px); font-weight: 800; letter-spacing: -.5px; margin-bottom: 13px; }
+.focus-labels { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.focus-labels button { display: flex; align-items: center; justify-content: center; gap: 9px; flex: 1; min-width: 95px; border: 1px solid var(--ui-line); border-radius: 13px; padding: 12px 10px; font-size: 12px; font-weight: 700; background: color-mix(in srgb, var(--ui-haze) 12%, transparent); transition: background .2s, border-color .2s; }
+.focus-labels button svg { color: var(--task-color); flex-shrink: 0; }
+.focus-labels button[aria-pressed="true"] { background: color-mix(in srgb, var(--task-color) 17%, var(--ui-haze)); border-color: var(--task-color); }
+.start-focus { display: flex; align-items: center; justify-content: center; gap: 12px; width: 100%; background: var(--primary); color: var(--primary-ink); padding: 13px; border-radius: 13px; font-size: 17px; font-weight: 800; transition: filter .2s, transform .2s; }
+.start-focus:hover { filter: brightness(1.08); }
+.start-focus:active { transform: scale(.99); }
+.start-focus:disabled { opacity: .45; }
+.backfill-anchor { position: relative; text-align: center; margin-top: 8px; }
+.backfill-trigger { font-size: 12px; font-weight: 700; color: var(--stat-spirit); padding: 5px 12px; }
+.backfill-popover { position: absolute; z-index: 40; bottom: 0; left: 50%; transform: translateX(-50%); width: 290px; text-align: left; border-radius: 18px; border: 1px solid var(--border); background: var(--surface); padding: 20px; box-shadow: 0 12px 44px #0002; }
+.empty-labels { font-size: 12px; margin-top: 8px; }
+.session-complete { position: absolute; bottom: 0; right: 0; font-size: 12px; color: var(--stat-spirit); }
+.grove-scene { position: relative; min-width: 0; min-height: 490px; height: 100%; }
+.grove-caption { position: absolute; top: 25px; left: 14%; font-size: 14px; opacity: .75; z-index: 1; }
+.grove-caption span { display: block; width: 32px; height: 1px; background: currentColor; margin-top: 12px; opacity: .6; }
+.grove-canvas { position: absolute; inset: -4% -9% -4% -4%; }
+.grove-canvas canvas { display: block; width: 100%; height: 100%; }
+.grove-fallback { position: absolute; inset: 0; }
+.grove-loading { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; opacity: .5; }
+.tree-label { position: absolute; display: flex; gap: 9px; align-items: flex-start; min-width: 150px; border-radius: 14px; padding: 10px 12px; z-index: 3; background: color-mix(in srgb,var(--ui-haze) 76%,transparent); box-shadow: 0 4px 22px #202a1710; backdrop-filter: blur(8px); }
+.tree-label > svg { color: var(--task-color); margin-top: 2px; }
+.tree-label p { font-size: 13px; line-height: 1.3; font-weight: 750; }
+.tree-label small { display: block; margin-top: 5px; font-size: 9px; opacity: .7; }
+.tree-label-mind { left: 3%; bottom: 34%; }
+.tree-label-health { right: -1%; bottom: 33%; }
+.tree-label-spirit { left: 43%; bottom: 12%; }
+.tree-xp { height: 5px; background: color-mix(in srgb,var(--foreground) 12%,transparent); margin-top: 6px; width: 100%; border-radius: 5px; overflow: hidden; }
+.tree-xp > span { display: block; height: 100%; background: var(--task-color); border-radius: inherit; transition: width .6s; }
+.tree-label.is-wilting { --task-color: var(--tree-wilt) !important; }
+.tree-warning { color: var(--stat-health); }
+.today-footer { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; height: 70px; padding: 0 4vw; position: relative; }
+.pager-indicator { text-align: center; font-size: 11px; color: color-mix(in srgb,var(--foreground) 68%,transparent); }
+.pager-indicator > div { display: flex; justify-content: center; gap: 7px; margin-top: 5px; }
+.pager-indicator button { width: 25px; height: 25px; display: grid; place-items: center; border-radius: 50%; }
+.pager-indicator button::after { content: ""; width: 9px; height: 9px; border: 1px solid currentColor; border-radius: 50%; }
+.pager-indicator button[aria-pressed="true"]::after { background: var(--primary); border-color: var(--primary); }
+.keyboard-hint { text-align: right; font-size: 10px; opacity: .45; }
+.journey-assets { justify-self: start; position: relative; z-index: 5; }
+.journey-assets > div { align-items: flex-start; }
+.journey-assets > div > button:first-child { background: none; padding: 3px 0; box-shadow: none; backdrop-filter: none; }
+.journey-assets > div > button:first-child span { font-size: 12px; }
+.journey-assets > div:has(input) { position: absolute; bottom: 5px; left: 0; }
+.evening-panel { max-width: 1660px; margin: 0 auto; padding: 25px clamp(28px,4vw,68px); position: relative; isolation: isolate; min-height: 100%; }
+body:has(.today-panel:not([inert]) .evening-panel) .forest-reading-haze { background: radial-gradient(ellipse at 45% 53%,color-mix(in srgb,var(--ui-haze) 92%,transparent) 32%,color-mix(in srgb,var(--ui-haze) 80%,transparent) 58%,transparent 90%); }
+.checkin-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; margin-bottom: 27px; }
+.checkin-heading h1 { font-size: clamp(30px,3vw,45px); font-weight: 850; letter-spacing: -1.3px; line-height: 1.1; }
+.checkin-subtitle { font-size: 18px; margin-top: 5px; }
+.checkin-summary { font-size: 12px; opacity: .7; margin-top: 12px; }
+.day-selector { display: flex; gap: 3px; padding: 3px; border: 1px solid var(--ui-line); border-radius: 28px; margin-top: 10px; }
+.day-selector button { font-size: 12px; padding: 7px 20px; border-radius: 20px; }
+.day-selector button[aria-pressed="true"] { background: var(--primary); color: var(--primary-ink); }
+.checkin-columns { display: grid; grid-template-columns: 41% 1fr; gap: clamp(30px,4vw,68px); }
+.checkin-columns h2 { font-size: 23px; font-weight: 800; letter-spacing: -.5px; }
+.checkin-caption { opacity: .65; font-size: 12px; margin-top: 5px; margin-bottom: 12px; }
+.checkin-items { min-width: 0; }
+.checkin-items:disabled { opacity: .65; }
+.checkin-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 17px 0; min-width: 0; font-size: 12px; border-bottom: 1px solid var(--ui-line); }
+.checkin-name { display: flex; gap: 13px; align-items: center; font-size: 13px; font-weight: 700; }
+.checkin-name svg { color: var(--task-color); flex-shrink: 0; }
+.label-progress-row .checkin-name { width: 39%; }
+.label-progress-value { flex: 1; font-size: 11px; }
+.label-progress-bar { margin-top: 6px; height: 6px; background: color-mix(in srgb,var(--foreground) 12%,transparent); border-radius: 9px; overflow: hidden; }
+.label-progress-bar > span { display: block; height: 100%; background: var(--task-color); border-radius: inherit; transition: width .4s; }
+.session-stepper { display: flex; gap: 7px; }
+.session-stepper button, .habit-scores button { border: 1px solid var(--ui-line); width: 31px; height: 31px; border-radius: 50%; font-size: 17px; display: grid; place-items: center; }
+.session-stepper button:disabled { opacity: .3; }
+.session-stepper button:hover:not(:disabled) { background: color-mix(in srgb,var(--task-color) 15%,transparent); }
+.habit-scores { display: flex; gap: 7px; }
+.habit-scores button { font-size: 13px; }
+.habit-scores button[aria-pressed="true"] { background: var(--task-color); color: var(--background); border-color: var(--task-color); }
+.bedtime-row { display: block; }
+.bedtime-row label { display: flex; justify-content: space-between; gap: 15px; align-items: center; }
+.bedtime-row input { width: 19px; height: 19px; accent-color: var(--task-color); }
+.bedtime-row p { font-size: 10px; opacity: .65; margin-top: 6px; padding-left: 35px; }
+.journal-status > span:last-child { font-size: 11px; opacity: .7; }
+.mood-row { display: flex; gap: 16px; align-items: center; justify-content: space-between; margin-top: 18px; }
+.mood-row h2 { font-size: 18px; }
+.mood-row button { width: 36px; height: 36px; font-size: 23px; }
+.journal-heading { display: flex; justify-content: space-between; gap: 15px; align-items: center; margin-bottom: 8px; }
+.journal-heading h2 { display: flex; align-items: center; gap: 10px; }
+.journal-heading svg { color: var(--stat-spirit); }
+.journal-heading > span { font-size: 11px; opacity: .7; }
+.journal-editor > div:first-child { min-height: 22px; margin-bottom: 6px; opacity: .8; }
+.journal-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+.journal-fields > div { display: flex; flex-direction: column; }
+.journal-fields p { font-size: 12px; line-height: 1.45; min-height: 3em; font-weight: 650; }
+.journal-input { width: 100%; min-height: 120px; flex: 1; padding: 12px; font-size: 13px; line-height: 1.65; border-radius: 14px; border: 1px solid color-mix(in srgb,var(--foreground) 24%,transparent); background: color-mix(in srgb,var(--ui-haze) 28%,transparent); resize: vertical; }
+.journal-input::placeholder { color: color-mix(in srgb,var(--foreground) 40%,transparent); }
+.journal-input:focus { background: color-mix(in srgb,var(--ui-haze) 60%,transparent); box-shadow: 0 0 0 2px color-mix(in srgb,var(--stat-spirit) 25%,transparent); }
+.close-day-row { margin-top: 22px; padding-top: 15px; border-top: 1px solid var(--ui-line); display: flex; align-items: center; gap: 15px; justify-content: space-between; position: relative; }
+.close-day-row > p { font-size: 11px; opacity: .7; max-width: 60%; }
+.close-day { border-radius: 12px; background: var(--primary); color: var(--primary-ink); padding: 11px 23px; font-size: 13px; font-weight: 750; min-width: 140px; }
+.close-day:disabled { opacity: .42; }
+.checkin-error { border-left: 3px solid var(--stat-health); padding: 10px; font-size: 13px; margin-bottom: 14px; }
+.focus-session { position: fixed; inset: 0; z-index: 80; background: #071713eb; color: #f3f2e4; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 30px; }
+.focus-session > :not(:first-child) { z-index: 1; }
+.focus-eyebrow { font-size: 13px; letter-spacing: 2px; opacity: .6; }
+.clock-content { display: flex; flex-direction: column; align-items: center; }
+.clock-digits { font-size: 85px; line-height: 1.2; font-weight: 600; letter-spacing: -3px; font-variant-numeric: tabular-nums; }
+.clock-label { font-size: 18px; opacity: .65; margin-top: 10px; }
+.abandon-focus { color: #f3f2e48f; font-size: 12px; border-bottom: 1px dotted #f3f2e459; padding: 5px; }
+.timer-error { position: fixed; top: 90px; left: 50%; transform: translateX(-50%); max-width: min(90vw,580px); background: var(--surface); border: 1px solid var(--stat-health); padding: 18px; border-radius: 14px; display: flex; gap: 18px; align-items: center; z-index: 110; font-size: 13px; }
+.timer-error button { text-decoration: underline; white-space: nowrap; }
+@media(min-width:1500px) and (min-height:850px) {
+  .daily-goals { gap: 20px 30px; }.daily-goals li { font-size: 16px; }.goal-check { width: 31px; height: 31px; }
+  .focus-controls { margin-top: 42px; }.focus-labels button { font-size: 14px; padding: 16px 10px; }.start-focus { padding: 16px; }
+  .daily-overview { margin-top: 34px; }.session-breakdown { font-size: 16px; }
+  .checkin-row { padding: 21px 0; }.checkin-name { font-size: 15px; }.label-progress-value { font-size: 13px; }
+  .journal-fields p { font-size: 14px; }.journal-input { min-height: 150px; }
+}
+@media(max-width:1050px) {
+  .today-header { padding: 0 24px; }.journey-brand { font-size: 21px; }.today-header nav { gap: 0; }.today-header nav a { padding: 8px 12px; font-size: 13px; }
+  .home-dashboard { grid-template-columns: 46% 54%; padding: 10px 28px 0; }.today-content h1 { font-size: 37px; }
+  .daily-goals { gap: 12px 14px; }.daily-goals li { font-size: 12px; }.goal-count { font-size: 10px; }.goal-check { width: 21px; height: 21px; }
+  .focus-labels button { min-width: 80px; gap: 5px; font-size: 11px; }.focus-labels svg { width: 17px; }
+  .tree-label { min-width: 120px; padding: 8px; gap: 6px; }.tree-label p { font-size: 11px; }.tree-label svg { width: 18px; }.tree-label small { font-size: 8px; }
+  .checkin-columns { gap: 28px; grid-template-columns: 43% 1fr; }.session-stepper { gap: 4px; }.session-stepper button { width: 26px; height: 26px; }.checkin-name { gap: 8px; font-size: 12px; }.habit-scores { gap: 4px; }.habit-scores button { width: 27px; height: 27px; }
+}
+@media(max-width:760px) {
+  .today-header { height: 100px; padding: 12px 20px; align-items: flex-start; flex-wrap: wrap; gap: 7px; }
+  .journey-brand { font-size: 20px; }.journey-brand svg { width: 24px; height: 24px; }.settings-link { padding: 0 5px; }.today-header nav { order: 3; width: 100%; justify-content: space-between; }.today-header nav a { padding: 5px 13px; font-size: 12px; }
+  .today-pager { height: calc(100svh - 165px); }.today-footer { height: 65px; padding: 0 20px; }.keyboard-hint { display: none; }.today-footer { grid-template-columns: 1fr auto; }.journey-assets > div > button:first-child span { font-size: 10px; }
+  .home-dashboard { display: flex; flex-direction: column; height: auto; min-height: 100%; padding: 0 23px 15px; }
+  .today-content { width: 100%; padding-top: 22px; }.chapter-eyebrow { margin-bottom: 9px; }.today-content h1 { font-size: 36px; margin-bottom: 15px; }.today-content h1 br { display: none; }
+  .session-total { font-size: 21px; }.session-breakdown { font-size: 12px; }.daily-overview { margin-top: 20px; }.daily-goals { gap: 14px 18px; }.daily-goals li { font-size: 13px; }
+  .focus-controls { margin-top: 23px; }.focus-labels button { padding: 12px 8px; font-size: 11px; }.focus-controls h2 { font-size: 21px; }
+  .grove-scene { height: 420px; min-height: 420px; width: 100%; }.grove-caption { top: 15px; left: 5%; }.tree-label-mind { left: 0; }.tree-label-health { right: 0; }.tree-label-spirit { left: 40%; bottom: 8%; }
+  .evening-panel { padding: 24px 23px; }.checkin-heading { flex-wrap: wrap; gap: 10px; margin-bottom: 22px; }.checkin-heading h1 { font-size: 33px; }.checkin-subtitle { font-size: 16px; }.day-selector { margin-top: 0; }
+  .checkin-columns { display: flex; flex-direction: column; gap: 30px; }.checkin-name { font-size: 13px; }.checkin-row { padding: 17px 0; }.checkin-progress { width: 100%; }.checkin-journal { padding-bottom: 20px; }.journal-fields { grid-template-columns: 1fr; gap: 16px; }.journal-fields p { min-height: auto; }.journal-input { min-height: 130px; }
+  .focus-clock { transform: scale(.78); margin: -40px; }.focus-session { gap: 35px; }.pager-indicator { font-size: 10px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; }
+  .forest-background-day, .forest-background-night, .tree-xp > span, .label-progress-bar > span { transition: none; }
+  .animate-confetti-burst, .animate-night-drift { animation: none; }
+}
+/* Keep all focus controls visible on common laptop heights. Panels still scroll on smaller windows. */
+@media (min-width:761px) and (max-height:800px) {
+  .home-dashboard { min-height: 510px; padding-top: 0; }
+  .today-content { padding-top: 10px; padding-bottom: 12px; }
+  .chapter-eyebrow { margin-bottom: 10px; }
+  .today-content h1 { font-size: clamp(34px,3.3vw,48px); margin-bottom: 16px; }
+  .daily-overview { margin-top: 19px; }
+  .daily-goals { gap: 10px 20px; margin-top: 10px; }
+  .focus-controls { margin-top: 20px; }
+  .focus-controls h2 { margin-bottom: 10px; }
+  .focus-labels button { padding: 10px 8px; }
+  .start-focus { padding: 11px; }
+  .grove-caption { top: 14px; left: 3%; }
+}
+@media (min-width:761px) and (max-height:800px) {
+  .evening-panel { padding-top: 20px; padding-bottom: 20px; }
+  .checkin-heading { margin-bottom: 19px; }
+  .checkin-heading h1 { font-size: 34px; }
+  .checkin-subtitle { font-size: 16px; }
+  .checkin-summary { margin-top: 8px; }
+  .checkin-columns h2 { font-size: 21px; }
+  .checkin-caption { margin-bottom: 7px; }
+  .checkin-row { padding: 10px 0; }
+  .mood-row { margin-top: 10px; }
+  .journal-fields { gap: 12px 18px; }
+  .journal-input { min-height: 92px; padding: 9px 12px; }
+  .journal-editor > div:first-child { min-height: 17px; margin-bottom: 4px; }
+  .close-day-row { margin-top: 14px; padding-top: 12px; }
+}
+/* Float seed/sprout labels above the tiny plants instead of covering their growth. */
+.tree-label.is-small-tree { transform: translateY(-65px); }
+
+:root[data-theme="dark"] { color-scheme: dark; }
+:root:not([data-theme="dark"]) { color-scheme: light; }
+@media (max-width:760px) {
+  .forest-background-day, .forest-background-night { background-position: 30% center; }
+  .forest-reading-haze { background: linear-gradient(to bottom,color-mix(in srgb,var(--ui-haze) 87%,transparent),color-mix(in srgb,var(--ui-haze) 75%,transparent) 65%,color-mix(in srgb,var(--ui-haze) 35%,transparent)); }
+}
+/* The daily free-writing space and Sunday's reflection share the forest backdrop. */
+.journal-free-writing { grid-column: 1 / -1; }
+.journal-free-writing p { min-height: auto; margin-bottom: 7px; }
+.journal-free-writing .journal-input { min-height: 150px; }
+.sunday-invitation { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; margin-top: 14px; padding: 10px 0; border-top: 1px solid var(--ui-line); border-bottom: 1px solid var(--ui-line); color: var(--stat-spirit); font-size: 12px; font-weight: 800; text-align: left; }
+.sunday-invitation span { color: var(--foreground); font-weight: 700; }
+.sunday-invitation:hover span { text-decoration: underline; }
+.sunday-checkin-note { display: flex; align-items: center; gap: 10px; margin: -8px 0 18px; font-size: 12px; }
+.sunday-checkin-note span { color: var(--stat-spirit); font-weight: 800; text-transform: uppercase; letter-spacing: 1.2px; }
+.sunday-checkin-note button { margin-left: auto; padding: 0; color: var(--stat-spirit); font-weight: 750; white-space: nowrap; }
+.sunday-checkin-note button:hover { text-decoration: underline; }
+.sunday-wrapup { margin-top: 44px; padding: 32px 0 60px; border-top: 1px solid var(--ui-line); scroll-margin-top: 18px; }
+.sunday-wrapup-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 20px; margin-bottom: 28px; }
+.sunday-eyebrow { text-transform: uppercase; letter-spacing: 2px; font-size: 11px; font-weight: 800; color: var(--stat-spirit); }
+.sunday-wrapup-heading h2 { font-size: clamp(28px, 3vw, 44px); line-height: 1.08; letter-spacing: -1.2px; font-weight: 850; margin: 8px 0; }
+.sunday-wrapup-heading p:last-child, .sunday-week-writing > p { font-size: 13px; opacity: .72; }
+.sunday-wrapup-heading > a { white-space: nowrap; padding: 8px 0; font-size: 12px; font-weight: 750; color: var(--stat-spirit); }
+.sunday-wrapup-heading > a:hover { text-decoration: underline; }
+.sunday-wrapup-columns { display: grid; grid-template-columns: 39% 1fr; gap: clamp(30px, 5vw, 76px); }
+.sunday-wrapup-columns h3 { font-size: 20px; font-weight: 800; margin-bottom: 12px; }
+.sunday-week-recap > h3:not(:first-child) { margin-top: 28px; }
+.sunday-stat-list { display: grid; gap: 12px; }
+.sunday-stat-list > div { display: grid; grid-template-columns: 112px 1fr 30px; align-items: center; gap: 12px; font-size: 12px; }
+.sunday-stat-list > div > span { display: flex; align-items: center; gap: 9px; font-weight: 700; }
+.sunday-stat-list svg { color: var(--task-color); }
+.sunday-stat-track { height: 8px; overflow: hidden; background: color-mix(in srgb,var(--foreground) 12%,transparent); border-radius: 20px; }
+.sunday-stat-track > span { display: block; height: 100%; background: var(--task-color); border-radius: inherit; }
+.sunday-stat-list strong { font-variant-numeric: tabular-nums; text-align: right; }
+.sunday-week-recap > svg { max-width: 410px; height: 150px; }
+.sunday-habits { display: grid; gap: 9px; font-size: 12px; }
+.sunday-habits li { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid var(--ui-line); padding-bottom: 7px; }
+.sunday-habits li span:last-child { opacity: .7; white-space: nowrap; }
+.sunday-insight, .sunday-excerpt { font-size: 12px; line-height: 1.6; border-left: 2px solid var(--stat-spirit); padding-left: 12px; margin-top: 24px; }
+.sunday-week-writing > p { margin: -6px 0 16px; }
+.sunday-review-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 18px; }
+.sunday-review-fields > :first-child { grid-column: 1 / -1; }
+.sunday-review-fields > div { display: flex; flex-direction: column; gap: 7px; }
+.sunday-review-fields > div > p { font-size: 12px; font-weight: 700; line-height: 1.45; }
+.sunday-review-fields > .week-free-writing { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 7px; }
+.sunday-review-fields .journal-input { min-height: 110px; flex: 1; }
+.sunday-review-fields > .week-free-writing .journal-input { min-height: 150px; }
+@media (max-width:760px) {
+  .sunday-checkin-note { display: block; line-height: 1.7; }
+  .sunday-checkin-note button { display: block; margin-left: 0; }
+  .sunday-wrapup-heading { align-items: flex-start; flex-direction: column; gap: 7px; }
+  .sunday-wrapup-columns { grid-template-columns: 1fr; }
+  .sunday-review-fields { grid-template-columns: 1fr; }
+  .sunday-review-fields > :first-child, .sunday-review-fields > .week-free-writing { grid-column: auto; }
 }

@@ -1,28 +1,34 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import type { EveningData } from "@/app/actions/evening";
+import type { WeeklyReviewData } from "@/app/actions/week";
+import type { SaveState } from "@/components/useAutosave";
 import { JOURNAL_MIN_WORDS } from "@/core/balance";
-import { countWords } from "@/core/journalCompose";
+import { countJournalWords } from "@/core/journalCompose";
 import type { DayKey } from "@/core/types";
 import { HabitScoreRow } from "./HabitScoreRow";
 import { JournalCard } from "./JournalCard";
 import { LabelProgressRow } from "./LabelProgressRow";
+import { Icon } from "@/components/ui/Icon";
 import { MoodPicker } from "./MoodPicker";
 import { NightSparkle } from "./NightSparkle";
 import { useEveningRitual } from "./useEveningRitual";
+import { SundayWrapUp } from "@/components/week/SundayWrapUp";
 
 type Props = {
   todayKey: DayKey;
-  initialTodayData: EveningData;
+  todayData: EveningData;
+  weeklyData: WeeklyReviewData | null;
+  onTodayDataChange: Dispatch<SetStateAction<EveningData>>;
   /** Dòng "hôm nay tôi đã ở đâu" THẬT, tính trực tiếp từ đồng hồ pomodoro ở trên — xem
    *  DailyScreen.tsx để hiểu vì sao `data.summaryLine` (tự fetch riêng) không đủ. */
   liveTodaySummaryLine: string;
   onXpMightHaveChanged?: () => void;
   /** Truyền THẲNG `timer.backfill` từ DailyScreen — xem useEveningRitual.ts#quickAddSession. */
-  onBackfillOneSession: (labelId: number) => void;
+  onBackfillOneSession: (labelId: number) => Promise<boolean>;
   /** Truyền THẲNG `timer.undoBackfill` từ DailyScreen — xem useEveningRitual.ts#undoOneSession. */
-  onUndoBackfillSession: (labelId: number) => void;
+  onUndoBackfillSession: (labelId: number) => Promise<boolean>;
 };
 
 /**
@@ -31,7 +37,9 @@ type Props = {
  */
 export function EveningPanel({
   todayKey,
-  initialTodayData,
+  todayData,
+  weeklyData,
+  onTodayDataChange,
   liveTodaySummaryLine,
   onXpMightHaveChanged,
   onBackfillOneSession,
@@ -47,19 +55,23 @@ export function EveningPanel({
     quickAddSession,
     undoOneSession,
     close,
+    pending,
+    error,
   } = useEveningRitual({
     todayKey,
-    initialTodayData,
+    todayData,
+    onTodayDataChange,
     onXpMightHaveChanged,
     onBackfillOneSession,
     onUndoBackfillSession,
   });
+  const [journalSaveState, setJournalSaveState] = useState<SaveState>("saved");
   const [justClosed, setJustClosed] = useState(false);
   const summaryLine = selectedDay === "today" ? liveTodaySummaryLine : (data?.summaryLine ?? "");
   // Chặn cứng "Close day" tới khi đủ JOURNAL_MIN_WORDS — [CHỐT — 2026-09-03], cố ý đi ngược
   // nguyên tắc 3 (§2 "dữ liệu chảy vào không bị bơm vào"), chủ dự án đã xác nhận muốn vậy. Đếm
   // trên TOÀN BỘ journalText đã gộp (câu hỏi quan trọng + câu gợi ý), không chỉ ô tự do.
-  const journalWordCount = countWords(data?.journalText ?? "");
+  const journalWordCount = countJournalWords(data?.journalText ?? "");
   const journalWordsMet = journalWordCount >= JOURNAL_MIN_WORDS;
 
   useEffect(() => {
@@ -68,113 +80,59 @@ export function EveningPanel({
     return () => window.clearTimeout(t);
   }, [justClosed]);
 
-  function handleClose() {
-    close();
-    setJustClosed(true);
+  async function handleClose() {
+    if (await close()) setJustClosed(true);
   }
 
+  function jumpToWeek() {
+    const target = document.getElementById("week-wrap-up");
+    const panel = target?.closest(".today-panel");
+    if (target && panel) panel.scrollTo({ top: target.offsetTop, behavior: "smooth" });
+  }
+
+  const tasks = data?.checkIn.filter((item) => item.kind !== "habit_score" || item.threshold !== null) ?? [];
   return (
-    <section className="mx-auto flex w-full max-w-lg flex-col gap-6 px-6 py-16">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold text-foreground">Evening</h2>
-        <div className="flex rounded-full bg-surface-muted p-1 text-sm font-medium">
-          {(
-            [
-              { key: "today", label: "Today" },
-              { key: "yesterday", label: "Yesterday" },
-            ] as const
-          ).map((d) => (
-            <button
-              key={d.key}
-              onClick={() => setSelectedDay(d.key)}
-              className={`rounded-full px-3 py-1 transition-colors ${
-                selectedDay === d.key ? "bg-surface text-foreground shadow-sm" : "text-foreground/50"
-              }`}
-            >
-              {d.label}
-            </button>
-          ))}
+    <section id="evening" className="evening-panel" aria-labelledby="check-in-heading">
+      <div className="checkin-heading">
+        <div><h1 id="check-in-heading">Daily check-in</h1><p className="checkin-subtitle">A moment to reflect.</p><p className="checkin-summary">{summaryLine}</p></div>
+        <div className="day-selector" role="group" aria-label="Check-in day">
+          {([{ key: "today", label: "Today" }, { key: "yesterday", label: "Yesterday" }] as const).map((day) =>
+            <button key={day.key} aria-pressed={selectedDay === day.key} onClick={() => setSelectedDay(day.key)}>{day.label}</button>)}
         </div>
       </div>
-
-      {!data ? (
-        <p className="text-sm text-foreground/50">Loading…</p>
-      ) : (
-        <>
-          <p className="text-sm text-foreground/70">{summaryLine}</p>
-
-          {/* "Check-in" — [MỚI, 2026-09-16] gộp cả nhãn có ngưỡng phiên (English/Deep work/New
-              knowledge) lẫn thói quen chấm điểm (Sport/Sleep) và trạng thái nhật ký vào MỘT
-              danh sách, theo đúng thứ tự đã cấu hình "6 việc" (§4.5) ở Cài đặt — trước đây khối
-              này (tên cũ "Habits") chỉ có hai thói quen, không có chỗ nào hiện số phiên đã làm
-              cho ba nhãn kia. */}
-          <div className="flex flex-col gap-4 rounded-3xl bg-surface p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground/60">Check-in</h3>
+      {weeklyData && <p className="sunday-checkin-note"><span>Sunday</span> Your weekly reflection is ready below today’s check-in. <button type="button" onClick={jumpToWeek}>Jump to week ↓</button></p>}
+      {error && <p role="alert" className="checkin-error">{error}</p>}
+      {!data ? <p role="status">Loading…</p> : <div className="checkin-columns">
+        <div className="checkin-progress">
+          <h2>{selectedDay === "today" ? "Today’s progress" : "Yesterday’s progress"}</h2>
+          <p className="checkin-caption">{tasks.filter((item) => item.done).length} of {tasks.length} daily goals complete</p>
+          <fieldset disabled={pending} className="checkin-items">
+            <legend className="sr-only">Daily tasks and habits</legend>
             {data.checkIn.map((item) => {
-              if (item.kind === "label") {
-                return (
-                  <LabelProgressRow
-                    key={`label-${item.labelId}`}
-                    item={item}
-                    showButtons={selectedDay === "today"}
-                    onAdd={() => quickAddSession(item.labelId)}
-                    onRemove={() => undoOneSession(item.labelId)}
-                  />
-                );
-              }
-              if (item.kind === "journal_status") {
-                return (
-                  <div key="journal-status" className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-medium text-foreground/80">
-                      {item.emoji} {item.name}
-                    </span>
-                    <span className="text-sm text-foreground/60">{item.done ? "Written ✓" : "Not yet"}</span>
-                  </div>
-                );
-              }
-              return (
-                <HabitScoreRow
-                  key={`habit-${item.habitId}`}
-                  habit={item}
-                  onChange={(score) => saveHabitScore(item.habitId, score)}
-                />
-              );
+              if (item.kind === "label") return <LabelProgressRow key={`label-${item.labelId}`} item={item} showButtons={selectedDay === "today"}
+                onAdd={() => quickAddSession(item.labelId)} onRemove={() => undoOneSession(item.labelId)}/>;
+              if (item.kind === "journal_status") return <div key="journal-status" className="checkin-row journal-status" style={{ "--task-color": `var(--stat-${item.stat})` } as React.CSSProperties}>
+                <span className="checkin-name"><Icon name="book"/><span>{item.name}</span></span>
+                <span>{item.done ? "Written ✓" : "Not yet"}</span>
+              </div>;
+              return <HabitScoreRow key={`habit-${item.habitId}`} habit={item} onChange={(score) => saveHabitScore(item.habitId, score)}/>;
             })}
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-3xl bg-surface p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground/60">Mood</h3>
-            <MoodPicker value={data.mood} onChange={saveMood} />
-          </div>
-
-          <div className="flex flex-col gap-3 rounded-3xl bg-surface p-5 shadow-sm">
-            <h3 className="text-sm font-semibold text-foreground/60">Journal</h3>
-            <JournalCard
-              key={data.dayKey}
-              prompt={data.journalPrompt}
-              value={data.journalText}
-              onSave={saveJournal}
-            />
-          </div>
-
-          <div className="relative flex flex-col items-center gap-2">
-            <NightSparkle active={justClosed} />
-            <button
-              onClick={handleClose}
-              disabled={!journalWordsMet}
-              className="w-full rounded-full bg-foreground py-3 text-base font-bold text-background transition-transform active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 disabled:active:scale-100"
-            >
-              {justClosed ? "Good night 🌙" : data.closedAt ? "Day closed ✓ — close again" : "Close day"}
+          </fieldset>
+          <div className="mood-row"><h2>Mood</h2><fieldset disabled={pending}><legend className="sr-only">Your mood</legend><MoodPicker value={data.mood} onChange={saveMood}/></fieldset></div>
+        </div>
+        <div className="checkin-journal" data-no-swipe>
+          <div className="journal-heading"><h2><Icon name="leaf" size={26}/>Journal</h2><span>{journalWordCount} / {JOURNAL_MIN_WORDS} words</span></div>
+          <JournalCard key={data.dayKey} dayKey={data.dayKey} onSaveStateChange={setJournalSaveState} prompt={data.journalPrompt} value={data.journalText} onSave={saveJournal}/>
+          <div className="close-day-row">
+            <NightSparkle active={justClosed}/>
+            <p>{!journalWordsMet ? "Write a little more to close your day." : journalSaveState !== "saved" ? "Your journal needs to be saved first." : "A little growth, one day at a time."}</p>
+            <button onClick={handleClose} disabled={!journalWordsMet || pending || journalSaveState !== "saved"} className="close-day">
+              {pending ? "Saving…" : justClosed ? "Good night 🌙" : data.closedAt ? "Day closed ✓ — close again" : "Close day"}
             </button>
-            {!journalWordsMet && (
-              <p className="text-xs font-medium text-foreground/45">
-                {journalWordCount}/{JOURNAL_MIN_WORDS} words in journal — write a bit more to close the day
-              </p>
-            )}
           </div>
-
-        </>
-      )}
+        </div>
+      </div>}
+      {weeklyData && <SundayWrapUp data={weeklyData}/>}
     </section>
   );
 }

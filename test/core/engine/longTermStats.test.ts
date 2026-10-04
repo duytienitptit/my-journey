@@ -17,7 +17,7 @@ import type { DailyTimelinePoint, RawCompletedSession } from "../../../core/engi
 import type { DayKey, StatKey } from "../../../core/types";
 
 function session(dayKey: DayKey, labelId = 1): RawCompletedSession {
-  return { dayKey, labelId, source: "timer" };
+  return { dayKey, labelId, source: "timer", plannedMinutes: 25 };
 }
 
 function point(dayKey: DayKey, dayAchieved: boolean, xp: Partial<Record<StatKey, number>> = {}): DailyTimelinePoint {
@@ -55,12 +55,12 @@ describe("core/engine/longTermStats — khoá tháng và khung 12 tháng", () =>
 });
 
 describe("core/engine/longTermStats — khối 1 tổng cộng dồn", () => {
-  it("giờ tính theo minutesPerSession truyền vào, KHÔNG phải hằng số 0,5", () => {
+  it("giờ tính theo thời lượng ĐÃ LƯU của từng phiên", () => {
     const sessions = [session("2026-09-01" as DayKey), session("2026-09-01" as DayKey)];
     // 25 + 5 = 30 phút → 2 phiên = 1 giờ
-    expect(lifetimeTotals(sessions, [], 30).totalHours).toBe(1);
-    // Đổi độ dài phiên sang 50 + 5 = 55 phút → cùng 2 phiên nhưng ra giờ khác
-    expect(lifetimeTotals(sessions, [], 55).totalHours).toBeCloseTo(55 / 30, 10);
+    expect(lifetimeTotals(sessions, [], 5).totalHours).toBe(1);
+    // Phiên mới 50 phút không thay đổi thời lượng hai phiên cũ.
+    expect(lifetimeTotals([...sessions, { ...sessions[0], plannedMinutes: 50 }], [], 5).totalHours).toBeCloseTo(1 + 55 / 60, 10);
   });
 
   it("daysAchieved đếm từ dailySeries, không đếm ngày không đạt", () => {
@@ -69,11 +69,11 @@ describe("core/engine/longTermStats — khối 1 tổng cộng dồn", () => {
       point("2026-09-02" as DayKey, false),
       point("2026-09-03" as DayKey, true),
     ];
-    expect(lifetimeTotals([], series, 30).daysAchieved).toBe(2);
+    expect(lifetimeTotals([], series, 5).daysAchieved).toBe(2);
   });
 
   it("chưa có phiên nào → toàn số 0, không lỗi", () => {
-    expect(lifetimeTotals([], [], 30)).toEqual({ totalSessions: 0, totalHours: 0, daysAchieved: 0 });
+    expect(lifetimeTotals([], [], 5)).toEqual({ totalSessions: 0, totalHours: 0, daysAchieved: 0 });
   });
 });
 
@@ -130,7 +130,7 @@ describe("core/engine/longTermStats — khối 5 kỷ lục cá nhân", () => {
       session("2026-09-14" as DayKey),
       session("2026-09-15" as DayKey),
     ];
-    const r = personalRecords(sessions, 12, 30);
+    const r = personalRecords(sessions, 12, 5);
     expect(r.mostSessionsInADay).toEqual({ dayKey: "2026-09-07", sessions: 3 });
     expect(r.mostHoursInAWeek).toEqual({ weekStart: "2026-09-07", hours: 1.5 });
     expect(r.longestDayAchievedStreak).toBe(12);
@@ -138,11 +138,11 @@ describe("core/engine/longTermStats — khối 5 kỷ lục cá nhân", () => {
 
   it("hoà nhau → giữ ngày SỚM NHẤT (kỷ lục thuộc về lần đầu chạm tới)", () => {
     const sessions = [session("2026-09-10" as DayKey), session("2026-09-02" as DayKey)];
-    expect(personalRecords(sessions, 0, 30).mostSessionsInADay?.dayKey).toBe("2026-09-02");
+    expect(personalRecords(sessions, 0, 5).mostSessionsInADay?.dayKey).toBe("2026-09-02");
   });
 
   it("chưa có phiên nào → null chứ không phải số 0 giả", () => {
-    const r = personalRecords([], 0, 30);
+    const r = personalRecords([], 0, 5);
     expect(r.mostSessionsInADay).toBeNull();
     expect(r.mostHoursInAWeek).toBeNull();
   });
@@ -168,7 +168,7 @@ describe("core/engine/longTermStats — khối 6 giờ theo nhãn, theo TUẦN",
       session("2026-09-09" as DayKey, 2),
       session("2026-09-15" as DayKey, 2),
     ];
-    const rows = hoursByLabelPerWeek(sessions, weeks, 30);
+    const rows = hoursByLabelPerWeek(sessions, weeks, 5);
     expect(rows[0].hoursByLabelId.get(1)).toBe(1);
     expect(rows[0].hoursByLabelId.get(2)).toBe(0.5);
     expect(rows[1].hoursByLabelId.get(2)).toBe(0.5);
@@ -177,12 +177,12 @@ describe("core/engine/longTermStats — khối 6 giờ theo nhãn, theo TUẦN",
 
   it("phiên CUỐI TUẦN vẫn thuộc tuần bắt đầu từ Thứ Hai trước đó, không rơi sang tuần sau", () => {
     // 2026-09-13 là Chủ nhật của tuần bắt đầu 2026-09-07.
-    const rows = hoursByLabelPerWeek([session("2026-09-13" as DayKey, 1)], ["2026-09-07"] as DayKey[], 30);
+    const rows = hoursByLabelPerWeek([session("2026-09-13" as DayKey, 1)], ["2026-09-07"] as DayKey[], 5);
     expect(rows[0].hoursByLabelId.get(1)).toBe(0.5);
   });
 
   it("tuần trống vẫn có dòng, map rỗng", () => {
-    const rows = hoursByLabelPerWeek([], ["2026-09-07"] as DayKey[], 30);
+    const rows = hoursByLabelPerWeek([], ["2026-09-07"] as DayKey[], 5);
     expect(rows).toHaveLength(1);
     expect(rows[0].hoursByLabelId.size).toBe(0);
   });

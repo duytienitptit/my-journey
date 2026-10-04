@@ -225,6 +225,44 @@ describe("core/engine/timeline — decay khi bỏ bê (§4.1)", () => {
   });
 });
 
+// [THÊM — 2026-09-16] Cảnh báo "sắp mất điểm" trong khu vườn màn chính (components/forest/ForestGrove.tsx)
+// — chủ dự án yêu cầu sau khi soi kỹ Forest ("or I'll wither!"). Đúng MỘT ngày, ngày ân hạn CUỐI
+// trước khi decayAmountForDay thật sự trừ — không phải cả cửa sổ ân hạn, y hệt ngữ nghĩa
+// dayAchievedStreak.danger ở trên.
+describe("core/engine/timeline — neglectDangerByStat: cảnh báo sắp mất điểm (§4.1, mốc gỡ 3D)", () => {
+  it("đúng ngày ân hạn CUỐI (ngày thứ 3 im lặng) thì cảnh báo bật — trước đó và sau đó thì tắt", () => {
+    const raw = emptyRaw(START);
+    const sessionsNeeded = xpRequiredForLevel(1) / XP_SESSION_COMPLETE;
+    raw.completedSessions = Array.from({ length: sessionsNeeded }, () => session(START, ENGLISH_ID)); // mind cấp 1, rồi im lặng
+
+    const day2 = foldTimeline(raw, endOfDayMs(addDays(START, 2))); // ngày thứ 2 im lặng — còn sớm
+    expect(day2.neglectDangerByStat.mind).toBe(false);
+
+    const day3 = foldTimeline(raw, endOfDayMs(addDays(START, 3))); // ngày thứ 3 — ân hạn CUỐI, chưa bị trừ
+    expect(day3.neglectDangerByStat.mind).toBe(true);
+    expect(day3.xpByStat.mind).toBe(300); // vẫn nguyên, chưa mất gì — đây là CẢNH BÁO, không phải hậu quả
+
+    const day4 = foldTimeline(raw, endOfDayMs(addDays(START, 4))); // ngày thứ 4 — đã mất thật, hết cảnh báo
+    expect(day4.neglectDangerByStat.mind).toBe(false);
+    expect(day4.xpByStat.mind).toBeLessThan(300);
+  });
+
+  it("chỉ số CHƯA TỪNG có điểm thì không cảnh báo dù im lặng bao lâu — không có gì để mất", () => {
+    const raw = emptyRaw(START); // health/spirit không một dòng habit_entries nào
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 3)));
+    expect(result.xpByStat.health).toBe(0);
+    expect(result.neglectDangerByStat.health).toBe(false);
+    expect(result.neglectDangerByStat.spirit).toBe(false);
+  });
+
+  it("chỉ số vẫn hoạt động đều thì không bao giờ cảnh báo", () => {
+    const raw = rawFromAchievedRange(START, addDays(START, 5));
+    const result = foldTimeline(raw, endOfDayMs(addDays(START, 5)));
+    expect(result.neglectDangerByStat.health).toBe(false);
+    expect(result.neglectDangerByStat.spirit).toBe(false);
+  });
+});
+
 describe("core/engine/timeline — chuỗi ngày-đạt: hiển thị tính tới hết hôm qua (§4.6)", () => {
   it("hôm nay vừa đạt lần đầu — chuỗi HIỂN THỊ vẫn là 0 cho tới sáng mai", () => {
     const raw = rawFromAchievedRange(START, START); // chỉ 1 ngày, đúng hôm nay, vừa đạt

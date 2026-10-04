@@ -9,6 +9,70 @@
 
 ---
 
+## Giao diện đã chốt — triển khai 2026-10-02
+
+Mục này thay thế mô tả giao diện cũ mâu thuẫn bên dưới (căn phòng 3D, cây SVG là
+hình chính, check-in cuộn xuống). Các luật XP, level, streak, decay, phiên học, ngủ
+và nhật ký giữ nguyên. Ảnh tham chiếu và tài liệu: `docs/design/README.md`.
+
+- **Today:** một nền rừng liên tục; nội dung và nút hòa vào nền, không bọc các khối
+  trong thẻ trắng. Bên trái: chương/streak, tổng phiên đã hoàn thành hôm nay, số phiên
+  theo nhãn, tiến độ task, chọn nhãn và Start focus/Backfill. Tổng phiên tách rõ với
+  số mục tiêu đạt; chỉ tính phiên `completed`, gồm cả timer và manual.
+- **Check-in tại Today:** vuốt ngang bằng touch/trackpad, kéo chuột hoặc phím trái/phải
+  để chuyển giữa khu rừng và check-in; có hai chấm nhỏ để điều hướng bằng bàn phím.
+  Hai panel luôn được mount để giữ timer và bản nháp. Thao tác trong textarea/nút
+  không kích hoạt kéo trang. Màn thấp/điện thoại cuộn dọc riêng từng panel.
+- **Check-in:** tiến độ, thói quen, mood bên trái; năm ô nhật ký bên phải (ba câu hỏi cố định, một câu gợi ý mỗi ngày và một ô viết tự do riêng), viền nhẹ.
+  Today/Yesterday, autosave và điều kiện Close day 200 từ giữ nguyên; chỉ đếm chữ người dùng viết, không đếm chữ của câu hỏi.
+  Chủ nhật, Today có lối vào “Wrap up your week” và Check-in có phần tổng kết tuần ngay phía dưới phần hằng ngày; dữ liệu tuần và ô tự do dùng cùng bản lưu với trang This week.
+- **Rừng:** Three.js dựng ba cây độc lập và một đảo đất chung; Mind thông lam,
+  Health phong cam, Spirit liễu xanh. Mỗi cây lớn theo cấp thực tế với các mốc
+  `[0,1,3,6,10,15,21]`. Kích thước hình dừng tăng sau cấp 30; số cấp/XP vẫn chính xác.
+  Héo riêng theo neglect; cả rừng ngả vàng khi streak danger; hoa theo streak tối đa 7.
+  Nền raster chỉ là phong cảnh, không chứa cây tiến độ hay chữ. Nếu WebGL không dùng
+  được, hiển thị rừng SVG và giữ nguyên nhãn cấp/XP.
+- **Màu task:** đọc stat được cấu hình, không tự chuyển XP sang chỉ số khác để khớp
+  ảnh minh họa. Nhãn phiên mặc định English/Deep work/New knowledge đều thuộc Mind.
+  Sport/ngủ thuộc Health, Journal thuộc Spirit theo cấu hình hiện tại.
+- **Ngày/đêm:** vẫn tự đổi theo giờ Việt Nam hiện có; thay nền rừng, bảng màu và ánh
+  sáng của cây. Focus mode giữ đồng hồ và Abandon, giao diện nền không tương tác.
+- **Hiệu năng:** tải renderer ở client theo chunk riêng, gộp lá/cỏ bằng instancing,
+  render khi dữ liệu/kích thước/theme thay đổi, không có vòng render chạy liên tục.
+  Tôn trọng reduced motion. Dev preview hỗ trợ cấp cây và ánh sáng mà không ghi DB.
+
+---
+
+## Cập nhật đã chốt — review 2026-10-01
+
+Mục này thay thế các mô tả cũ mâu thuẫn bên dưới. Chủ dự án cho phép sửa lỗi kỹ thuật;
+chưa đổi cơ chế học English, ngưỡng phiên, XP/streak, decay hoặc nhật ký 200 từ. Dự kiến
+bắt đầu dùng thử vào tuần tới; chưa có dữ liệu để kết luận hiệu quả thay đổi thói quen.
+
+- **Ngủ:** thói quen `sleep-enough` hiển thị “Bed before 22:30”, dùng checkbox xác nhận
+  lên giường trước 22:30 giờ Việt Nam. Chỉ tích được cho ngày hiện tại và trước đúng
+  22:30; từ 22:30 trở đi khóa tích, không cho ghi bù hôm qua/sáng hôm sau. Máy chủ kiểm
+  tra lại khi ghi, kể cả tab cũ hoặc đồng hồ client sai. Có thể bỏ tích để sửa nhầm trong
+  cửa sổ hôm nay/hôm qua. Ranh giới ngày 04:00 giữ nguyên.
+- Lưu ngủ bằng score 4 khi tích, 1 khi bỏ tích để tương thích engine/backup cũ; không đổi
+  công thức XP. Ngưỡng đạt task ngủ cố định 4, không cho chỉnh thành một ngưỡng khác.
+  Dữ liệu ngủ cũ được giữ nguyên; không giả định các bản ghi cũ đã được nhập trước 22:30.
+- **Lưu dữ liệu:** chỉ hiện Saved/đóng ngày sau xác nhận máy chủ; nhật ký và review tuần
+  giữ bản nháp local khi lỗi. Dashboard và check-in dùng cùng snapshot đã xác nhận.
+  Khi response timer/ghi bù lỗi, nút Refresh status đọc lại trạng thái, không tự phát lại
+  lệnh cộng/trừ có thể đã được ghi.
+- **Timer:** một phiên đang chạy được bảo đảm ở transaction và unique index trong DB;
+  giờ kết thúc lấy từ deadline đã lưu. Tab quay lại sẽ đồng bộ; qua 04:00 tải lại ngày.
+- **Thống kê giờ:** cộng `plannedMinutes` đã lưu của từng phiên hoàn thành + breakMinutes
+  (mặc định 5). Đổi độ dài timer không làm đổi số phút của các phiên trước đó.
+- **Backup thủ công:** xuất đủ bảng người dùng trong một snapshot; kiểm tra cấu trúc,
+  khóa và tham chiếu trước khi xóa/nhập; toàn bộ import và reset sequence cùng transaction.
+  Nhận backup đầy đủ cũ không có version và version 1. Không thêm backup tự động/login.
+- Ẩn ô Daily session goal chưa được sử dụng trong logic; giữ giá trị cũ trong DB.
+- Font Nunito đi kèm ứng dụng; production build dùng webpack, dev vẫn dùng Turbopack.
+
+---
+
 ## 0. Cách tôi muốn bạn làm việc
 
 Tôi đánh dấu ba loại thông tin trong file này:
@@ -54,7 +118,10 @@ Khi bạn gặp một lựa chọn mà file này không nói rõ, quay lại đ�
 4. **Thống kê không đập vào mặt.** Ban ngày không có biểu đồ. Số liệu sống ở màn hình riêng.
    **[NỚI — 2026-09-16]** Màn chính dashboard có hiện SỐ (còn mấy việc, x/6 hôm nay, cấp ba chỉ
    số, chương) — chủ dự án chủ động yêu cầu, hai lần: khối check-in (16/09 sáng) rồi cả màn
-   dashboard (16/09 tối). Ranh giới còn lại: **vẫn không có BIỂU ĐỒ nào ban ngày**, và mọi thống
+   dashboard (16/09 tối). **[NỚI THÊM — 2026-09-17]** Cấp + XP hiện tại mỗi chỉ số — chủ dự án
+   báo "chưa xem được level cây và số điểm hiện tại", số cấp đảo từ "lui về title (hover)" sang
+   **đọc thẳng trong chữ**, kèm một thanh XP mảnh (không phải biểu đồ) hiện phân số XP còn thiếu
+   trong cấp hiện tại. Ranh giới còn lại: **vẫn không có BIỂU ĐỒ nào ban ngày**, và mọi thống
    kê theo thời gian (xu hướng, heatmap, kỷ lục) vẫn chỉ sống ở `/stats`, `/week`.
 5. **Game phục vụ cuộc sống, không ngược lại.** Phải có nguồn điểm dành riêng cho nghỉ ngơi, để chính cái game không đẩy tôi tới kiệt sức.
 
@@ -383,8 +450,15 @@ cấp, chương hiện tại), một bên là **cây tiến độ** vẽ bằng 
 theo cấp, quả là chuỗi ngày-đạt, lá ngả vàng khi chuỗi vào ngày ân hạn (§4.6). Đồng hồ pomodoro
 vẫn nổi ở trên như cũ, phần ghi nhận cuối ngày vẫn nằm bên dưới cuộn xuống là tới.
 
+**[SỬA — 2026-09-17]** Cây một thân ba nhánh → **khu vườn ba cây ba loài** đứng trên đồng cỏ của
+khu rừng chung cả web (§5.3, §5.7). Khổ rộng: chữ "hôm nay" ở trên-trái (có lớp sương dịu phía sau
+cho dễ đọc), khu vườn ở dưới-phải, chân cây neo đúng mép đồng cỏ ở mọi cỡ màn hình.
+
 Chế độ tập trung: dashboard **mờ hẳn đi và nền chuyển tối** — bắt buộc phải tối, vì đồng hồ đếm
 ngược dùng chữ trắng (xưa nay nền là phòng 3D tối gần đen); để nền sáng thì đồng hồ tàng hình.
+**[SỬA — 2026-09-17]** "Nền tối" giờ là **khu rừng phủ lớp tối gần đen + đom đóm trôi chậm khắp
+màn hình** — đom đóm của mục [THÊM — 2026-09-05] bên dưới sống lại (mất theo phòng 3D ngày 16/09),
+chủ dự án chọn lại qua bản phác.
 
 **Phần trên — lúc tôi làm việc:**
 - Tôi bấm chọn nhãn → Start → màn hình chuyển sang trạng thái tĩnh: số phút đếm ngược, tên nhãn. Nhân vật ngồi vào bàn / cầm tạ / ngồi thiền tuỳ nhãn.
@@ -395,7 +469,11 @@ ngược dùng chữ trắng (xưa nay nền là phòng 3D tối gần đen); đ
   MacBook trong lúc làm việc, không muốn màn hình tối om tuyệt đối. Gần trăm hạt sáng nhỏ trôi
   chậm rãi, nhấp nháy dịu — **rải khắp cả khung hình** (chủ dự án tự xem rồi yêu cầu đổi từ bản
   đầu "chỉ quanh nhân vật, bán kính hẹp" — không đủ "phủ kín"), màu theo đúng màu nhãn đang chạy
-  (giống màu ánh sáng phòng đã có). Đây KHÔNG phải quay lại "vui ở chỗ tập trung" — hạt sáng
+  (giống màu ánh sáng phòng đã có). **[SỬA — 2026-09-17]** Bản khu rừng dùng màu **vàng-xanh của
+  đom đóm thật**, không theo màu nhãn nữa (màu nhãn vốn đi theo "ánh sáng phòng", thứ không còn
+  tồn tại; vòng tròn quanh đồng hồ vẫn mang màu nhãn) — đúng như bản phác chủ dự án đã chọn.
+  Dựng bằng CSS thuần (`components/forest/Fireflies.tsx`), tắt hoạt ảnh khi hệ điều hành bật
+  "giảm chuyển động". Đây KHÔNG phải quay lại "vui ở chỗ tập trung" — hạt sáng
   chuyển động rất chậm, không có âm thanh, không cạnh tranh với đồng hồ đếm ngược (giờ cũng
   **phóng to hơn hẳn** ở giữa); ranh giới là "tĩnh và dịu", chỉ nới rộng, không phải "trống tuyệt
   đối". Chỉ hiện lúc `focusMode` (đồng hồ đang chạy), mờ dần vào/ra chứ không bật tắt đột ngột.
@@ -487,6 +565,49 @@ ngược dùng chữ trắng (xưa nay nền là phòng 3D tối gần đen); đ
 tán theo `sqrt(cấp)` để cấp 30 vẫn vừa khung, quả = chuỗi ngày-đạt (tối đa 7), lá ngả vàng khi
 chuỗi ở ngày ân hạn. Vẽ bằng SVG thuần — không asset, không WebGL, không camera/ánh sáng, tức là
 không còn chỗ nào để hỏng thẩm mỹ như căn phòng.
+
+**[THÊM — 2026-09-16, sau khi soi Habit Tree + Forest]** Mỗi nhánh có **tên mốc** đọc theo cấp
+(Seed → Sprout → Sapling → Young tree → Tree → Mature tree → Ancient tree, bảng tra ở
+`core/balance.ts#TREE_STAGE_NAMES`) thay vì chỉ hiện số cấp trần. Và **cảnh báo sắp mất điểm**
+riêng từng nhánh — nối vào `decay.ts` đã có từ mốc 3 (§4.1): đúng NGÀY ÂN HẠN CUỐI trước khi
+decay thật sự trừ, vòng đứt nét quanh đúng nhánh đó (`core/engine/timeline.ts#neglectDangerByStat`,
+y hệt ngữ nghĩa `dayAchievedStreak.danger` — một ngày, không phải cả cửa sổ ân hạn).
+
+**[SỬA LỚN — 2026-09-17] Cây một thân → khu vườn BA CÂY BA LOÀI** (`components/forest/ForestGrove.tsx`,
+thay `TreeOfProgress.tsx`). Chủ dự án muốn "cây đẹp hơn" và "cả web trông như một khu rừng"; chọn
+qua bản phác (6 màn hình vẽ thật, 3 câu hỏi) cả ba phương án đề xuất. Mỗi chỉ số một cây khác
+loài, đọc được bằng **hình dáng** chứ không chỉ bằng màu:
+- **Mind = cây thông lam** (tầng lá xếp chồng) · **Health = cây phong cam** (tán tròn nhiều chùm)
+  · **Spirit = cây liễu xanh** (vòm tròn, rèm lá rủ).
+- Mỗi cây **tự lớn theo cấp của chính chỉ số đó**, và tên mốc giờ khớp một hình thật: Seed = hạt
+  nảy mầm trên ụ đất · Sprout = mầm hai lá · từ Sapling là cây thật cao dần (cao nhất ở cấp 30,
+  cấp cao hơn vẫn đọc đúng tên mốc) · Ancient thêm rễ nổi.
+- **Chuỗi ngày-đạt = hoa nở dưới gốc** (tối đa 7) — thay cho quả.
+- Chuỗi ở ngày ân hạn = **cả vườn ngả vàng, hoa rũ** (giữ ý "lá ngả vàng" cũ).
+- Sắp mất điểm (ý nghĩa y nguyên đoạn trên) = **riêng cây đó héo nâu, lá rụng quanh gốc** — thay
+  cho vòng đứt nét; chấm màu cạnh tên chỉ số cũng héo theo, câu giải thích vẫn ở `title`.
+- Vẫn SVG thuần, không asset. Mọi màu là biến CSS (`--tree-*` ở `app/globals.css`) nên tự đổi
+  theo chế độ tối.
+
+**[SỬA — 2026-09-17, cùng ngày] Chi tiết cho "cây chưa chân thực".** Bốn kỹ thuật minh hoạ, áp
+dụng cho maple/willow (spruce đã có vân gỗ riêng từ trước):
+- **Gờ loe ở gốc** — mọi cây thật (Sapling trở lên) đều hơi phình ra chỗ thân chạm đất, không
+  cắm thẳng xuống như que.
+- **Vân gỗ** trên thân maple/willow (trước đó chỉ là một mảng màu phẳng).
+- **Tán maple không còn là các vòng tròn hoàn hảo chồng lên nhau** — mỗi chùm lá là một elip
+  lệch góc + dẹt khác nhau (`MAPLE_CLUMPS`), cùng vài chấm lá đậm/nhạt rải trong mỗi chùm.
+- Một nhánh con lú ra khỏi mép tán maple — cây thật không bao giờ có viền lá kín tuyệt đối.
+
+**Số cấp — [SỬA — 2026-09-17, đảo quyết định cũ]** Không còn "lui về `title` (hover)" như bản
+16/09 — chủ dự án báo không xem được, giờ đọc THẲNG trong chữ (`mind · Lv 15 · Mature tree`) kèm
+một thanh XP mảnh (không phải biểu đồ) hiện phân số XP còn thiếu trong cấp hiện tại. Xem nguyên
+tắc 4 (§2, [NỚI THÊM]).
+
+**Công cụ xem trước — CHỈ DEV** (`components/dev/GrovePreviewContext.tsx` + `GrovePreviewWidget.tsx`,
+mount ở `app/layout.tsx`, cùng gate `NODE_ENV` như `TimeTravelWidget`): ô nổi góc dưới-trái cho
+xem hình dạng khu vườn ở bất kỳ cấp/chuỗi/trạng thái héo nào, ĐỔI TỨC THÌ không tải lại trang và
+KHÔNG đụng DB — chỉ ghi đè prop hình ảnh phía client. Dựng theo yêu cầu "cho dữ liệu fake để xem
+cây lớn lên", cố ý không seed dữ liệu (xem CLAUDE.md).
 
 **Ba cơ chế dưới đây MẤT ĐẦU RA HÌNH ẢNH, chưa quyết thay bằng gì** — engine + test của chúng
 GIỮ NGUYÊN, chỉ không còn nơi hiển thị: đồ đạc mở khoá theo cấp (`core/engine/room.ts`), vật phẩm
@@ -622,7 +743,17 @@ Nếu chủ dự án muốn khác (vd. có thêm đường "gộp") thì đổi 
 ### 5.7 Ngôn ngữ thiết kế tôi muốn
 
 - Nền màu **ấm** (kem/be), không trắng tinh, không đen tuyền. Có chế độ tối cho buổi đêm.
-- Bo góc lớn, bóng mềm, chữ tròn dễ chịu.
+  **[SỬA — 2026-09-17] Cả web là MỘT KHU RỪNG** — chủ dự án yêu cầu, chọn "rừng nhiều lớp mọi
+  trang" (không chọn "chỉ đổi tông màu") qua bản phác: nền kem ngả rêu, chữ xanh rêu đậm; phía sau
+  MỌI trang là ba rặng rừng xa mờ → gần đậm, sương giữa các rặng, đồng cỏ phía trước
+  (`components/forest/ForestBackdrop.tsx`, mount một lần ở `app/layout.tsx`). Thẻ nội dung nổi
+  lên trên như trang giấy; bố cục và số liệu các trang không đổi. Ban ngày có nắng xiên; chế độ tối
+  thành **rừng đêm** — cùng hình khối, trăng + sao hiện ra. Mọi màu của cảnh nằm ở biến CSS
+  `--forest-*`/`--tree-*`, không rải hex trong component.
+- Bo góc lớn, bóng mềm, chữ tròn dễ chịu. **[THÊM — 2026-09-17]** Mọi `input`/`textarea`/`select`
+  trong toàn app focus ra viền dịu (`foreground/20`) thay vì viền mặc định chói của trình duyệt,
+  và input số ẩn nút tăng/giảm vuông vức mặc định (`app/globals.css`, lớp `base`) — bắt gặp lúc
+  chủ dự án gửi ảnh popup tài sản với viền cam gắt.
 - **Emoji là công dân hạng nhất** — mỗi nhãn, mỗi thói quen đều có emoji riêng.
 - Hoạt ảnh **chỉ ở khoảnh khắc chuyển tiếp**: nút nảy nhẹ khi bấm, pháo giấy nhỏ khi xong phiên, thẻ trượt vào khi mở phần buổi tối.
 - **Viết lời trong app như người nói chuyện, đừng như phần mềm.** *"Xong rồi, nghỉ chút đi"* chứ không phải *"Phiên đã hoàn tất"*.

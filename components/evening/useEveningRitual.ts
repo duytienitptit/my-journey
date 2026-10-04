@@ -1,162 +1,104 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { now } from "@/core/clock";
+import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 import { addDays } from "@/core/day";
 import type { DayKey } from "@/core/types";
 import {
-  closeDayAction,
-  getEveningDataAction,
-  saveHabitScoreAction,
-  saveJournalAction,
-  saveMoodAction,
-  type EveningData,
+  closeDayAction, getEveningDataAction, saveHabitScoreAction, saveJournalAction,
+  saveMoodAction, type EveningData,
 } from "@/app/actions/evening";
 
-/**
- * Nghi thức tối — SPEC.md §5.1 phần dưới. Ghi bù cho nghi thức tối được tới hôm nay HOẶC hôm
- * qua (§4.11), khác phiên pomodoro (chỉ hôm nay) — vì vậy có `selectedDay`, còn đồng hồ
- * (useSessionTimer) thì không.
- */
-
 export type SelectedDay = "today" | "yesterday";
-
 type Props = {
   todayKey: DayKey;
-  /** Dữ liệu "today" đã tải sẵn từ Server Component — khỏi phải xin lại ngay lúc mở trang. */
-  initialTodayData: EveningData;
-  /** Gọi sau habit/journal/close — ba việc có thể đổi XP (§4.4). Tâm trạng KHÔNG đổi XP nên
-   *  saveMood không gọi. Xem components/stats/useComputedStats.ts. */
+  todayData: EveningData;
+  onTodayDataChange: Dispatch<SetStateAction<EveningData>>;
   onXpMightHaveChanged?: () => void;
-  /** Ghi bù NHANH đúng 1 phiên cho một nhãn — nút "+" trong khối check-in (SPEC.md §5.1, [MỚI —
-   *  2026-09-16]). Thật ra là `timer.backfill(labelId, 1)` truyền từ DailyScreen xuống, KHÔNG
-   *  phải một đường ghi phiên riêng — dùng lại đúng cơ chế ghi bù đã có (chỉ tính cho HÔM NAY,
-   *  §4.3) để dải chấm phiên ở đầu trang cũng thấy chấm mới ngay, không lệch với khối này. */
-  onBackfillOneSession: (labelId: number) => void;
-  /** Undo "+" lỡ bấm thừa — nút "−" trong khối check-in ([MỚI — 2026-09-16, cùng ngày]). Thật ra
-   *  là `timer.undoBackfill(labelId)` truyền từ DailyScreen xuống, cùng lý do với
-   *  `onBackfillOneSession` ở trên. */
-  onUndoBackfillSession: (labelId: number) => void;
+  onBackfillOneSession: (labelId: number) => Promise<boolean>;
+  onUndoBackfillSession: (labelId: number) => Promise<boolean>;
 };
 
-export function useEveningRitual({
-  todayKey,
-  initialTodayData,
-  onXpMightHaveChanged,
-  onBackfillOneSession,
-  onUndoBackfillSession,
-}: Props) {
+/** Today's dashboard and check-in share one snapshot; the editor owns its unsaved draft. */
+export function useEveningRitual({ todayKey, todayData, onTodayDataChange, onXpMightHaveChanged, onBackfillOneSession, onUndoBackfillSession }: Props) {
   const yesterdayKey = addDays(todayKey, -1);
   const [selectedDay, setSelectedDay] = useState<SelectedDay>("today");
-  const [dataByDay, setDataByDay] = useState<Record<SelectedDay, EveningData | null>>({
-    today: initialTodayData,
-    yesterday: null,
-  });
-
+  const [yesterday, setYesterday] = useState<EveningData | null>(null);
+  const [pending, setPending] = useState(0);
+  const [error, setError] = useState<string | null>(null);
   const dayKey = selectedDay === "today" ? todayKey : yesterdayKey;
-  const data = dataByDay[selectedDay];
+  const data = selectedDay === "today" ? todayData : yesterday;
 
-  // Chuyển sang "Hôm qua" lần đầu — tải dữ liệu ngày đó. Đây là cách DUY NHẤT lấy dữ liệu từ
-  // bên ngoài (server) khi tôi đổi tab, không có lựa chọn nào khác ngoài effect.
   useEffect(() => {
-    if (dataByDay[selectedDay]) return;
+    if (selectedDay !== "yesterday" || yesterday) return;
     let cancelled = false;
-    void getEveningDataAction(selectedDay === "today" ? todayKey : yesterdayKey).then((fresh) => {
-      if (cancelled) return;
-      setDataByDay((prev) => ({ ...prev, [selectedDay]: fresh }));
-    });
-    return () => {
-      cancelled = true;
-    };
-  }, [selectedDay, todayKey, yesterdayKey, dataByDay]);
+    void getEveningDataAction(yesterdayKey).then((fresh) => {
+      if (!cancelled) setYesterday(fresh);
+    }).catch(() => { if (!cancelled) setError("Could not load yesterday. Select Today, then try again."); });
+    return () => { cancelled = true; };
+  }, [selectedDay, yesterday, yesterdayKey]);
 
-  function patch(patchFn: (d: EveningData) => EveningData) {
-    setDataByDay((prev) => {
-      const current = prev[selectedDay];
-      if (!current) return prev;
-      return { ...prev, [selectedDay]: patchFn(current) };
-    });
+  async function refreshDay(key: DayKey) {
+    const fresh = await getEveningDataAction(key);
+    if (key === todayKey) onTodayDataChange(fresh);
+    else setYesterday(fresh);
   }
 
-  function saveHabitScore(habitId: number, score: number) {
-    patch((d) => ({
-      ...d,
-      checkIn: d.checkIn.map((item) =>
-        item.kind === "habit_score" && item.habitId === habitId
-          ? { ...item, score, done: item.threshold !== null && score >= item.threshold }
-          : item,
-      ),
-    }));
-    void saveHabitScoreAction(habitId, dayKey, score).then(() => onXpMightHaveChanged?.());
+  async function commit(action: () => Promise<unknown>, key: DayKey, xp: boolean, throwOnError = false) {
+    setPending((n) => n + 1);
+    setError(null);
+    try {
+      await action();
+      await refreshDay(key);
+      if (xp) onXpMightHaveChanged?.();
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save. Please try again.");
+      if (throwOnError) throw err;
+      return false;
+    } finally { setPending((n) => n - 1); }
   }
 
-  /** Bấm "+" trên một dòng nhãn trong khối check-in — cộng lạc quan NGAY 1 phiên vào đúng dòng
-   *  đó rồi gọi `onBackfillOneSession` (= `timer.backfill(labelId, 1)` thật) để ghi xuống DB và
-   *  cập nhật dải chấm/chuỗi ở đầu trang. Chỉ áp dụng cho "Hôm nay" — ghi bù phiên không có khái
-   *  niệm "hôm qua" (§4.3); nút "+" đã ẩn ở tab "Hôm qua" phía UI, chặn thêm ở đây cho chắc vì
-   *  `onBackfillOneSession` LUÔN ghi vào ngày hôm nay THẬT bất kể đang xem tab nào.
-   */
-  function quickAddSession(labelId: number) {
+  async function saveHabitScore(habitId: number, score: number) {
+    await commit(() => saveHabitScoreAction(habitId, dayKey, score), dayKey, true);
+  }
+  async function saveMood(mood: number) {
+    await commit(() => saveMoodAction(dayKey, mood), dayKey, false);
+  }
+  async function saveJournal(text: string) {
+    setError(null);
+    try {
+      // Editing an existing entry changes neither XP nor the weekly metrics. Keep the
+      // confirmed text local instead of refetching the whole day and all computed stats.
+      const savedText = await saveJournalAction(dayKey, text, data?.journalPrompt?.id ?? null);
+      const hadJournal = Boolean(data?.journalText.trim());
+      const hasJournal = Boolean(savedText.trim());
+      const applySavedText = (previous: EveningData): EveningData => ({
+        ...previous,
+        journalText: savedText,
+        checkIn: previous.checkIn.map((item) => item.kind === "journal_status" ? { ...item, done: hasJournal } : item),
+      });
+      if (dayKey === todayKey) onTodayDataChange(applySavedText);
+      else setYesterday((previous) => previous ? applySavedText(previous) : previous);
+      if (hadJournal !== hasJournal) onXpMightHaveChanged?.();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not save. Please try again.");
+      throw err;
+    }
+  }
+  async function quickAddSession(labelId: number) {
     if (selectedDay !== "today") return;
-    patch((d) => ({
-      ...d,
-      checkIn: d.checkIn.map((item) =>
-        item.kind === "label" && item.labelId === labelId
-          ? { ...item, count: item.count + 1, manualCount: item.manualCount + 1, done: item.count + 1 >= item.threshold }
-          : item,
-      ),
-    }));
-    onBackfillOneSession(labelId);
+    await commit(async () => {
+      if (!await onBackfillOneSession(labelId)) throw new Error("Could not confirm the save. Refresh status and check today’s count before adding again.");
+    }, todayKey, false);
   }
-
-  /** Bấm "−" trên một dòng nhãn — undo ĐÚNG 1 phiên ghi bù (source=manual) MỚI NHẤT của nhãn đó,
-   *  hôm nay. `manualCount > 0` là điều kiện DUY NHẤT cho phép trừ lạc quan — nếu đã về 0 thì
-   *  không còn phiên ghi bù nào để xoá (UI đã tự disable nút, xem LabelProgressRow.tsx); giữ
-   *  điều kiện này ở cả hai nơi để state lạc quan không bao giờ lệch khỏi DB thật. Không bao giờ
-   *  đụng phiên THẬT từ đồng hồ — xem db/queries.ts#undoLastManualSession.
-   */
-  function undoOneSession(labelId: number) {
+  async function undoOneSession(labelId: number) {
     if (selectedDay !== "today") return;
-    patch((d) => ({
-      ...d,
-      checkIn: d.checkIn.map((item) =>
-        item.kind === "label" && item.labelId === labelId && item.manualCount > 0
-          ? { ...item, count: item.count - 1, manualCount: item.manualCount - 1, done: item.count - 1 >= item.threshold }
-          : item,
-      ),
-    }));
-    onUndoBackfillSession(labelId);
+    await commit(async () => {
+      if (!await onUndoBackfillSession(labelId)) throw new Error("Could not confirm removal. Refresh status and check today’s count before removing again.");
+    }, todayKey, false);
   }
-
-  function saveMood(mood: number) {
-    patch((d) => ({ ...d, mood }));
-    void saveMoodAction(dayKey, mood); // không đổi XP (§4.4) — không gọi onXpMightHaveChanged
+  async function close() {
+    return commit(() => closeDayAction(dayKey), dayKey, true);
   }
-
-  function saveJournal(text: string) {
-    patch((d) => ({ ...d, journalText: text }));
-    void saveJournalAction(dayKey, text, data?.journalPrompt?.id ?? null).then(() => onXpMightHaveChanged?.());
-  }
-
-  function close() {
-    const closedAtOptimistic = now(); // chỉ để hiện UI ngay — giá trị thật lấy từ server bên dưới
-    patch((d) => ({ ...d, closedAt: closedAtOptimistic }));
-    void closeDayAction(dayKey).then((realClosedAt) => {
-      patch((d) => ({ ...d, closedAt: realClosedAt }));
-      onXpMightHaveChanged?.();
-    });
-  }
-
-  return {
-    selectedDay,
-    setSelectedDay,
-    dayKey,
-    data,
-    saveHabitScore,
-    saveMood,
-    saveJournal,
-    quickAddSession,
-    undoOneSession,
-    close,
-  };
+  return { selectedDay, setSelectedDay, dayKey, data, pending: pending > 0, error, saveHabitScore, saveMood, saveJournal, quickAddSession, undoOneSession, close };
 }

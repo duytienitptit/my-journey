@@ -31,6 +31,8 @@ export const SESSION_MINUTES_DEFAULT = 25;
 
 /** Nghỉ ngắn sau mỗi phiên. Không có nghỉ dài — bỏ ngày 2026-09-02, SPEC.md §11.3 câu S4. */
 export const BREAK_MINUTES_DEFAULT = 5;
+/** Bedtime check-in closes strictly before 22:30, Vietnam time. */
+export const BEDTIME_CUTOFF = "22:30";
 
 // ─── §5.1 · Mục tiêu ngày ────────────────────────────────────────────────
 
@@ -192,6 +194,29 @@ export const CHAPTER_NAMES: readonly string[] = [
   "House with a garden", // Ch.11
   "Large house with a garden", // Ch.12 — "Trưởng thành"
 ];
+
+// ─── Cây tiến độ (màn chính, mốc "gỡ 3D" 2026-09-16) ───────────────────────
+
+/**
+ * Tên mốc lớn lên của cây, tra theo NGƯỠNG CẤP (không phải chỉ số mảng trực tiếp như
+ * `CHAPTER_NAMES` — cấp không đi liền số 0,1,2... như chương). Đi cùng
+ * `TREE_STAGE_LEVEL_THRESHOLDS` ngay dưới: cấp ở vị trí `i` trở lên thì mang tên `i`.
+ * Ảnh hưởng chữ hiển thị + HÌNH cây ở khu vườn màn chính (`components/forest/ForestGrove.tsx`,
+ * [SỬA — 2026-09-17]: mốc 0 vẽ thành hạt nảy mầm, mốc 1 thành mầm hai lá, từ mốc 2 là cây thật,
+ * mốc cuối thêm rễ nổi) — không có hệ quả luật chơi nào, đây chỉ là CÁCH ĐỌC con số cấp.
+ */
+export const TREE_STAGE_NAMES: readonly string[] = [
+  "Seed", // cấp 0
+  "Sprout", // cấp 1-2
+  "Sapling", // cấp 3-5
+  "Young tree", // cấp 6-9
+  "Tree", // cấp 10-14
+  "Mature tree", // cấp 15-20
+  "Ancient tree", // cấp 21+
+];
+
+/** Cùng độ dài với `TREE_STAGE_NAMES` — phần tử `i` là cấp THẤP NHẤT mang tên `TREE_STAGE_NAMES[i]`. */
+export const TREE_STAGE_LEVEL_THRESHOLDS: readonly number[] = [0, 1, 3, 6, 10, 15, 21];
 
 // ─── §4.11 · Ghi bù ──────────────────────────────────────────────────────
 

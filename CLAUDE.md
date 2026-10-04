@@ -14,6 +14,13 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
 
 ## Trạng thái hiện tại
 
+- **Review 2026-10-01:** xem phần cập nhật đầu `SPEC.md` và `REVIEW-2026-09-30.md`.
+  Giữ cơ chế học/XP/nhật ký; ngủ là checkbox chỉ tích trước 22:30 VN (server kiểm tra).
+  Đã sửa an toàn import, lưu nháp, đồng bộ check-in, timer nhiều tab, giờ lịch sử và build.
+  Test DB chỉ chạy trên database local riêng `myjourney_review_<date>`; không seed/xóa
+  dữ liệu thật để QA. Các ghi chú bên dưới là lịch sử, ưu tiên cập nhật mới trong SPEC.
+
+
 - Giai đoạn: **xong mốc 1, 2, 3, 4, 5, 6, 7 (một phần), 8a, 8b — TOÀN BỘ 8 mốc gốc coi như xong**,
   kế hoạch đã duyệt ngày 2026-09-02 — xem `.claude/plans/h-y-l-n-1-plan-glimmering-clock.md`. Còn
   nợ đúng một việc lớn: đổi phong cách 3D (xem "Còn nợ" bên dưới), không thuộc 8 mốc gốc.
@@ -522,17 +529,261 @@ nguồn sự thật duy nhất. Đọc `SPEC.md` trước mọi việc, đặc b
   `tsc`/`eslint`/329 test/`npm run build` sạch. Đã soi bằng mắt: màn chính (sáng + tối), chế độ
   tập trung (ép bật tạm rồi hoàn tác, KHÔNG tạo phiên rác trong DB thật), trang Cài đặt.
 
+- **2026-09-16 (tiếp): soi Habit Tree + Forest thật, thêm 2 ý vào cây.** Chủ dự án nhờ tìm 10
+  web/app "giao diện cây" tham khảo — đã tìm bằng WebSearch (không bịa từ trí nhớ) + tự mở xem
+  bằng mắt qua trình duyệt (screenshot thật của App Store, không chỉ đọc mô tả) hai cái chủ dự án
+  thích nhất: **Habit Tree** (mỗi thói quen có nhãn "Habit Level: Seed → Sprout") và **Forest**
+  (49K đánh giá 4.8 sao — rừng isometric + câu "Stay focused, or I'll wither!"). Đề xuất 5 ý, hỏi
+  2 câu AskUserQuestion trước khi code (khoảnh khắc lớn lên lúc đang chạy phiên đụng thẳng nguyên
+  tắc 1 §2 "tĩnh ở chỗ tập trung" — chủ dự án chọn **KHÔNG đụng chế độ tập trung**, giữ nguyên; và
+  chọn làm 2/4 ý còn lại trước: **tên mốc lớn lên** + **cảnh báo sắp mất điểm**, bỏ hình dạng
+  khác theo nhánh và nở hoa lúc lên cấp cho sau).
+
+  **Tên mốc (từ Habit Tree):** `TREE_STAGE_NAMES` + `TREE_STAGE_LEVEL_THRESHOLDS` mới trong
+  `core/balance.ts` (Seed → Sprout → Sapling → Young tree → Tree → Mature tree → Ancient tree) —
+  ĐÚNG khuôn `CHAPTER_NAMES` đã có (mảng tên hiển thị thuần, không hệ quả luật chơi). Hàm tra
+  `treeStageNameForLevel()` đặt trong `TreeOfProgress.tsx`, không phải `core/engine/` — không có
+  hệ quả game nào, chỉ là CÁCH ĐỌC số cấp, cùng lớp với `canopyRadius()` đã có. Số cấp CHÍNH XÁC
+  lui về `title` (hover) — đúng bài học đã ghi sẵn trong chính file `TimerOverlay.tsx` cho số dài
+  nhất của chuỗi ("số dài nhất xem qua title").
+
+  **Cảnh báo sắp mất điểm (từ Forest):** nối vào `core/engine/decay.ts` ĐÃ CÓ SẴN từ mốc 3
+  (§4.1) — trước đó engine tính đúng nhưng KHÔNG BÁO GÌ TRƯỚC, cây chỉ lặng lẽ nhỏ lại sau khi
+  đã mất, chủ dự án phải tự đoán. `foldTimeline` (timeline.ts) MỞ RỘNG thêm
+  `neglectDangerByStat: Record<StatKey, boolean>`, tính trong CHÍNH vòng lặp decay đã có (không
+  pass thứ hai) — `true` ĐÚNG một ngày, ngày ân hạn CUỐI trước khi trừ thật (y hệt ngữ nghĩa
+  `dayAchievedStreak.danger`, không phải cả cửa sổ 3 ngày). Chặn thêm `xpByStat[stat] > 0` — chỉ
+  số CHƯA TỪNG có điểm (level 0, chưa đụng bao giờ) không cảnh báo, vì không có gì để mất, cảnh
+  báo lúc đó chỉ gây nhiễu. `ComputedStats` thêm field cùng tên, `TreeOfProgress.tsx` vẽ vòng
+  đứt nét màu nâu-cam RIÊNG nhánh đó (`NEGLECT_WARNING = "#b5754a"`) — CỐ Ý khác màu vàng của
+  `danger` (chuỗi ngày-đạt gãy, phủ CẢ cây) để hai cảnh báo không lẫn: một cái là "cả ngày hôm
+  nay chưa đạt", cái kia là "một chỉ số cụ thể sắp bị trừ điểm", có thể xảy ra độc lập nhau.
+
+  3 test mới (`timeline.test.ts`, tổng 332) — cả ba PASS ngay lần chạy đầu: đúng ngày thứ 3 im
+  lặng thì bật, ngày thứ 4 thì tắt (đã mất thật, hết cảnh báo) và XP vẫn nguyên lúc đang cảnh
+  báo (chứng minh đây là cảnh báo TRƯỚC, không phải hậu quả); chỉ số chưa từng có điểm thì không
+  bao giờ cảnh báo; chỉ số hoạt động đều thì không cảnh báo.
+
+  QA hình ảnh: ép tạm `neglectDangerByStat={{mind:true,...}}` trực tiếp trong `DailyScreen.tsx`
+  (giống cách đã kiểm chế độ tập trung lúc chiều) — thấy đúng vòng đứt nét quanh nhánh + chấm màu
+  đổi ở dòng chữ, KHÔNG đụng DB (không cần DB tạm riêng cho việc này, chỉ là prop giả trên UI đã
+  render) — chụp xong hoàn tác về `stats.neglectDangerByStat` thật ngay trong cùng lượt.
+  `tsc`/`eslint`/332 test/`npm run build` sạch cả trước và sau khi hoàn tác.
+
+  **[CHƯA HỎI]** Câu chữ tooltip cảnh báo ("One more day and it starts losing ground.") là Claude
+  tự viết theo giọng trung tính đã có (không phải giọng trách móc §4.12, chưa cần duyệt riêng
+  theo §11.5) — nhưng chưa hỏi tách riêng, có thể đổi nếu chủ dự án không thích.
+
+- **2026-09-16 (tiếp): vẽ lại hẳn cây + bố cục — chủ dự án nói thẳng "giao diện vẫn chưa thay
+  đổi nhiều".** Đúng — hai việc lượt trước (tên mốc, cảnh báo sắp mất điểm) là tinh chỉnh CHỮ,
+  không phải hình. Tự soi lại bằng mắt khó tính hơn, thấy hai vấn đề thật, không phải đoán:
+
+  **1. Cây chỉ là hình học, chưa phải minh hoạ.** Viết lại `TreeOfProgress.tsx`: mỗi nhánh giờ
+  là một CỤM nhiều vòng tròn chồng nhau (kỹ thuật "tán bông" của minh hoạ phẳng, `roundBlobs`/
+  `conicalBlobs`/`softBlobs`) thay vì 1 vòng tròn đơn — và **hình dạng cụm khác nhau theo chỉ
+  số**: mind = tán tròn rộng, health = ba tầng nhọn dần lên kiểu lá kim/thông, spirit = cụm nhỏ
+  mềm + hai chấm "hoa" điểm xuyết. Thêm `radialGradient` trên từng vòng lá (sáng trên-trái, tối
+  dưới-phải → có độ nổi thật) + quầng sáng dịu phía sau cả cây (`currentColor` kế thừa từ
+  `text-foreground/40`, TỰ đổi đậm/nhạt theo chế độ sáng/tối, không hardcode) + thân cây có độ
+  thon + hai vệt vân gỗ mờ thay vì hình chữ nhật phẳng. Không bị giới hạn "không gradient" như
+  công cụ phác thảo mockup — đây là code thật của app.
+
+  **2. Bố cục để trống hơn nửa màn hình trên khổ máy tính thật.** Container dùng đệm dọc CỐ ĐỊNH
+  (`pb-72`/`pt-20`) và cây cỡ REM CỐ ĐỊNH (26rem) — trên màn rộng (đo thật ở khổ giả lập 1440×900
+  qua `window.innerWidth/innerHeight` + `getBoundingClientRect()`, KHÔNG phải đoán qua ảnh chụp
+  vì ảnh chụp ở khổ giả lập bị lỗi hiển thị của chính công cụ Browser pane — toạ độ JS đúng nhưng
+  ảnh không khớp, phải học cách này giữa chừng) nội dung bị đẩy lệch lên trên, cây không lớn thêm
+  dù còn thừa rất nhiều chỗ. Sửa: cây dùng `min(62vh, 34rem)` (co theo chiều cao khung nhìn, có
+  trần) thay vì rem cố định; chữ tăng cỡ (`text-6xl` ở khổ rộng). **Bẫy lúc sửa — lộ ra SAU khi
+  sửa bố cục rộng:** đệm dưới giảm quá tay làm CỤM START (nền đặc) ĐÈ LÊN che mất dòng "hôm nay"/
+  chỉ số ở khổ HẸP (xếp dọc: cây cộng dồn chiều cao với khối chữ, khác khổ rộng là cây với chữ
+  nằm CẠNH nhau) — hai khổ phải tự soi RIÊNG, không suy luận khổ này ra khổ kia. Cây khổ hẹp giờ
+  dùng số nhỏ hơn hẳn khổ rộng (`34vh`, trần `14rem`) để chắc chắn không tràn qua vùng cụm Start.
+
+  Đã soi cả hai khổ (hẹp = khổ tự nhiên của Browser pane, rộng = giả lập 1440×900 kiểm bằng JS
+  vì ảnh chụp không đáng tin ở khổ này) + cả sáng/tối (bật tạm `data-theme='light'` qua JS, xem
+  xong xoá thuộc tính để `NightModeSync` tự set lại đúng giờ thật trong vòng poll kế tiếp — không
+  đụng DB, không cần khôi phục gì thêm). `tsc`/`eslint`/332 test/`npm run build` sạch.
+
+- **2026-09-17: đánh bóng thêm cây — chủ dự án "mọi thứ đều ổn rồi, sửa cây cho đẹp hơn".**
+  Năm tinh chỉnh trên `TreeOfProgress.tsx`, đều kiểm bằng ép cấp cao tạm thời (`mind:8/health:14/
+  spirit:3`) rồi hoàn tác — ở cấp 0 (seed) các cụm quá nhỏ để soi được khác biệt:
+  - **Hình nón health đọc SAI** — bản hôm qua vẫn quá RỘNG NGANG (dx tới ±0.5), hoà lẫn vào một
+    cụm tròn giống hệt mind. Thu hẹp ngang, kéo dài dọc — giờ đúng là hình lá kim thon cao, phân
+    biệt rõ với mind (tròn xoè) ngay cả ở cỡ nhỏ.
+  - Bóng mềm dưới mỗi cụm tán (lệch xuống-phải, `opacity 0.14`) — tách tán khỏi nhánh/nền phía
+    sau, đỡ cảm giác "dán phẳng".
+  - Cỏ THẬT hơn — bản đầu 4 nét cong đơn lẻ trông như dấu nháy đơn. Giờ mỗi bụi là 3 lá toả từ
+    một gốc, nhiều bụi hơn quanh mép đất, màu xanh lục CỐ Ý hardcode (không theo token trung tính
+    như mọi nét khác — cỏ vốn dĩ phải xanh dù sáng hay tối).
+  - Hai chi tiết nhỏ ở gốc — một cây nấm đỏ chấm trắng, một bông hoa — theo đúng gợi ý "chi tiết
+    nhỏ đáng yêu" rút ra lúc soi Kinder World tham khảo trước đó.
+  - Hai đốm sáng tĩnh kiểu sương mai trên tán — CHỈ hai, không hoạt ảnh/nhấp nháy, đúng nguyên
+    tắc 1 (§2) "tĩnh và dịu".
+
+  `tsc`/`eslint`/332 test/`npm run build` sạch.
+
+- **2026-09-17 (tiếp): CẢ WEB THÀNH MỘT KHU RỪNG + cây một thân → khu vườn ba cây ba loài.**
+  Chủ dự án: *"sửa lại giao diện cây để trông đẹp hơn, cũng như giao diện toàn bộ website để trông
+  giống như 1 khu rừng"*. (Năm tinh chỉnh `TreeOfProgress.tsx` ở mục ngay trên đã bị THAY THẾ hẳn
+  trong cùng ngày — file đó đã xoá.)
+
+  **Cách chốt:** phạm vi rộng (mọi trang) nên KHÔNG code ngay — dựng một trang phác thảo vẽ THẬT
+  bằng SVG (6 màn hình: màn chính ngày/đêm, sau vài tháng + cây héo, chế độ tập trung có đom đóm
+  chuyển động, trang phụ, hai cách vẽ cây lớn dần theo thời gian), tự soi và sửa 4 lỗi trong bản
+  phác trước khi đưa (cây liễu trông như con sứa, cây thông quá "hình học", hạt giống gần như vô
+  hình, chữ bên trái chìm vào rừng), rồi hỏi 3 câu. Chủ dự án chọn CẢ BA phương án đề xuất:
+  **rừng nhiều lớp mọi trang** (không chọn "chỉ đổi tông màu") · **ba cây ba loài** (không chọn
+  "một cây vẽ lại") · **tập trung = rừng đêm + đom đóm** (không chọn "nền tối trơn").
+
+  **Đã dựng (`components/forest/`, mới):**
+  - `ForestBackdrop.tsx` + `forestShapes.ts` — ba rặng rừng xa mờ → gần đậm, sương, đồng cỏ, dương
+    xỉ; hình học tạo MỘT lần bằng PRNG có hạt giống (không `Math.random`), mỗi rặng gộp thành MỘT
+    path (mọi hình con cùng chiều kim đồng hồ — ngược chiều là thủng lỗ với luật `nonzero`).
+    Mount ở `app/layout.tsx`: `fixed` đứng trước, nội dung trang bọc `<div className="relative">`
+    đứng sau — KHÔNG dùng z-index âm (xem lý do ghi ngay trong layout.tsx). Năm trang phụ bỏ
+    `bg-background` ở `<main>` để lộ rừng; thẻ `bg-surface` giữ nguyên nên chữ vẫn trên nền đặc.
+  - `ForestGrove.tsx` — Mind = thông lam, Health = phong cam, Spirit = liễu xanh; Seed = hạt nảy
+    mầm, Sprout = mầm hai lá, từ Sapling là cây thật (cao nhất ở cấp 30), Ancient thêm rễ nổi — mốc
+    tra bằng `TREE_STAGE_LEVEL_THRESHOLDS` chứ không hardcode 0/1/3. Chuỗi = hoa (thay quả); ân hạn
+    = cả vườn ngả vàng + hoa rũ; sắp mất điểm = RIÊNG cây đó héo nâu + lá rụng (thay vòng đứt nét).
+    Chân cây/cỏ/hoa đặt bằng `knollSurfaceY` (giải phương trình Bézier của ụ cỏ), không đoán số.
+  - `Fireflies.tsx` — 46 đốm CSS thuần, luôn mount nhưng tạm dừng hoạt ảnh khi không tập trung (để
+    tan vào/tan ra), tôn trọng "giảm chuyển động". Màu vàng-xanh đom đóm thật, KHÔNG theo màu nhãn
+    như bản 3D — đã ghi đổi này vào SPEC §5.1.
+  - `globals.css` — bảng màu rừng sáng/tối + `--forest-*`/`--tree-*`/`--flower-*`/`--focus-veil`;
+    MỌI màu của cảnh nằm ở đây, component chỉ tham chiếu biến → 19h đổi `data-theme` là cả khu rừng
+    thành rừng đêm (trăng, sao) mà không render lại gì. Tô màu SVG qua `style`, không qua thuộc tính
+    `fill="var(--x)"` (Chromium nhận nhưng không chắc mọi trình duyệt). `--stat-*` đổi cho trùng màu
+    tán ba cây.
+
+  **Ba lỗi thật bắt được lúc soi (tsc/eslint/test đều không thấy):**
+  (1) Khu vườn đầu tiên nằm giữa khung (flex căn giữa) → ụ cỏ **lơ lửng giữa rặng rừng** thay vì
+  đứng trên đồng cỏ. Mép đồng cỏ của khu rừng (SVG `xMidYMax slice`, neo đáy) luôn ở ~75–80% chiều
+  cao màn hình → đổi đệm dưới sang `14vh` + vườn `self-end`, rồi ĐO bằng `getScreenCTM` + điểm trên
+  path đồng cỏ ở 1024×768 · 1280×800 · 1440×900 · 1512×982 · 1920×1080: chân cây lệch mép cỏ ≤ 20px
+  ở mọi cỡ. (2) **Tia nắng lóe trắng đúng lúc 19h:** đổi biến màu là tức thì còn độ mờ chuyển 1,2s,
+  mà `--forest-sun` ban đêm đặt `#fff` → nửa giây tia nắng trắng tinh trên trời đêm. Giá trị đêm của
+  thứ đang mờ dần phải là màu TỆP với nền đêm, không phải màu "trung tính". (3) Mặt trăng nằm ngay
+  dưới cụm menu góc phải → dời xuống giữa-phải, phía trên khu vườn.
+
+  **Bẫy công cụ (không phải lỗi app, mất thời gian dò):** Browser pane ẩn chụp SAI trang đã cuộn —
+  nội dung vẽ ở vị trí CHƯA cuộn, lớp `fixed` bị đẩy xuống đúng bằng `scrollY`, dải trống phía trên.
+  Tưởng do z-index âm, đổi cách xếp lớp vẫn y hệt; gỡ HẲN khu rừng khỏi DOM vẫn y hệt → là lỗi công
+  cụ. Soi vùng dưới trang thì ẩn tạm phần phía trên (`display:none`) để vùng cần xem về `scrollY=0`.
+  Và: file ngoài thư mục dự án mở trong pane là "ảnh tĩnh", JS không chạy, công cụ trang không tác
+  động được → bản phác phải tạm đặt vào `public/` cho dev server phục vụ (đã xoá ngay sau khi soi).
+
+  QA dữ liệu giả: ép prop tạm trong `DailyScreen.tsx` (cấp 12/7/16, cấp tối đa + cây héo, ân hạn +
+  mốc Seed/Sprout/Sapling, ép `focusMode`) — KHÔNG đụng DB; sao lưu file vào scratchpad trước, chép
+  lại nguyên bản sau. `tsc`/`eslint`/332 test/`npm run build` sạch.
+
+  **[CHƯA HỎI — nhỏ]** Ba chi tiết Claude tự chọn khi dựng, chưa hỏi riêng: loài cây gán cho từng
+  chỉ số (thông/phong/liễu — có trong bản phác chủ dự án đã chọn, nhưng không hỏi tách riêng), đom
+  đóm đổi sang màu vàng-xanh thay vì màu nhãn, và hoa thay cho quả.
+
+- **2026-09-17 (tiếp, cùng ngày, đổi model sang Sonnet 5 giữa phiên): đánh bóng popup tài sản +
+  công cụ xem trước khu vườn + cây thật hơn + hiện cấp/XP.** Bốn việc riêng, chủ dự án báo qua
+  ba lượt nhắn liên tiếp trong cùng phiên.
+
+  **1. Popup "Add net worth"** (`components/assets/NetWorthControl.tsx`) — chủ dự án gửi ảnh chụp
+  popup với viền cam/xanh CHÓI (viền focus mặc định của trình duyệt, input chưa từng khai
+  `focus:ring-*`) + mũi tên tăng/giảm vuông vức của `<input type=number>`, nói "chỉnh thêm giao
+  diện ở đây". Sửa hai lớp:
+  - **`app/globals.css`** thêm base-layer reset ÁP DỤNG TOÀN APP (không chỉ popup này): mọi
+    `input`/`textarea`/`select` focus ra viền `foreground/20` thống nhất thay vì viền trình duyệt
+    (chỉ khi component KHÔNG tự khai `focus:ring-*` riêng — đặt ở `@layer base` nên `utilities`
+    của Tailwind v4 vẫn thắng bình thường), và ẩn nút tăng/giảm number input mọi nơi trong app.
+  - Riêng popup: thêm tiêu đề "Update net worth", viền `border-border` cho khung nổi rõ trên nền
+    rừng, input đổi từ `border-foreground/10 bg-background` (tông trước khu rừng) sang
+    `border-border` + focus ring riêng màu xanh Spirit (`--stat-spirit`) thay vì xám trung tính —
+    tài sản đứng một mình giữa màn hình, xứng đáng một điểm nhấn màu riêng.
+
+  **2. Công cụ "xem cây lúc lớn lên"** — chủ dự án xin "cho 1 số dữ liệu fake để xem cây lúc lớn
+  lên". **CỐ Ý KHÔNG seed dữ liệu vào DB** (kể cả DB tạm riêng như mọi lần trước, xem
+  [[feedback-shared-dev-db-caution]]) — chủ dự án chỉ cần XEM hình dạng cây ở nhiều cấp, không
+  cần các con số đó "từng xảy ra" trong lịch sử dùng thật. Dựng thành công cụ CHỈ DEV mới, tái
+  dùng được cho mọi lần cần soi cây sau này (nhanh hơn hẳn cách cũ là tự sửa code + hoàn tác mỗi
+  lần, đã làm nhiều lần trong ngày 16-17/09):
+  - `components/dev/GrovePreviewContext.tsx` — Context/Provider giữ `GrovePreviewOverride | null`
+    (levelByStat, streak, danger, neglectByStat), mount KHÔNG điều kiện ở `app/layout.tsx` (mặc
+    định `null` = dùng dữ liệu thật, hành vi giống hệt trước khi có file này — an toàn kể cả nếu
+    lỡ quên gate theo NODE_ENV ở nơi dùng).
+  - `components/dev/GrovePreviewWidget.tsx` — ô điều khiển nổi góc dưới-trái, CHỈ DEV (cùng gate
+    `NODE_ENV !== "production"` như `TimeTravelWidget`): 7 nút mốc (Seed…Ancient, set cả ba chỉ
+    số cùng lúc) + ba thanh trượt cấp riêng từng chỉ số (0-30) + checkbox héo mỗi chỉ số + thanh
+    trượt chuỗi + checkbox "ân hạn". Đổi tức thì, KHÔNG tải lại trang.
+  - `DailyScreen.tsx` đọc `useGrovePreview()`, ghi đè ĐÚNG BA prop hình ảnh truyền vào
+    `HomeDashboard` khi override khác `null` — không đụng `stats` thật, `TimerOverlay` (chuỗi ở
+    góc màn hình) vẫn luôn đọc dữ liệu THẬT, không bị ghi đè (tránh lẫn số giả vào chỗ chủ dự án
+    tin là số thật).
+  - **Bẫy đặt vị trí:** bản đầu neo góc TRÊN-TRÁI trùng thẳng vào cụm chuỗi+dải chấm của
+    `TimerOverlay` (cùng toạ độ `left-4 top-4`) — dò lại thấy MỌI góc trên đều đã có UI lúc tĩnh
+    (trái/giữa/phải), chỉ góc dưới-trái còn trống; panel phải mở LÊN TRÊN (`flex-col-reverse` +
+    `mb-2`) vì nút neo gần đáy màn hình, mở xuống sẽ tràn khỏi khung nhìn.
+
+  **3. Cây "chưa chân thực"** (`components/forest/ForestGrove.tsx`) — phản hồi rất chung chung,
+  không hỏi lại mà tự cải tiến bằng kỹ thuật minh hoạ cụ thể (nhờ vừa có công cụ xem trước ở mục
+  2 nên soi nhiều cấp gần như tức thì, không phải sửa code mỗi lần):
+  - **Gờ loe ở gốc** (`rootFlare`, mới) — MỌI cây thật (Sapling trở lên, không riêng Ancient) đều
+    có vệt tối rộng thấp ngay chỗ thân chạm đất; thân cắm thẳng xuống đất như que là điều làm cây
+    trông "vẽ" chứ không "mọc".
+  - **Vân gỗ** (`barkGrain`, mới) — spruce đã có riêng từ trước, tách dùng chung cho maple/willow
+    (trước đó thân hai loài này chỉ là một mảng màu phẳng).
+  - **Tán phong hết tròn tuyệt đối** — `MAPLE_CLUMPS` thêm góc xoay + tỉ lệ dẹt mỗi chùm, vẽ bằng
+    `ellipsePath` thay vì `circlePath`: tán cây thật không phải các quả cầu chồng lên nhau, đây
+    là thứ giống "vẽ bằng compa" nhất trong cả ba loài.
+  - **Chấm lá** (`leafFlecks`, mới) — vài đốm đậm/nhạt rải ngẫu nhiên (hạt giống theo toạ độ tâm
+    cụm, ổn định qua mọi lần render) trong mỗi chùm lá phong + trên vòm liễu, phá độ mịn phẳng
+    của gradient tròn đơn.
+  - **Một nhánh con lú khỏi tán** (chỉ maple) — vẽ TRƯỚC các chùm lá nên phần trong tán bị che,
+    chỉ đúng đoạn lú ra khỏi silhouette còn lộ; cây thật không bao giờ có viền lá kín tuyệt đối.
+  - Đây là MỘT vòng cải tiến, không phải bản chốt cuối — phản hồi ban đầu không đủ cụ thể để biết
+    "chân thực" theo hướng nào (chi tiết hơn? tỉ lệ tự nhiên hơn? đổ bóng sâu hơn?), nên chọn cải
+    tiến trực tiếp bằng các kỹ thuật minh hoạ đã biết chắc là đúng hướng thay vì dừng lại hỏi —
+    nếu vẫn chưa đạt, hỏi lại cụ thể hơn ("chưa thật ở chỗ nào") trước khi tiếp tục đoán.
+
+  **4. Hiện cấp + XP hiện tại** (`app/actions/stats.ts`, `HomeDashboard.tsx`) — chủ dự án báo
+  "chưa xem được level cây và số điểm hiện tại của mỗi cây". Đây là **[NỚI — 2026-09-17]** nguyên
+  tắc 4 (§2), cùng loại nới đã có ở mốc check-in (16/09): chủ dự án chủ động xin thêm số, không
+  phải Claude tự đề xuất. Đảo NGƯỢC quyết định cũ "số cấp lui về title (hover)" (16/09) — số cấp
+  giờ ĐỌC THẲNG trong dòng chữ (`mind · Lv 15 · Mature tree`), không chờ hover nữa.
+  - `foldTimeline` VỐN ĐÃ tính `xpByStat` (dùng nội bộ để suy `levelByStat`) nhưng
+    `ComputedStats`/`getComputedStatsAction` chưa từng lộ ra ngoài — chỉ cần thêm field, không
+    phải tính lại gì (đúng nguyên tắc §8.1: XP không lưu, luôn có sẵn trong lần fold hiện tại).
+  - Mỗi chỉ số một dòng riêng (đổi từ dãy chip ngang sang xếp dọc — hết chỗ vì mỗi dòng giờ có
+    thêm thanh tiến độ) + thanh XP mảnh (`h-1.5`, không phải biểu đồ) hiện phân số "XP còn thiếu
+    trong CẤP NÀY / tổng XP cấp này cần" — KHÔNG hiện tổng XP từ đầu (số đó dài, ít ý nghĩa đọc
+    lướt, lui về `title` khi hover, đúng bài học "số dài nhất xem qua title" đã áp dụng cho chuỗi
+    ở `TimerOverlay.tsx`).
+  - Ô xem trước (mục 2) không có "XP giả" thật — hiện đúng ngưỡng XP để CHẠM cấp đang chọn (thanh
+    trống 0%), đủ để xem HÌNH DẠNG cây, không cần đúng số.
+
+  **[BẮT ĐƯỢC lúc tự soi lại code trước khi chạy tsc]** Gõ nhầm `gap-2.5` thành `gap-2.５` (lẫn
+  một ký tự số ĐẦY ĐỦ-CHIỀU-RỘNG tiếng Á Đông vào giữa class Tailwind) — `tsc`/`eslint` không bắt
+  được (chuỗi hợp lệ về mặt cú pháp), chỉ lộ ra khi tự đọc lại diff. **Bài học: sau khi gõ nhanh
+  nhiều đoạn className dài, đọc lại đúng những dòng vừa gõ trước khi tin `tsc` sạch là đủ** — linter
+  kiểu không kiểm tra NỘI DUNG chuỗi class, chỉ kiểm cú pháp TypeScript.
+
+  `tsc`/`eslint`/332 test/`npm run build` sạch. Đã soi bằng mắt: popup tài sản (viền focus mới),
+  cấp/XP ở cả sáng/tối trên dữ liệu THẬT (cấp 0, đúng `0/300`), công cụ xem trước ở nhiều mốc
+  (Seed→Ancient, XP hiện đúng theo công thức `xpRequiredForLevel`), cây phong/liễu phóng to qua
+  `outerHTML` để soi chi tiết gờ gốc/vân gỗ/tán lệch/chấm lá.
+
 - **Tiếp theo:** (1) **ba cơ chế mất đầu ra hình ảnh cần quyết thay bằng gì** — đồ đạc theo cấp
   (§5.3), vật phẩm hiếm (§5.3), mùa/ngày lễ (§5.3) — cộng giai đoạn nhân vật (§4.8) và 12 chương
   nhà (§4.9, hiện chỉ còn dòng chữ "chapter N"). Engine của cả năm vẫn sống và có test, chỉ thiếu
-  nơi hiển thị; đừng xoá chúng mà không hỏi. (2) dùng dashboard vài hôm rồi xem cây có đủ "đáng
-  nhìn" không — nếu cần thì thêm chi tiết theo mùa/chương vào chính cái cây. Còn hai flag
+  nơi hiển thị; đừng xoá chúng mà không hỏi. **Khu rừng (17/09) là chỗ tự nhiên để đưa chúng trở
+  lại** (đồ đạc theo cấp → đồ vật quanh khu vườn, mùa → rừng đổi mùa, vật phẩm hiếm → thú rừng,
+  chương → khu vườn/rừng rộng dần) — nhưng đó là QUYẾT ĐỊNH của chủ dự án, chưa hỏi, đừng tự dựng.
+  (2) dùng khu vườn vài hôm rồi xem có đủ "đáng nhìn" không. Còn hai flag
   `[CHƯA HỎI]` cần xác nhận (nghĩa "nhập dữ liệu" ở mốc 8a, câu chữ thông báo nhắc tối ở mốc 8b)
   — hỏi lại nếu chưa được hỏi. Phần cron/backup của mốc 7 gốc vẫn còn treo nếu chủ dự án đổi ý —
   nay KỸ THUẬT khả thi hơn (đã deploy thật) nhưng vẫn là quyết định phạm vi của chủ dự án, không
   tự ý dựng.
 - Nền tảng (`SPEC.md` §8.5): Next.js 16 (App Router, Turbopack) + TypeScript strict · Tailwind v4 ·
-  react-three-fiber v9 + drei v10 · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
+  ~~react-three-fiber v9 + drei v10~~ (đã gỡ cùng phòng 3D ngày 16/09 — hình ảnh giờ là SVG thuần,
+  `components/forest/`) · Vitest · **Postgres 16 local (Homebrew) qua Drizzle** — DB
   dev thật trên máy, không phải SQLite giả lập; production trỏ Neon qua `DATABASE_URL` khi
   deploy · asset 3D/âm thanh dùng pack Kenney CC0 có sẵn (`public/CREDITS.md`) · ba chỉ số
   **Mind · Health · Spirit**. **[THÊM — 2026-09-16]** `@react-three/postprocessing` + `postprocessing`

@@ -8,6 +8,7 @@
  * toàn thời gian — `lifetimeTotals` (khối 1) và `personalRecords` (khối 5); xem §5.8.
  */
 
+import { SESSION_MINUTES_DEFAULT } from "../balance";
 import { addDays, mondayOf, parseDayKey } from "../day";
 import { STAT_KEYS, type DayKey, type StatKey } from "../types";
 import type { DailyTimelinePoint, RawCompletedSession } from "./types";
@@ -58,19 +59,18 @@ export type LifetimeTotals = {
 };
 
 /**
- * `minutesPerSession` = `session_minutes + break_minutes` (§5.8) — tầng gọi đọc từ bảng
- * `settings` và cộng lại, KHÔNG phải hằng số 0,5 giờ viết cứng ở đây. Chủ dự án chỉnh được độ
- * dài phiên (§4.3 [CHỐT]), nên con số giờ phải bám theo cài đặt.
+ * Historical hours use each session's stored plannedMinutes plus the fixed break.
+ * Changing the current timer duration never rewrites past hours.
  */
 export function lifetimeTotals(
   completedSessions: readonly RawCompletedSession[],
   dailySeries: readonly DailyTimelinePoint[],
-  minutesPerSession: number,
+  breakMinutes: number,
 ): LifetimeTotals {
   const totalSessions = completedSessions.length;
   return {
     totalSessions,
-    totalHours: (totalSessions * minutesPerSession) / MINUTES_PER_HOUR,
+    totalHours: completedSessions.reduce((total, session) => total + sessionHours(session, breakMinutes), 0),
     daysAchieved: dailySeries.reduce((n, point) => n + (point.dayAchieved ? 1 : 0), 0),
   };
 }
@@ -121,6 +121,10 @@ export function hoursOf(sessionCount: number, minutesPerSession: number): number
   return (sessionCount * minutesPerSession) / MINUTES_PER_HOUR;
 }
 
+function sessionHours(session: RawCompletedSession, breakMinutes: number): number {
+  return ((session.plannedMinutes ?? SESSION_MINUTES_DEFAULT) + breakMinutes) / MINUTES_PER_HOUR;
+}
+
 export type WeeklyLabelHours = { weekStart: DayKey; hoursByLabelId: ReadonlyMap<number, number> };
 
 /**
@@ -149,7 +153,7 @@ export function weekStartsOf(windowDays: readonly DayKey[]): DayKey[] {
 export function hoursByLabelPerWeek(
   completedSessions: readonly RawCompletedSession[],
   weekStarts: readonly DayKey[],
-  minutesPerSession: number,
+  breakMinutes: number,
 ): WeeklyLabelHours[] {
   const counts = new Map<DayKey, Map<number, number>>();
   for (const s of completedSessions) {
@@ -159,12 +163,12 @@ export function hoursByLabelPerWeek(
       bucket = new Map<number, number>();
       counts.set(week, bucket);
     }
-    bucket.set(s.labelId, (bucket.get(s.labelId) ?? 0) + 1);
+    bucket.set(s.labelId, (bucket.get(s.labelId) ?? 0) + sessionHours(s, breakMinutes));
   }
   return weekStarts.map((weekStart) => {
     const bucket = counts.get(weekStart);
     const hoursByLabelId = new Map<number, number>();
-    if (bucket) for (const [labelId, n] of bucket) hoursByLabelId.set(labelId, hoursOf(n, minutesPerSession));
+    if (bucket) for (const [labelId, n] of bucket) hoursByLabelId.set(labelId, n);
     return { weekStart, hoursByLabelId };
   });
 }
@@ -181,14 +185,14 @@ export type PersonalRecords = {
 export function personalRecords(
   completedSessions: readonly RawCompletedSession[],
   longestDayAchievedStreak: number,
-  minutesPerSession: number,
+  breakMinutes: number,
 ): PersonalRecords {
   const byDay = new Map<DayKey, number>();
   const byWeek = new Map<DayKey, number>();
   for (const s of completedSessions) {
     byDay.set(s.dayKey, (byDay.get(s.dayKey) ?? 0) + 1);
     const week = mondayOf(s.dayKey);
-    byWeek.set(week, (byWeek.get(week) ?? 0) + 1);
+    byWeek.set(week, (byWeek.get(week) ?? 0) + sessionHours(s, breakMinutes));
   }
 
   // Hoà nhau thì giữ ngày/tuần SỚM NHẤT — kỷ lục thuộc về lần đầu tiên chạm tới.
@@ -200,7 +204,7 @@ export function personalRecords(
   }
   let bestWeek: { weekStart: DayKey; hours: number } | null = null;
   for (const [weekStart, n] of byWeek) {
-    const hours = hoursOf(n, minutesPerSession);
+    const hours = n;
     if (!bestWeek || hours > bestWeek.hours || (hours === bestWeek.hours && weekStart < bestWeek.weekStart)) {
       bestWeek = { weekStart, hours };
     }

@@ -6,7 +6,7 @@ import type { TimerLabel } from "./TimerOverlay";
 
 type Props = {
   labels: readonly TimerLabel[];
-  onBackfill: (labelId: number, count: number) => void;
+  onBackfill: (labelId: number, count: number) => Promise<boolean>;
 };
 
 /**
@@ -15,6 +15,8 @@ type Props = {
  * "% ghi bù" — không hiện cảnh báo gì ở đây, không phải lỗi của tôi.
  */
 export function BackfillButton({ labels, onBackfill }: Props) {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState(false);
   const [open, setOpen] = useState(false);
   const [labelId, setLabelId] = useState<number>(labels[0]?.id ?? 0);
   const [count, setCount] = useState(1);
@@ -24,7 +26,7 @@ export function BackfillButton({ labels, onBackfill }: Props) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="rounded-full bg-surface/90 px-4 py-2 text-sm font-semibold text-foreground/80 shadow-md backdrop-blur transition-transform active:scale-95 hover:bg-surface"
+        className="backfill-trigger"
       >
         + Backfill
       </button>
@@ -32,7 +34,8 @@ export function BackfillButton({ labels, onBackfill }: Props) {
   }
 
   return (
-    <div className="w-64 rounded-2xl bg-surface/95 p-4 shadow-lg backdrop-blur">
+    <div role="dialog" aria-label="Backfill for today" className="backfill-popover">
+      {error && <p role="alert" className="mb-2 text-sm text-red-600">Could not confirm the save. Refresh status and check today’s count before adding again.</p>}
       <p className="mb-2 text-sm font-semibold text-foreground/80">Backfill for today</p>
       <div className="mb-3 flex flex-wrap gap-1.5">
         {labels.map((l) => (
@@ -44,7 +47,7 @@ export function BackfillButton({ labels, onBackfill }: Props) {
                 ? "text-background"
                 : "bg-surface-muted text-foreground/70 hover:bg-surface-muted/70"
             }`}
-            style={labelId === l.id ? { backgroundColor: l.color } : undefined}
+            style={labelId === l.id ? { backgroundColor: `var(--stat-${l.stat})` } : undefined}
           >
             {l.emoji} {l.name}
           </button>
@@ -70,11 +73,15 @@ export function BackfillButton({ labels, onBackfill }: Props) {
       </div>
       <div className="flex gap-2">
         <button
-          onClick={() => {
-            onBackfill(labelId, count);
-            setOpen(false);
-            setCount(1);
+          onClick={async () => {
+            setPending(true);
+            setError(false);
+            const ok = await onBackfill(labelId, count);
+            setPending(false);
+            if (ok) setOpen(false);
+            else setError(true);
           }}
+          disabled={pending || labels.length === 0}
           className="flex-1 rounded-full bg-foreground py-1.5 text-sm font-semibold text-background transition-transform active:scale-95"
         >
           Add

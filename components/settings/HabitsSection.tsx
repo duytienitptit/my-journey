@@ -6,7 +6,7 @@ import type { StatKey } from "@/core/types";
 import { Card, CardHint, CardTitle } from "./Card";
 import { STAT_META, StatPicker } from "./StatPicker";
 
-type Habit = { id: number; name: string; emoji: string; stat: StatKey; kind: "score_1_5" | "boolean" | "journal" };
+type Habit = { slug: string; id: number; name: string; emoji: string; stat: StatKey; kind: "score_1_5" | "boolean" | "journal" };
 
 function HabitForm({
   initial,
@@ -50,7 +50,7 @@ function HabitForm({
         />
       </div>
       <StatPicker value={stat} onChange={setStat} />
-      {!initial && <CardHint>New habits are scored 1–5 each night, same as Sport and Sleep enough.</CardHint>}
+      {!initial && <CardHint>New habits are scored 1–5 each night, same as Sport.</CardHint>}
       <div className="flex justify-end gap-2 pt-1">
         <button onClick={onCancel} className="text-xs text-foreground/50 hover:text-foreground">
           Cancel
@@ -104,7 +104,7 @@ export function HabitsSection({ habits, onChanged }: { habits: Habit[]; onChange
               <span className="text-base">{h.emoji}</span>
               <span className="flex-1 truncate text-sm font-medium text-foreground">{h.name}</span>
               <span className="text-xs text-foreground/40">
-                {h.kind === "journal" ? "written" : "1–5"} · {STAT_META[h.stat].emoji}
+                {h.slug === "sleep-enough" ? "before 22:30" : h.kind === "journal" ? "written" : "1–5"} · {STAT_META[h.stat].emoji}
               </span>
               {confirmArchiveId === h.id ? (
                 <span className="flex items-center gap-1.5 text-xs">

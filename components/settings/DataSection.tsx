@@ -1,5 +1,6 @@
 "use client";
 
+import { backupSummary, validateBackup } from "@/lib/backup";
 import { useRef, useState } from "react";
 import { setHideMoneyAction } from "@/app/actions/assets";
 import { importDataAction } from "@/app/actions/settings";
@@ -20,6 +21,7 @@ export function DataSection({ hideMoney, onChanged }: Props) {
   const [hide, setHide] = useState(hideMoney);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [preview, setPreview] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const [importedOk, setImportedOk] = useState(false);
@@ -31,11 +33,18 @@ export function DataSection({ hideMoney, onChanged }: Props) {
     onChanged();
   }
 
-  function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handlePickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     setImportError(null);
     setImportedOk(false);
-    setPendingFile(file);
+    setPendingFile(null);
+    setPreview(null);
+    if (!file) return;
+    try {
+      const data = validateBackup(JSON.parse(await file.text()));
+      setPreview(backupSummary(data));
+      setPendingFile(file);
+    } catch (err) { setImportError(err instanceof Error ? err.message : "Invalid backup file."); }
   }
 
   async function confirmImport() {
@@ -55,6 +64,8 @@ export function DataSection({ hideMoney, onChanged }: Props) {
       } else {
         setImportError(result.error);
       }
+    } catch {
+      setImportError("Could not import. Please check your connection and try again.");
     } finally {
       setImporting(false);
     }
@@ -88,6 +99,7 @@ export function DataSection({ hideMoney, onChanged }: Props) {
           onChange={handlePickFile}
           className="text-xs text-foreground/60 file:mr-2 file:rounded-full file:border-0 file:bg-surface-muted file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-foreground"
         />
+        {preview && <p className="text-xs text-foreground/80">Restore: {preview}</p>}
         {pendingFile && !importedOk && (
           <div className="flex flex-col gap-2 rounded-2xl bg-red-500/10 p-3">
             <p className="text-xs font-medium text-red-600">

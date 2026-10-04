@@ -18,25 +18,28 @@ type Props = {
  */
 export function SessionSection({ sessionMinutes, dailySessionGoal, reminderHour, onChanged }: Props) {
   const [minutes, setMinutes] = useState(String(sessionMinutes));
-  const [goal, setGoal] = useState(String(dailySessionGoal));
   const [reminderOn, setReminderOn] = useState(reminderHour !== null);
   const [hour, setHour] = useState(String(reminderHour ?? 22));
   const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
 
   const m = Number(minutes);
-  const g = Number(goal);
+  const g = dailySessionGoal;
   const h = Number(hour);
   const valid = Number.isFinite(m) && m > 0 && Number.isFinite(g) && g > 0 && (!reminderOn || (h >= 0 && h <= 23));
 
   async function save() {
     if (!valid) return;
     setPending(true);
+    setError(null);
     try {
       await updateSessionSettingsAction(Math.round(m), Math.round(g), reminderOn ? Math.round(h) : null);
       onChanged();
       setSaved(true);
       window.setTimeout(() => setSaved(false), 2000);
+    } catch {
+      setError("Could not save settings. Please try again.");
     } finally {
       setPending(false);
     }
@@ -45,6 +48,7 @@ export function SessionSection({ sessionMinutes, dailySessionGoal, reminderHour,
   return (
     <Card>
       <CardTitle>Session</CardTitle>
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <label className="flex items-center justify-between gap-2 text-sm text-foreground/70">
         Session length (minutes)
         <input
@@ -52,16 +56,6 @@ export function SessionSection({ sessionMinutes, dailySessionGoal, reminderHour,
           min={1}
           value={minutes}
           onChange={(e) => setMinutes(e.target.value)}
-          className="w-20 rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-right text-sm"
-        />
-      </label>
-      <label className="flex items-center justify-between gap-2 text-sm text-foreground/70">
-        Daily session goal
-        <input
-          type="number"
-          min={1}
-          value={goal}
-          onChange={(e) => setGoal(e.target.value)}
           className="w-20 rounded-lg border border-foreground/10 bg-background px-2 py-1.5 text-right text-sm"
         />
       </label>

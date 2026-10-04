@@ -6,6 +6,10 @@
  * thuần ở `core/` (dayKeyOf, isSessionComplete…) để tính toán, rồi mới đọc/ghi.
  */
 import { and, asc, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { validateBackup } from "@/lib/backup";
+import { assertEditableDay, canCheckBedtime, BEDTIME_SLUG, BEDTIME_NAME } from "@/core/bedtime";
+import { DEFAULT_DAILY_TASK_THRESHOLDS } from "@/core/balance";
+import { sessionEndsAt } from "@/core/session";
 import { now } from "@/core/clock";
 import { dayKeyOf } from "@/core/day";
 import { chapterForNetWorth, chaptersNewlyReached, totalNetWorth } from "@/core/engine/chapters";
@@ -41,6 +45,7 @@ export type DailyTaskWithRef = {
   stat: StatKey;
   /** Chỉ có khi refType="habit" — Cài đặt (mốc 8) cần biết đây là habit "journal" (đạt = có
    *  chữ, không có ngưỡng số, §4.5) để không vẽ ô nhập ngưỡng cho dòng này. */
+  habitSlug?: string;
   habitKind: "score_1_5" | "boolean" | "journal" | null;
 };
 
@@ -66,8 +71,9 @@ export async function listDailyTasksWithRef(): Promise<DailyTaskWithRef[]> {
         id: t.id,
         refType: t.refType,
         refId: t.refId,
-        threshold: t.threshold,
-        name: ref.name,
+        threshold: t.refType === "habit" && ref.slug === BEDTIME_SLUG ? DEFAULT_DAILY_TASK_THRESHOLDS.sleepEnough : t.threshold,
+        name: ref.slug === BEDTIME_SLUG ? BEDTIME_NAME : ref.name,
+        habitSlug: t.refType === "habit" ? ref.slug : undefined,
         emoji: ref.emoji,
         stat: ref.stat,
         habitKind: t.refType === "habit" ? (ref as (typeof habitRows)[number]).kind : null,
@@ -146,17 +152,29 @@ export async function archiveHabit(id: number) {
     .where(and(eq(schema.dailyTasks.refType, "habit"), eq(schema.dailyTasks.refId, id)));
 }
 
+async function taskThreshold(refType: "label" | "habit", refId: number, threshold: number | null) {
+  if (refType === "habit") {
+    const [habit] = await db.select().from(schema.habits).where(eq(schema.habits.id, refId));
+    if (habit?.slug === BEDTIME_SLUG) return DEFAULT_DAILY_TASK_THRESHOLDS.sleepEnough;
+  }
+  return threshold;
+}
+
 export async function addDailyTask(input: { refType: "label" | "habit"; refId: number; threshold: number | null }) {
+  const threshold = await taskThreshold(input.refType, input.refId, input.threshold);
   const rows = await db
     .select({ v: schema.dailyTasks.sortOrder })
     .from(schema.dailyTasks)
     .orderBy(desc(schema.dailyTasks.sortOrder))
     .limit(1);
-  await db.insert(schema.dailyTasks).values({ ...input, sortOrder: (rows[0]?.v ?? 0) + 1, active: true });
+  await db.insert(schema.dailyTasks).values({ ...input, threshold, sortOrder: (rows[0]?.v ?? 0) + 1, active: true });
 }
 
 export async function updateDailyTaskThreshold(id: number, threshold: number | null) {
-  await db.update(schema.dailyTasks).set({ threshold }).where(eq(schema.dailyTasks.id, id));
+  const [task] = await db.select().from(schema.dailyTasks).where(eq(schema.dailyTasks.id, id));
+  if (!task) throw new Error("Task is unavailable.");
+  const value = await taskThreshold(task.refType, task.refId, threshold);
+  await db.update(schema.dailyTasks).set({ threshold: value }).where(eq(schema.dailyTasks.id, id));
 }
 
 /** "Xoá" khỏi 6 việc = active=false, không xoá dòng — giữ đúng tinh thần không xoá thật ở đây. */
@@ -210,36 +228,41 @@ export async function getActiveSession(): Promise<PersistedSession | null> {
     endsAt: row.endsAt.getTime(),
   };
   if (isSessionComplete(shape, now())) {
-    await finalizeSession(row.id, row.endsAt.getTime());
+    await finalizeSession(row.id);
     return null;
   }
   return { id: row.id, ...shape };
 }
 
-/** Chỉ cho phép một phiên chạy tại một thời điểm (§4.3) — gọi getActiveSession() trước ở caller. */
-export async function startSession(labelId: number, plannedMinutes: number, endsAtMs: number) {
-  const startedAt = new Date(now());
-  const [row] = await db
-    .insert(schema.sessions)
-    .values({
-      labelId,
-      dayKey: dayKeyOf(startedAt.getTime()),
-      startedAt,
-      endsAt: new Date(endsAtMs),
-      plannedMinutes,
-      source: "timer",
-      status: "running",
-    })
-    .returning();
-  return row;
+/** Serialize starts and restores; the partial unique index is a second line of defence. */
+export async function startSession(labelId: number) {
+  return db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(20260930)`);
+    const instant = now();
+    await tx.update(schema.sessions).set({ status: "completed", endedAt: sql`${schema.sessions.endsAt}` })
+      .where(and(eq(schema.sessions.status, "running"), lte(schema.sessions.endsAt, new Date(instant))));
+    const [active] = await tx.select().from(schema.sessions).where(eq(schema.sessions.status, "running")).limit(1);
+    if (active) throw new Error("A session is already running. Refresh this page to resume it.");
+    const [label] = await tx.select().from(schema.labels).where(and(eq(schema.labels.id, labelId), eq(schema.labels.archived, false)));
+    if (!label) throw new Error("Choose an active label first.");
+    const [settings] = await tx.select().from(schema.settings).where(eq(schema.settings.id, 1));
+    if (!settings) throw new Error("Session settings are missing.");
+    const [row] = await tx.insert(schema.sessions).values({
+      labelId, dayKey: dayKeyOf(instant), startedAt: new Date(instant),
+      endsAt: new Date(sessionEndsAt(instant, settings.sessionMinutes)),
+      plannedMinutes: settings.sessionMinutes, source: "timer", status: "running",
+    }).returning();
+    return row;
+  });
 }
 
-/** Đánh dấu hoàn thành — gọi khi client PHÁT HIỆN hoàn thành lúc tab đang mở (chuông/pháo giấy). */
-export async function finalizeSession(sessionId: number, endsAtMs: number) {
-  await db
-    .update(schema.sessions)
-    .set({ status: "completed", endedAt: new Date(endsAtMs) })
-    .where(and(eq(schema.sessions.id, sessionId), eq(schema.sessions.status, "running")));
+/** Use only the stored deadline and server clock, never a client-supplied completion time. */
+export async function finalizeSession(sessionId: number) {
+  await db.update(schema.sessions)
+    .set({ status: "completed", endedAt: sql`${schema.sessions.endsAt}` })
+    .where(and(eq(schema.sessions.id, sessionId), eq(schema.sessions.status, "running"), lte(schema.sessions.endsAt, new Date(now()))));
+  const [row] = await db.select({ status: schema.sessions.status }).from(schema.sessions).where(eq(schema.sessions.id, sessionId));
+  return row?.status === "completed";
 }
 
 /** Không có tạm dừng — chỉ có bỏ phiên, 0 điểm, vẫn giữ bản ghi (§4.3). */
@@ -254,7 +277,7 @@ export async function abandonSession(sessionId: number) {
 export async function backfillSessions(labelId: number, count: number, plannedMinutes: number) {
   const instant = new Date(now());
   const dayKey = dayKeyOf(instant.getTime());
-  if (count <= 0) return [];
+  if (!Number.isSafeInteger(count) || count < 1) throw new Error("Session count must be a positive whole number.");
   const values = Array.from({ length: count }, () => ({
     labelId,
     dayKey,
@@ -365,8 +388,16 @@ export async function listHabitEntriesForDay(dayKey: DayKey) {
   return db.select().from(schema.habitEntries).where(eq(schema.habitEntries.dayKey, dayKey));
 }
 
-/** Sport, Sleep enough — chấm 1-5 (§4.2). Ghi đè nếu đã chấm hôm đó (unique habit_id+day_key). */
+/** Habit thường chấm 1–5; ngủ lưu 4/1 từ checkbox trước 22:30. Ghi đè nếu đã chấm hôm đó (unique habit_id+day_key). */
 export async function upsertHabitScore(habitId: number, dayKey: DayKey, score: number) {
+  const instant = now();
+  assertEditableDay(dayKey, instant);
+  const [habit] = await db.select().from(schema.habits).where(eq(schema.habits.id, habitId));
+  if (!habit || habit.archived) throw new Error("Habit is unavailable.");
+  if (habit.slug === BEDTIME_SLUG) {
+    if (score !== 1 && score !== DEFAULT_DAILY_TASK_THRESHOLDS.sleepEnough) throw new Error("Use the bedtime checkbox.");
+    if (score > 1 && !canCheckBedtime(dayKey, instant)) throw new Error("Bedtime check-in closes at 22:30 Vietnam time. It cannot be backfilled.");
+  }
   await db
     .insert(schema.habitEntries)
     .values({ habitId, dayKey, score, updatedAt: new Date(now()) })
@@ -388,20 +419,26 @@ async function ensureDayLog(dayKey: DayKey) {
 }
 
 export async function upsertMood(dayKey: DayKey, mood: number) {
+  assertEditableDay(dayKey, now());
   await ensureDayLog(dayKey);
   await db.update(schema.dayLogs).set({ mood }).where(eq(schema.dayLogs.dayKey, dayKey));
 }
 
 export async function upsertJournal(dayKey: DayKey, text: string, promptId: number | null) {
+  assertEditableDay(dayKey, now());
   await ensureDayLog(dayKey);
-  await db
+  const [saved] = await db
     .update(schema.dayLogs)
     .set({ journalText: text, journalPromptId: promptId })
-    .where(eq(schema.dayLogs.dayKey, dayKey));
+    .where(eq(schema.dayLogs.dayKey, dayKey))
+    .returning({ journalText: schema.dayLogs.journalText });
+  if (!saved) throw new Error("Journal save was not confirmed.");
+  return saved.journalText ?? "";
 }
 
 /** Đóng ngày — không khoá lại, vẫn sửa được sau (SPEC.md §11.2 câu Q16). Đóng muộn vẫn tính. */
 export async function closeDay(dayKey: DayKey) {
+  assertEditableDay(dayKey, now());
   await ensureDayLog(dayKey);
   await db.update(schema.dayLogs).set({ closedAt: new Date(now()) }).where(eq(schema.dayLogs.dayKey, dayKey));
 }
@@ -419,6 +456,7 @@ export async function listActivePrompts() {
 // ─── Xuất dữ liệu — SPEC.md §5.5, thủ công ───────────────────────────────
 
 export async function exportAllData() {
+  return db.transaction(async (tx) => {
   const [
     profileRows,
     labelRows,
@@ -434,21 +472,22 @@ export async function exportAllData() {
     promptRows,
     rareItemRows,
   ] = await Promise.all([
-    db.select().from(schema.profile),
-    db.select().from(schema.labels),
-    db.select().from(schema.habits),
-    db.select().from(schema.dailyTasks),
-    db.select().from(schema.sessions).orderBy(desc(schema.sessions.startedAt)),
-    db.select().from(schema.habitEntries),
-    db.select().from(schema.dayLogs).orderBy(desc(schema.dayLogs.dayKey)),
-    db.select().from(schema.weekReviews),
-    db.select().from(schema.netWorthEntries),
-    db.select().from(schema.chapterEvents),
-    db.select().from(schema.settings),
-    db.select().from(schema.prompts),
-    db.select().from(schema.rareItems),
+    tx.select().from(schema.profile),
+    tx.select().from(schema.labels),
+    tx.select().from(schema.habits),
+    tx.select().from(schema.dailyTasks),
+    tx.select().from(schema.sessions).orderBy(desc(schema.sessions.startedAt)),
+    tx.select().from(schema.habitEntries),
+    tx.select().from(schema.dayLogs).orderBy(desc(schema.dayLogs.dayKey)),
+    tx.select().from(schema.weekReviews),
+    tx.select().from(schema.netWorthEntries),
+    tx.select().from(schema.chapterEvents),
+    tx.select().from(schema.settings),
+    tx.select().from(schema.prompts),
+    tx.select().from(schema.rareItems),
   ]);
   return {
+    version: 1 as const,
     exportedAt: new Date(now()).toISOString(),
     profile: profileRows,
     labels: labelRows,
@@ -464,6 +503,7 @@ export async function exportAllData() {
     prompts: promptRows,
     rareItems: rareItemRows,
   };
+  }, { isolationLevel: "repeatable read", accessMode: "read only" });
 }
 
 export type ExportedData = Awaited<ReturnType<typeof exportAllData>>;
@@ -481,8 +521,10 @@ function toDate(v: string | Date | null): Date | null {
  * nhập. KHÔNG gộp với dữ liệu hiện có — đúng ngữ nghĩa "khôi phục từ bản sao lưu", không phải
  * "hợp nhất hai nguồn". Tầng gọi (Server Action) chịu trách nhiệm xác nhận với người dùng trước.
  */
-export async function importAllData(data: ExportedData): Promise<void> {
+export async function importAllData(input: unknown): Promise<void> {
+  const data = validateBackup(input);
   await db.transaction(async (tx) => {
+    await tx.execute(sql`select pg_advisory_xact_lock(20260930)`);
     // Xoá theo thứ tự phụ thuộc khoá ngoại — bảng con trước, bảng cha sau.
     await tx.delete(schema.chapterEvents);
     await tx.delete(schema.netWorthEntries);
@@ -514,6 +556,7 @@ export async function importAllData(data: ExportedData): Promise<void> {
     if (data.habitEntries?.length) {
       await tx.insert(schema.habitEntries).values(data.habitEntries.map((e) => ({ ...e, updatedAt: toDate(e.updatedAt)! })));
     }
+    if (data.prompts.length) await tx.insert(schema.prompts).values(data.prompts);
     if (data.dayLogs?.length) {
       await tx.insert(schema.dayLogs).values(data.dayLogs.map((d) => ({ ...d, closedAt: toDate(d.closedAt) })));
     }
@@ -530,7 +573,6 @@ export async function importAllData(data: ExportedData): Promise<void> {
         .insert(schema.chapterEvents)
         .values(data.chapterEvents.map((c) => ({ ...c, reachedAt: toDate(c.reachedAt)! })));
     }
-    if (data.prompts?.length) await tx.insert(schema.prompts).values(data.prompts);
     if (data.rareItems?.length) {
       await tx.insert(schema.rareItems).values(data.rareItems.map((r) => ({ ...r, receivedAt: toDate(r.receivedAt)! })));
     }
@@ -539,7 +581,6 @@ export async function importAllData(data: ExportedData): Promise<void> {
         .insert(schema.settings)
         .values(data.settings.map((s) => ({ ...s, updatedAt: toDate(s.updatedAt)! })));
     }
-  });
 
   // Serial id đã chèn THẲNG từ file nhập (giữ đúng quan hệ) — sequence của mỗi bảng cần chỉnh
   // lại về sau MAX(id) hiện có, nếu không lần INSERT tự-sinh-id tiếp theo sẽ trùng id vừa nhập.
@@ -558,12 +599,14 @@ export async function importAllData(data: ExportedData): Promise<void> {
     "rare_items",
   ];
   for (const table of idTables) {
-    await db.execute(
-      sql.raw(
-        `select setval(pg_get_serial_sequence('${table}', 'id'), coalesce((select max(id) from ${table}), 1), (select max(id) from ${table}) is not null)`,
-      ),
+    const [row] = await tx.execute<{ sequence: string; next: number }>(
+      sql.raw(`select pg_get_serial_sequence('${table}', 'id') as sequence, coalesce(max(id), 0) + 1 as next from ${table}`),
     );
+    // ALTER SEQUENCE, unlike setval(), rolls back with the restore transaction.
+    const sequence = sql.join(row.sequence.split(".").map((part) => sql.identifier(part)), sql`.`);
+    await tx.execute(sql`alter sequence ${sequence} restart with ${sql.raw(String(row.next))}`);
   }
+  });
 }
 
 // ─── Bản ghi thô cho core/engine/ — SPEC.md §8.1, §8.4 ────────────────────
@@ -579,7 +622,7 @@ export async function getEngineRawData(): Promise<EngineRawData> {
       db.select().from(schema.habits),
       db.select().from(schema.dailyTasks).where(eq(schema.dailyTasks.active, true)),
       db
-        .select({ dayKey: schema.sessions.dayKey, labelId: schema.sessions.labelId, source: schema.sessions.source })
+        .select({ dayKey: schema.sessions.dayKey, labelId: schema.sessions.labelId, source: schema.sessions.source, plannedMinutes: schema.sessions.plannedMinutes })
         .from(schema.sessions)
         .where(eq(schema.sessions.status, "completed")),
       db.select().from(schema.habitEntries),
@@ -594,8 +637,11 @@ export async function getEngineRawData(): Promise<EngineRawData> {
     profileStartedDayKey: dayKeyOf(profile.startedAt.getTime()),
     labels: labelRows.map((l) => ({ id: l.id, stat: l.stat })),
     habits: habitRows.map((h) => ({ id: h.id, slug: h.slug, stat: h.stat, kind: h.kind })),
-    dailyTasks: dailyTaskRows.map((t) => ({ refType: t.refType, refId: t.refId, threshold: t.threshold })),
-    completedSessions: sessionRows.map((s) => ({ dayKey: s.dayKey as DayKey, labelId: s.labelId, source: s.source })),
+    dailyTasks: dailyTaskRows.map((t) => ({ refType: t.refType, refId: t.refId,
+      threshold: t.refType === "habit" && habitRows.some((h) => h.id === t.refId && h.slug === BEDTIME_SLUG)
+        ? DEFAULT_DAILY_TASK_THRESHOLDS.sleepEnough : t.threshold,
+    })),
+    completedSessions: sessionRows.map((s) => ({ dayKey: s.dayKey as DayKey, labelId: s.labelId, source: s.source, plannedMinutes: s.plannedMinutes })),
     habitEntries: habitEntryRows.map((e) => ({
       dayKey: e.dayKey as DayKey,
       habitId: e.habitId,

@@ -14,7 +14,7 @@
  *     tới hết hôm qua) là con số trả ra cho giao diện.
  */
 
-import { STREAK_DAY_ACHIEVED_MILESTONES, STREAK_JOURNAL_MILESTONES, WEEK_PERFECT_BONUS } from "../balance";
+import { DECAY_GRACE_DAYS, STREAK_DAY_ACHIEVED_MILESTONES, STREAK_JOURNAL_MILESTONES, WEEK_PERFECT_BONUS } from "../balance";
 import { addDays, dayKeyOf, enumerateDayKeys } from "../day";
 import { STAT_KEYS, type DayKey, type StatKey } from "../types";
 import { isRestWell, xpEarnedForDay } from "./xp";
@@ -234,6 +234,18 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
 
   const totalXp = STAT_KEYS.reduce((sum, stat) => sum + xpByStat[stat], 0);
 
+  // Cảnh báo "sắp mất điểm" (cây tiến độ, mốc "gỡ 3D" 2026-09-16) — ĐÚNG một ngày, ngày ân hạn
+  // CUỐI CÙNG trước khi decay.ts thật sự trừ (decayAmountForDay chỉ trừ khi > DECAY_GRACE_DAYS,
+  // nên "== DECAY_GRACE_DAYS" là hôm nay vẫn an toàn nhưng mai mà vẫn 0 XP thì mất thật — cùng
+  // ngữ nghĩa với `dayAchievedStreak.danger`, chỉ một ngày duy nhất, không phải cả dải ngày).
+  // Chặn thêm `xpByStat[stat] > 0` — chỉ số CHƯA TỪNG có điểm (chưa đụng tới bao giờ) đã ở sàn 0
+  // sẵn rồi, không có gì để "sắp mất", cảnh báo lúc đó chỉ gây nhiễu vô nghĩa.
+  const neglectDangerByStat: Record<StatKey, boolean> = {
+    mind: consecutiveZeroDays.mind === DECAY_GRACE_DAYS && xpByStat.mind > 0,
+    health: consecutiveZeroDays.health === DECAY_GRACE_DAYS && xpByStat.health > 0,
+    spirit: consecutiveZeroDays.spirit === DECAY_GRACE_DAYS && xpByStat.spirit > 0,
+  };
+
   return {
     xpByStat,
     levelByStat: {
@@ -248,6 +260,7 @@ export function foldTimeline(raw: EngineRawData, nowMs: number): TimelineResult 
     events: { levelUps, stageChanges, streakMilestones },
     dailySeries,
     longestDayAchievedStreak,
+    neglectDangerByStat,
   };
 }
 

@@ -13,15 +13,24 @@ export const IMPORTANT_QUESTIONS: readonly string[] = [
   "What decision are you postponing that you already know the answer to?",
 ];
 
-/** Ghép các câu trả lời quan trọng + văn bản tự do thành một chuỗi `journalText` duy nhất. */
-export function composeJournalText(input: ComposedAnswers): string {
-  return composeQaText(IMPORTANT_QUESTIONS, input);
+/** A daily prompt, when present, has its own answer; free writing remains separate. */
+function questionsFor(prompt?: string | null): readonly string[] {
+  return prompt ? [...IMPORTANT_QUESTIONS, prompt] : IMPORTANT_QUESTIONS;
+}
+
+/** Ghép câu trả lời + văn bản tự do thành một chuỗi `journalText` duy nhất. */
+export function composeJournalText(input: ComposedAnswers, prompt?: string | null): string {
+  return composeQaText(questionsFor(prompt), input);
 }
 
 /** Ngược lại `composeJournalText` — xem ghi chú round-trip trong `qaCompose.ts`. */
-export function parseJournalText(journalText: string): ComposedAnswers {
-  return parseQaText(IMPORTANT_QUESTIONS, journalText);
+export function parseJournalText(journalText: string, prompt?: string | null): ComposedAnswers {
+  return parseQaText(questionsFor(prompt), journalText);
 }
 
-/** Dùng cho ngưỡng "Close day" (JOURNAL_MIN_WORDS) — tái xuất từ qaCompose.ts. */
+/** Only the user's own words count, never the displayed questions or Q/A markers. */
+export function countJournalWords(journalText: string): number {
+  return countWords(journalText.replace(/^Q: [^\n]*\nA: /gm, ""));
+}
+
 export { countWords };

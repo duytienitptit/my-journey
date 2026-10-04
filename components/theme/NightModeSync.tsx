@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { getLiveClockStateAction } from "@/app/actions/liveClock";
+import { useGrovePreview } from "@/components/dev/GrovePreviewContext";
 
 const POLL_MS = 60_000;
 const NOTIFIED_KEY_PREFIX = "myjourney:evening-reminder-notified:";
@@ -19,6 +20,8 @@ const NOTIFIED_KEY_PREFIX = "myjourney:evening-reminder-notified:";
  */
 export function NightModeSync() {
   const lastNotifiedDayRef = useRef<string | null>(null);
+  const { override } = useGrovePreview();
+  const previewTheme = override?.theme;
 
   useEffect(() => {
     let cancelled = false;
@@ -45,7 +48,7 @@ export function NightModeSync() {
       const state = await getLiveClockStateAction();
       if (cancelled) return;
 
-      document.documentElement.dataset.theme = state.isNight ? "dark" : "light";
+      document.documentElement.dataset.theme = previewTheme ?? (state.isNight ? "dark" : "light");
 
       if (!state.shouldRemindEveningRitual) return;
       if (alreadyNotifiedToday(state.todayKey)) return;
@@ -58,13 +61,13 @@ export function NightModeSync() {
       }
     }
 
-    void tick();
-    const id = window.setInterval(() => void tick(), POLL_MS);
+    void tick().catch(() => { /* Keep the last theme while offline. */ });
+    const id = window.setInterval(() => void tick().catch(() => {}), POLL_MS);
     return () => {
       cancelled = true;
       window.clearInterval(id);
     };
-  }, []);
+  }, [previewTheme]);
 
   return null;
 }

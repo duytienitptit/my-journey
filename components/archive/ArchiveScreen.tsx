@@ -45,7 +45,7 @@ export function ArchiveScreen({ initialData }: { initialData: ArchiveData }) {
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col gap-6 bg-background px-6 py-12">
+    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col gap-6 px-6 py-12">
       <Link href="/" className="text-sm font-medium text-foreground/50 hover:text-foreground/80">
         ← Today
       </Link>

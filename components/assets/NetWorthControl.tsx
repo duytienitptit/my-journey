@@ -52,41 +52,51 @@ export function NetWorthControl({ netWorth, hideMoney, onChanged }: Props) {
   }
 
   if (editing) {
+    // [SỬA — 2026-09-17, soi cùng khu rừng] Bản trước không có tiêu đề (nhảy thẳng vào hai ô),
+    // input dùng `border-foreground/10 bg-background` (tông cũ trước khu rừng) và không viền
+    // ngoài — nổi hơi yếu trên nền rừng nhiều chi tiết phía sau. Thêm tiêu đề nhỏ + viền
+    // `border-border` (đúng token khu rừng) + focus ring riêng cho input tiền (xanh Spirit thay
+    // vì `foreground/20` mặc định ở `globals.css` — tài sản đứng một mình giữa màn hình, đáng có
+    // điểm nhấn màu riêng thay vì xám trung tính).
     return (
-      <div className="flex w-64 flex-col gap-2.5 rounded-3xl bg-surface/95 p-4 shadow-lg backdrop-blur">
-        <label className="flex items-center justify-between gap-2 text-xs text-foreground/60">
-          Stocks (₫)
+      <div className="flex w-72 flex-col gap-3 rounded-3xl border border-border bg-surface/95 p-5 shadow-lg backdrop-blur">
+        <p className="text-sm font-semibold text-foreground/70">Update net worth</p>
+        <label className="flex items-center justify-between gap-3">
+          <span className="text-sm text-foreground/55">Stocks (₫)</span>
           <input
             type="number"
             min={0}
             inputMode="numeric"
             value={stocks}
             onChange={(e) => setStocks(e.target.value)}
-            className="w-32 rounded-lg border border-foreground/10 bg-background px-2 py-1 text-right text-sm"
+            className="w-32 rounded-xl border border-border bg-background px-3 py-1.5 text-right text-sm text-foreground focus:shadow-[0_0_0_2px_var(--stat-spirit)]"
             placeholder="0"
             autoFocus
           />
         </label>
-        <label className="flex items-center justify-between gap-2 text-xs text-foreground/60">
-          Gold (₫)
+        <label className="flex items-center justify-between gap-3">
+          <span className="text-sm text-foreground/55">Gold (₫)</span>
           <input
             type="number"
             min={0}
             inputMode="numeric"
             value={gold}
             onChange={(e) => setGold(e.target.value)}
-            className="w-32 rounded-lg border border-foreground/10 bg-background px-2 py-1 text-right text-sm"
+            className="w-32 rounded-xl border border-border bg-background px-3 py-1.5 text-right text-sm text-foreground focus:shadow-[0_0_0_2px_var(--stat-spirit)]"
             placeholder="0"
           />
         </label>
-        <div className="flex justify-end gap-2 pt-1">
-          <button onClick={() => setEditing(false)} className="text-xs text-foreground/50 hover:text-foreground">
+        <div className="flex justify-end gap-3 pt-1">
+          <button
+            onClick={() => setEditing(false)}
+            className="rounded-full px-3 py-1.5 text-sm font-medium text-foreground/50 transition-colors hover:bg-foreground/5 hover:text-foreground"
+          >
             Cancel
           </button>
           <button
             onClick={submit}
             disabled={pending}
-            className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background transition-transform active:scale-95 disabled:opacity-50"
+            className="rounded-full bg-foreground px-4 py-1.5 text-sm font-semibold text-background transition-transform active:scale-95 disabled:opacity-50"
           >
             Save
           </button>

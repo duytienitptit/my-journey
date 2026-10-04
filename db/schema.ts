@@ -13,6 +13,7 @@
  * để mốc 4 giờ sáng chỉ có một nơi định nghĩa (§8.3).
  */
 
+import { sql } from "drizzle-orm";
 import {
   bigint,
   boolean,
@@ -24,6 +25,7 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ─── Enum ────────────────────────────────────────────────────────────────
@@ -112,7 +114,7 @@ export const sessions = pgTable("sessions", {
   plannedMinutes: integer("planned_minutes").notNull(),
   source: sessionSourceEnum("source").notNull(),
   status: sessionStatusEnum("status").notNull().default("running"),
-});
+}, (table) => [uniqueIndex("sessions_one_running").on(sql`(true)`).where(sql`${table.status} = 'running'`)]);
 
 // ─── habit_entries — chấm thói quen mỗi ngày, SPEC.md §7 ─────────────────
 // "Viết nhật ký" (kind=journal) KHÔNG có dòng ở đây — đọc thẳng day_logs.journal_text.

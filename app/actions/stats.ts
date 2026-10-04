@@ -9,6 +9,14 @@ import { getEngineRawData, getHideMoney, getLatestNetWorth } from "@/db/queries"
 
 export type ComputedStats = {
   levelByStat: Record<StatKey, number>;
+  /** XP tích luỹ HIỆN TẠI của từng chỉ số (đã trừ decay nếu có) — [THÊM — 2026-09-17] chủ dự án
+   *  báo "chưa xem được level cây và số điểm hiện tại của mỗi cây". `levelByStat` chỉ là cấp suy
+   *  ra từ số này (`core/engine/levels.ts#levelForXp`); UI cần con số thô để vẽ thanh tiến độ
+   *  "còn bao nhiêu XP nữa lên cấp" ở `HomeDashboard.tsx`. */
+  xpByStat: Record<StatKey, number>;
+  /** `true` = chỉ số đó hôm nay là ngày ân hạn CUỐI trước khi decay.ts bắt đầu trừ điểm (§4.1).
+   *  Khu vườn màn chính (`components/forest/ForestGrove.tsx`) cho đúng cây đó héo đi. */
+  neglectDangerByStat: Record<StatKey, boolean>;
   /** Chuỗi ngày-đạt, tính TỚI HẾT HÔM QUA (§4.6/R5) — hiện ở góc màn chính (§5.1), mốc 4. Có
    *  `.danger` (ân hạn 1 ngày, [CHỐT — 2026-09-04]) — chuỗi nhật ký không có, gãy là về 0 ngay. */
   dayAchievedStreak: DayAchievedStreakInfo;
@@ -46,6 +54,8 @@ export async function getComputedStatsAction(): Promise<ComputedStats> {
   const chapter = chapterForNetWorth(latestNetWorth?.totalVnd ?? 0);
   return {
     levelByStat: result.levelByStat,
+    xpByStat: result.xpByStat,
+    neglectDangerByStat: result.neglectDangerByStat,
     dayAchievedStreak: result.dayAchievedStreak,
     streakMilestoneEvents: result.events.streakMilestones,
     chapter,

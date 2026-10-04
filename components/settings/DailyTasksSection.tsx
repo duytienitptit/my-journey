@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { addDailyTaskAction, removeDailyTaskAction, updateDailyTaskThresholdAction } from "@/app/actions/settings";
 import type { DailyTaskWithRef } from "@/db/queries";
+import { BEDTIME_SLUG } from "@/core/bedtime";
 import { DAY_ACHIEVED_REQUIRED_COUNT } from "@/core/balance";
 import type { StatKey } from "@/core/types";
 import { Card, CardHint, CardTitle } from "./Card";
@@ -16,7 +17,7 @@ type Ref = { id: number; name: string; emoji: string; stat: StatKey };
 type Props = {
   dailyTasks: DailyTaskWithRef[];
   labels: Ref[];
-  habits: (Ref & { kind: "score_1_5" | "boolean" | "journal" })[];
+  habits: (Ref & { slug: string; kind: "score_1_5" | "boolean" | "journal" })[];
   onChanged: () => void;
 };
 
@@ -24,6 +25,7 @@ function ThresholdCell({ task, onChanged }: { task: DailyTaskWithRef; onChanged:
   const [value, setValue] = useState(String(task.threshold ?? ""));
   const [pending, setPending] = useState(false);
 
+  if (task.habitSlug === BEDTIME_SLUG) return <span className="text-xs text-foreground/70">before 22:30</span>;
   if (task.habitKind === "journal") {
     return <span className="w-24 shrink-0 text-right text-xs text-foreground/40">has text</span>;
   }
@@ -79,6 +81,7 @@ export function DailyTasksSection({ dailyTasks, labels, habits, onChanged }: Pro
   const [selectedType, selectedIdStr] = selected.split(":");
   const selectedHabit = selectedType === "habit" ? availableHabits.find((h) => String(h.id) === selectedIdStr) : null;
   const isJournalSelection = selectedHabit?.kind === "journal";
+  const hasFixedThreshold = isJournalSelection || selectedHabit?.slug === BEDTIME_SLUG;
 
   async function handleRemove(id: number) {
     await removeDailyTaskAction(id);
@@ -90,7 +93,7 @@ export function DailyTasksSection({ dailyTasks, labels, habits, onChanged }: Pro
     const [refType, refIdStr] = selected.split(":") as ["label" | "habit", string];
     const refId = Number(refIdStr);
     let threshold: number | null = null;
-    if (!isJournalSelection) {
+    if (!hasFixedThreshold) {
       const n = Number(newThreshold);
       if (!Number.isFinite(n) || n <= 0) return;
       threshold = Math.round(n);
@@ -158,7 +161,7 @@ export function DailyTasksSection({ dailyTasks, labels, habits, onChanged }: Pro
               </optgroup>
             )}
           </select>
-          {selected && !isJournalSelection && (
+          {selected && !hasFixedThreshold && (
             <label className="flex items-center justify-between gap-2 text-xs text-foreground/60">
               Threshold ({selectedType === "label" ? "sessions" : "score 1–5"})
               <input
@@ -184,7 +187,7 @@ export function DailyTasksSection({ dailyTasks, labels, habits, onChanged }: Pro
             </button>
             <button
               onClick={handleAdd}
-              disabled={pending || !selected || (!isJournalSelection && !newThreshold)}
+              disabled={pending || !selected || (!hasFixedThreshold && !newThreshold)}
               className="rounded-full bg-foreground px-3 py-1 text-xs font-semibold text-background transition-transform active:scale-95 disabled:opacity-50"
             >
               Add

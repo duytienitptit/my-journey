@@ -1,9 +1,10 @@
 import { DailyScreen } from "@/components/DailyScreen";
 import { getEveningDataAction } from "@/app/actions/evening";
 import { getComputedStatsAction } from "@/app/actions/stats";
+import { getWeeklyReviewDataAction } from "@/app/actions/week";
 import { daySummaryLine } from "@/core/summary";
 import { now } from "@/core/clock";
-import { dayKeyOf } from "@/core/day";
+import { dayKeyOf, isoWeekdayOf } from "@/core/day";
 import { getActiveSession, listActiveLabels, listSessionsForDay } from "@/db/queries";
 
 // Trang này đọc DB mỗi lần vào — không cache tĩnh. Đồng hồ pomodoro và nghi thức tối phải luôn
@@ -13,12 +14,13 @@ export const dynamic = "force-dynamic";
 export default async function Home() {
   const todayKey = dayKeyOf(now());
 
-  const [labels, activeSession, todaySessions, eveningData, stats] = await Promise.all([
+  const activeSession = await getActiveSession();
+  const [labels, todaySessions, eveningData, stats, weeklyData] = await Promise.all([
     listActiveLabels(),
-    getActiveSession(),
     listSessionsForDay(todayKey),
     getEveningDataAction(todayKey),
     getComputedStatsAction(),
+    isoWeekdayOf(todayKey) === 7 ? getWeeklyReviewDataAction() : Promise.resolve(null),
   ]);
 
   const completed = todaySessions.filter((s) => s.status === "completed");
@@ -26,6 +28,7 @@ export default async function Home() {
 
   return (
     <DailyScreen
+      key={todayKey}
       labels={labels}
       todayKey={todayKey}
       initialActiveSession={activeSession}
@@ -33,6 +36,7 @@ export default async function Home() {
       initialSummaryLine={summaryLine}
       initialEveningData={eveningData}
       initialStats={stats}
+      initialWeeklyData={weeklyData}
     />
   );
 }

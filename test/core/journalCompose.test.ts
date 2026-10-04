@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { IMPORTANT_QUESTIONS, composeJournalText, countWords, parseJournalText } from "../../core/journalCompose";
+import { IMPORTANT_QUESTIONS, composeJournalText, countJournalWords, countWords, parseJournalText } from "../../core/journalCompose";
 
 describe("composeJournalText", () => {
   it("ghép cả 3 câu trả lời + văn bản tự do, phân cách bằng dòng trống", () => {
@@ -90,5 +90,28 @@ describe("countWords", () => {
 
   it("khoảng trắng thừa ở đầu/cuối không tính là từ", () => {
     expect(countWords("  một hai  ")).toBe(2);
+  });
+});
+
+describe("daily prompt and free writing", () => {
+  const prompt = "What would make tomorrow gentler?";
+
+  it("stores the rotating prompt answer and independent free journal in one text field", () => {
+    const text = composeJournalText({ answers: ["mind", "thank myself", "a decision", "Sleep earlier"], freeText: "Today felt calm." }, prompt);
+    expect(parseJournalText(text, prompt)).toEqual({ answers: ["mind", "thank myself", "a decision", "Sleep earlier"], freeText: "Today felt calm." });
+    expect(text).toContain(`Q: ${prompt}\nA: Sleep earlier`);
+  });
+
+  it("keeps older unlabelled writing in the free journal instead of losing it", () => {
+    const oldText = composeJournalText({ answers: ["old answer", "", ""], freeText: "My old free writing" });
+    const parsed = parseJournalText(oldText, prompt);
+    expect(parsed.answers).toEqual(["old answer", "", "", ""]);
+    expect(parsed.freeText).toBe("My old free writing");
+  });
+
+  it("counts written words without counting fixed or rotating question text", () => {
+    const text = composeJournalText({ answers: ["one two", "", "", "three"], freeText: "four five" }, prompt);
+    expect(countJournalWords(text)).toBe(5);
+    expect(countJournalWords("A plain older journal entry")).toBe(5);
   });
 });

@@ -9,6 +9,7 @@ import type { NextConfig } from "next";
 const PUBLIC_ASSET_CACHE = "public, max-age=86400, stale-while-revalidate=604800";
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   async headers() {
     if (process.env.NODE_ENV !== "production") return [];
     return ["/sounds/:path*"].map((source) => ({

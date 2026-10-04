@@ -29,11 +29,11 @@ export function WeekScreen({ initialData }: { initialData: WeeklyReviewData }) {
 
   async function handleSaveReview(text: string) {
     await saveWeekReviewAction(text);
-    await refresh();
+    setData((previous) => ({ ...previous, reviewText: text }));
   }
 
   return (
-    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col gap-6 bg-background px-6 py-12">
+    <main className="mx-auto flex min-h-svh w-full max-w-lg flex-col gap-6 px-6 py-12">
       <div className="flex items-center justify-between">
         <Link href="/" className="text-sm font-medium text-foreground/50 hover:text-foreground/80">
           ← Today
@@ -108,7 +108,7 @@ export function WeekScreen({ initialData }: { initialData: WeeklyReviewData }) {
 
       <div className="flex flex-col gap-3 rounded-3xl bg-surface p-5 shadow-sm">
         <h2 className="text-sm font-semibold text-foreground/60">Wrap up the week</h2>
-        <WeekReviewCard value={data.reviewText} onSave={handleSaveReview} />
+        <WeekReviewCard weekStart={data.weekStart} value={data.reviewText} onSave={handleSaveReview} />
       </div>
     </main>
   );

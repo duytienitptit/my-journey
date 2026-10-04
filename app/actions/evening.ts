@@ -1,11 +1,14 @@
 "use server";
 
+import { BEDTIME_SLUG, BEDTIME_NAME, bedtimeDeadline } from "@/core/bedtime";
+import { countJournalWords } from "@/core/journalCompose";
+import { JOURNAL_MIN_WORDS } from "@/core/balance";
 import { now } from "@/core/clock";
 import { isDailyTaskDone, type DayAchievedInput } from "@/core/engine/dayAchieved";
 import { promptIndexForDay } from "@/core/journalPrompt";
 import { daySummaryLine } from "@/core/summary";
 import { HABIT_SCORE_MAX, HABIT_SCORE_MIN, MOOD_MAX, MOOD_MIN } from "@/core/balance";
-import type { DayKey } from "@/core/types";
+import type { DayKey, StatKey } from "@/core/types";
 import {
   closeDay,
   countCompletedSessionsByLabelForDay,
@@ -40,7 +43,7 @@ import {
  *   `dailyTasks`, xem SPEC.md §4.4/§4.5).
  * - "journal_status": chỉ hiện trạng thái đã viết/chưa — viết thật ở khối Journal bên dưới.
  */
-export type CheckInItem =
+export type CheckInItem = { stat: StatKey } & (
   | {
       kind: "label";
       labelId: number;
@@ -51,8 +54,8 @@ export type CheckInItem =
       done: boolean;
       manualCount: number;
     }
-  | { kind: "habit_score"; habitId: number; name: string; emoji: string; score: number | null; threshold: number | null; done: boolean }
-  | { kind: "journal_status"; name: string; emoji: string; done: boolean };
+  | { kind: "habit_score"; habitId: number; name: string; emoji: string; score: number | null; threshold: number | null; done: boolean; bedtimeCutoff?: number }
+  | { kind: "journal_status"; name: string; emoji: string; done: boolean });
 
 export type EveningData = {
   dayKey: DayKey;
@@ -99,6 +102,7 @@ export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData>
     if (t.refType === "label") {
       return {
         kind: "label",
+        stat: t.stat,
         labelId: t.refId,
         name: t.name,
         emoji: t.emoji,
@@ -109,14 +113,16 @@ export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData>
       };
     }
     if (t.habitKind === "journal") {
-      return { kind: "journal_status", name: t.name, emoji: t.emoji, done };
+      return { kind: "journal_status", stat: t.stat, name: t.name, emoji: t.emoji, done };
     }
     return {
       kind: "habit_score",
+      stat: t.stat,
       habitId: t.refId,
       name: t.name,
       emoji: t.emoji,
       score: entryByHabit.get(t.refId)?.score ?? null,
+      ...(allHabits.find((h) => h.id === t.refId)?.slug === BEDTIME_SLUG ? { name: BEDTIME_NAME, bedtimeCutoff: bedtimeDeadline(dayKey) } : {}),
       threshold: t.threshold ?? HABIT_SCORE_MAX,
       done,
     };
@@ -132,11 +138,13 @@ export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData>
     .map((h) => ({
       kind: "habit_score",
       habitId: h.id,
+      stat: h.stat,
       name: h.name,
       emoji: h.emoji,
       score: entryByHabit.get(h.id)?.score ?? null,
       threshold: null,
       done: false,
+      ...(h.slug === BEDTIME_SLUG ? { name: BEDTIME_NAME, bedtimeCutoff: bedtimeDeadline(dayKey) } : {}),
     }));
 
   const completed = sessions.filter((s) => s.status === "completed");
@@ -154,25 +162,27 @@ export async function getEveningDataAction(dayKey: DayKey): Promise<EveningData>
 }
 
 export async function saveHabitScoreAction(habitId: number, dayKey: DayKey, score: number) {
-  if (score < HABIT_SCORE_MIN || score > HABIT_SCORE_MAX) {
+  if (!Number.isInteger(score) || score < HABIT_SCORE_MIN || score > HABIT_SCORE_MAX) {
     throw new Error(`Score must be between ${HABIT_SCORE_MIN} and ${HABIT_SCORE_MAX}.`);
   }
   await upsertHabitScore(habitId, dayKey, score);
 }
 
 export async function saveMoodAction(dayKey: DayKey, mood: number) {
-  if (mood < MOOD_MIN || mood > MOOD_MAX) {
+  if (!Number.isInteger(mood) || mood < MOOD_MIN || mood > MOOD_MAX) {
     throw new Error(`Mood must be between ${MOOD_MIN} and ${MOOD_MAX}.`);
   }
   await upsertMood(dayKey, mood);
 }
 
 export async function saveJournalAction(dayKey: DayKey, text: string, promptId: number | null) {
-  await upsertJournal(dayKey, text, promptId);
+  return upsertJournal(dayKey, text, promptId);
 }
 
 /** Không khoá ngày lại — vẫn sửa được sau (§11.2 câu Q16). Đóng muộn vẫn tính đủ (§4.11). */
 export async function closeDayAction(dayKey: DayKey) {
+  const log = await getDayLog(dayKey);
+  if (countJournalWords(log?.journalText ?? "") < JOURNAL_MIN_WORDS) throw new Error(`Write at least ${JOURNAL_MIN_WORDS} words and wait for Saved before closing the day.`);
   await closeDay(dayKey);
   return now();
 }

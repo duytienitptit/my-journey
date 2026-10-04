@@ -55,7 +55,7 @@ export function useComputedStats(initial: ComputedStats) {
         setStreakBrokenNotice(prev.dayAchievedStreak.current);
       }
       setStats(fresh);
-    });
+    }).catch(() => { /* Keep the last confirmed stats until the next refresh. */ });
   }, []);
 
   useEffect(() => {

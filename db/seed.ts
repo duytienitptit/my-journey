@@ -94,7 +94,7 @@ async function main() {
     .insert(schema.habits)
     .values([
       { slug: "sport", name: "Sport", emoji: "🏃", stat: "health", kind: "score_1_5" },
-      { slug: "sleep-enough", name: "Sleep enough", emoji: "😴", stat: "health", kind: "score_1_5" },
+      { slug: "sleep-enough", name: "Bed before 22:30", emoji: "😴", stat: "health", kind: "score_1_5" },
       { slug: "journal", name: "Journal", emoji: "📔", stat: "spirit", kind: "journal" },
     ])
     .returning({ id: schema.habits.id, slug: schema.habits.slug });

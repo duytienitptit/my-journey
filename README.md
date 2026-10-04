@@ -1,38 +1,57 @@
 # My Journey
 
-App cá nhân, một người dùng duy nhất. Mô tả sản phẩm đầy đủ nằm trong [`SPEC.md`](SPEC.md);
-luật làm việc của Claude trên dự án này nằm trong [`CLAUDE.md`](CLAUDE.md). Nguồn model 3D/âm
-thanh (CC0) liệt kê ở [`public/CREDITS.md`](public/CREDITS.md).
+Ứng dụng quản lý bản thân cho một người dùng. Luật sản phẩm: [SPEC.md](SPEC.md).
+Review và tình trạng sửa lỗi: [REVIEW-2026-09-30.md](REVIEW-2026-09-30.md).
+Thiết kế và ảnh giao diện: [docs/design/README.md](docs/design/README.md).
+Nguồn hình ảnh, âm thanh và font: [public/CREDITS.md](public/CREDITS.md).
 
-## Chạy thử
+## Chạy local
+
+Cài Node.js và PostgreSQL, tạo database riêng, đặt `DATABASE_URL` trong `.env.local`.
+Không dùng URL production để chạy thử hoặc seed.
 
 ```bash
 npm install
+npm run db:migrate
+npm run db:seed   # chỉ cho database mới, chưa có dữ liệu sử dụng
 npm run dev
 ```
 
 Mở [http://localhost:3000](http://localhost:3000).
 
+```bash
+npm run build    # webpack; font được đóng gói local, không tải Google Fonts lúc build
+npm start
+```
+
 ## Kiểm thử
 
 ```bash
-npm test        # unit test cho core/ (chạy một lần)
-npm run test:watch
+npm test         # logic và component; bỏ qua test DB nếu không có TEST_DATABASE_URL
 npm run lint
 npx tsc --noEmit
 ```
 
-## Stack
+Kiểm thử tích hợp có ghi/xóa dữ liệu: chỉ dùng database local riêng tên
+`myjourney_review_<date>`. Suite từ chối các hostname và tên DB khác, lưu/khôi phục
+snapshot baseline sau khi chạy. Đừng đặt dữ liệu cá nhân trong database này.
 
-Next.js 16 (App Router, Turbopack) · TypeScript strict · Tailwind CSS v4 · react-three-fiber +
-drei (phòng 3D) · Vitest · Postgres + Drizzle (từ mốc 2) · deploy Vercel.
-
-## Cấu trúc
-
+```bash
+createdb myjourney_review_20260930
+DATABASE_URL=postgresql://localhost/myjourney_review_20260930 npm run db:migrate
+DATABASE_URL=postgresql://localhost/myjourney_review_20260930 npm run db:seed
+TEST_DATABASE_URL=postgresql://localhost/myjourney_review_20260930 npx vitest run test/integration/database.test.ts
 ```
-core/         Logic game — hàm thuần, không đụng DB/React (SPEC.md §8)
-components/   Giao diện: room/ (cảnh 3D), timer/ (đồng hồ pomodoro)
-app/          Next.js App Router
-test/         Unit test cho core/
-public/       Model 3D + âm thanh CC0 (xem CREDITS.md)
-```
+
+## Stack và cấu trúc
+
+Next.js 16 App Router · React 19 · TypeScript strict · Tailwind CSS v4 · Three.js forest (SVG fallback) ·
+Postgres + Drizzle · Vitest + Testing Library. Dev dùng Turbopack; build dùng webpack.
+
+- `core/`: logic thuần, không phụ thuộc React/DB.
+- `components/`: dashboard, forest, timer, evening và các màn phụ.
+- `app/`: routes, Server Actions và API.
+- `db/`: schema, migrations và queries.
+- `lib/`: kiểm tra backup.
+- `test/`: logic, component và tích hợp Postgres.
+- `public/`: âm thanh, font và giấy phép.

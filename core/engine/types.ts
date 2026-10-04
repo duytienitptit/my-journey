@@ -40,6 +40,8 @@ export type HabitConfig = {
  * `core/engine/weeklyStats.ts`), dùng chung một lần fetch thô duy nhất (§8.1).
  */
 export type RawCompletedSession = {
+  /** Stored per session; optional only for legacy engine fixtures. */
+  plannedMinutes?: number;
   dayKey: DayKey;
   labelId: number;
   source: "timer" | "manual";
@@ -151,4 +153,9 @@ export type TimelineResult = {
   /** Chuỗi ngày-đạt DÀI NHẤT từng có, tính theo đúng luật ân hạn §4.6 (không phải đếm ngày liên
    *  tiếp thô) — "kỷ lục cá nhân" ở §5.8. Tính trên bộ đếm SỐNG nên hôm nay cũng được kể. */
   longestDayAchievedStreak: number;
+  /** `true` = hôm nay là ngày ân hạn CUỐI CÙNG của chỉ số đó trước khi decay.ts bắt đầu trừ điểm
+   *  (§4.1) — mai mà vẫn không có phiên/thói quen nào cho chỉ số này thì bắt đầu mất XP thật.
+   *  Dùng để cảnh báo trong khu vườn màn chính (`components/forest/ForestGrove.tsx`), y hệt cách
+   *  `dayAchievedStreak.danger` cảnh báo chuỗi — CHỈ một ngày, không phải cả cửa sổ ân hạn. */
+  neglectDangerByStat: Record<StatKey, boolean>;
 };
